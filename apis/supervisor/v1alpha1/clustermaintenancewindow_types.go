@@ -18,36 +18,42 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"kmodules.xyz/client-go/apiextensions"
+	"kubeops.dev/supervisor/crds"
 )
 
-// ClusterMaintenancewindowStatus defines the observed state of ClusterMaintenancewindow
-type ClusterMaintenancewindowStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
+const (
+	ResourceKindClusterMaintenanceWindow = "ClusterMaintenanceWindow"
+	ResourceClusterMaintenanceWindow     = "clustermaintenancewindow"
+	ResourceClusterMaintenanceWindows    = "clustermaintenancewindows"
+)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Cluster
 
-// ClusterMaintenancewindow is the Schema for the clustermaintenancewindows API
-type ClusterMaintenancewindow struct {
+// ClusterMaintenanceWindow is the Schema for the clustermaintenancewindows API
+type ClusterMaintenanceWindow struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MaintenancewindowSpec          `json:"spec,omitempty"`
-	Status ClusterMaintenancewindowStatus `json:"status,omitempty"`
+	Spec   MaintenanceWindowSpec   `json:"spec,omitempty"`
+	Status MaintenanceWindowStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// ClusterMaintenancewindowList contains a list of ClusterMaintenancewindow
-type ClusterMaintenancewindowList struct {
+// ClusterMaintenanceWindowList contains a list of ClusterMaintenanceWindow
+type ClusterMaintenanceWindowList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ClusterMaintenancewindow `json:"items"`
+	Items           []ClusterMaintenanceWindow `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ClusterMaintenancewindow{}, &ClusterMaintenancewindowList{})
+	SchemeBuilder.Register(&ClusterMaintenanceWindow{}, &ClusterMaintenanceWindowList{})
+}
+
+func (_ ClusterMaintenanceWindow) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+	return crds.MustCustomResourceDefinition(GroupVersion.WithResource(ResourceClusterMaintenanceWindows))
 }

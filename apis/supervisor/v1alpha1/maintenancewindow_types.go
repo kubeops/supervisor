@@ -19,10 +19,20 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	"kmodules.xyz/client-go/apiextensions"
+	"kubeops.dev/supervisor/crds"
 )
 
-// MaintenancewindowSpec defines the desired state of Maintenancewindow
-type MaintenancewindowSpec struct {
+const (
+	ResourceKindMaintenanceWindow = "MaintenanceWindow"
+	ResourceMaintenanceWindow     = "maintenancewindow"
+	ResourceMaintenanceWindows    = "maintenancewindows"
+)
+
+// MaintenanceWindowSpec defines the desired state of MaintenanceWindow
+type MaintenanceWindowSpec struct {
+	// +optional
+	IsDefault bool `json:"isDefault,omitempty"`
 	// +optional
 	Sunday []TimeWindow `json:"sunday,omitempty"`
 	// +optional
@@ -44,33 +54,46 @@ type TimeWindow struct {
 	NotAfter  kmapi.TimeOfDay `json:"notAfter"`
 }
 
-// MaintenancewindowStatus defines the observed state of Maintenancewindow
-type MaintenancewindowStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+// MaintenanceWindowStatus defines the observed state of MaintenanceWindow
+type MaintenanceWindowStatus struct {
+	// Specifies the current phase of the database
+	// +optional
+	// +kubebuilder:default=UnderReview
+	Status ApprovalStatus `json:"status,omitempty"`
+	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
+	// resource's generation, which is updated on mutation by the API Server.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Conditions applied to the database, such as approval or denial.
+	// +optional
+	Conditions []kmapi.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Maintenancewindow is the Schema for the maintenancewindows API
-type Maintenancewindow struct {
+// MaintenanceWindow is the Schema for the maintenancewindows API
+type MaintenanceWindow struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MaintenancewindowSpec   `json:"spec,omitempty"`
-	Status MaintenancewindowStatus `json:"status,omitempty"`
+	Spec   MaintenanceWindowSpec   `json:"spec,omitempty"`
+	Status MaintenanceWindowStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// MaintenancewindowList contains a list of Maintenancewindow
-type MaintenancewindowList struct {
+// MaintenanceWindowList contains a list of MaintenanceWindow
+type MaintenanceWindowList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Maintenancewindow `json:"items"`
+	Items           []MaintenanceWindow `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Maintenancewindow{}, &MaintenancewindowList{})
+	SchemeBuilder.Register(&MaintenanceWindow{}, &MaintenanceWindowList{})
+}
+
+func (_ MaintenanceWindow) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+	return crds.MustCustomResourceDefinition(GroupVersion.WithResource(ResourceMaintenanceWindows))
 }
