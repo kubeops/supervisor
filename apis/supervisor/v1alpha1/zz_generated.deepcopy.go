@@ -400,6 +400,10 @@ func (in *RecommendationStatus) DeepCopyInto(out *RecommendationStatus) {
 		*out = new(Subject)
 		**out = **in
 	}
+	if in.ReviewTimestamp != nil {
+		in, out := &in.ReviewTimestamp, &out.ReviewTimestamp
+		*out = (*in).DeepCopy()
+	}
 	if in.ApprovedWindow != nil {
 		in, out := &in.ApprovedWindow, &out.ApprovedWindow
 		*out = new(ApprovedWindow)

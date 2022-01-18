@@ -82,6 +82,8 @@ type RecommendationStatus struct {
 	// +optional
 	Comments string `json:"comments,omitempty"`
 	// +optional
+	ReviewTimestamp *metav1.Time `json:"reviewTimestamp,omitempty"`
+	// +optional
 	ApprovedWindow *ApprovedWindow `json:"approvedWindow,omitempty"`
 	// +optional
 	// +kubebuilder:default=Namespace

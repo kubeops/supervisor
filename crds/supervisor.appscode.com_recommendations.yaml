@@ -187,6 +187,9 @@ spec:
                 - Target
                 - TargetAndNamespace
                 type: string
+              reviewTimestamp:
+                format: date-time
+                type: string
               reviewer:
                 description: Subject contains a reference to the object or user identities
                   a role binding applies to.  This can either hold a direct API object
