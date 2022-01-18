@@ -32,7 +32,8 @@ const (
 
 // RecommendationSpec defines the desired state of Recommendation
 type RecommendationSpec struct {
-	Description string `json:"description,omitempty"`
+	Description string         `json:"description,omitempty"`
+	Target      kmapi.ObjectID `json:"target"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:EmbeddedResource
 	Operation runtime.RawExtension `json:"operation"`

@@ -72,8 +72,20 @@ spec:
                 - Approved
                 - Rejected
                 type: string
+              target:
+                properties:
+                  group:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                type: object
             required:
             - operation
+            - target
             type: object
           status:
             description: RecommendationStatus defines the observed state of Recommendation
