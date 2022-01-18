@@ -35,106 +35,38 @@ spec:
           spec:
             description: MaintenanceWindowSpec defines the desired state of MaintenanceWindow
             properties:
-              friday:
+              dates:
                 items:
                   properties:
-                    notAfter:
-                      format: time
+                    end:
+                      format: date-time
                       type: string
-                    notBefore:
-                      format: time
+                    start:
+                      format: date-time
                       type: string
                   required:
-                  - notAfter
-                  - notBefore
+                  - end
+                  - start
                   type: object
                 type: array
+              days:
+                additionalProperties:
+                  items:
+                    properties:
+                      end:
+                        format: time
+                        type: string
+                      start:
+                        format: time
+                        type: string
+                    required:
+                    - end
+                    - start
+                    type: object
+                  type: array
+                type: object
               isDefault:
                 type: boolean
-              monday:
-                items:
-                  properties:
-                    notAfter:
-                      format: time
-                      type: string
-                    notBefore:
-                      format: time
-                      type: string
-                  required:
-                  - notAfter
-                  - notBefore
-                  type: object
-                type: array
-              saturday:
-                items:
-                  properties:
-                    notAfter:
-                      format: time
-                      type: string
-                    notBefore:
-                      format: time
-                      type: string
-                  required:
-                  - notAfter
-                  - notBefore
-                  type: object
-                type: array
-              sunday:
-                items:
-                  properties:
-                    notAfter:
-                      format: time
-                      type: string
-                    notBefore:
-                      format: time
-                      type: string
-                  required:
-                  - notAfter
-                  - notBefore
-                  type: object
-                type: array
-              thursday:
-                items:
-                  properties:
-                    notAfter:
-                      format: time
-                      type: string
-                    notBefore:
-                      format: time
-                      type: string
-                  required:
-                  - notAfter
-                  - notBefore
-                  type: object
-                type: array
-              tuesday:
-                items:
-                  properties:
-                    notAfter:
-                      format: time
-                      type: string
-                    notBefore:
-                      format: time
-                      type: string
-                  required:
-                  - notAfter
-                  - notBefore
-                  type: object
-                type: array
-              wednesday:
-                items:
-                  properties:
-                    notAfter:
-                      format: time
-                      type: string
-                    notBefore:
-                      format: time
-                      type: string
-                  required:
-                  - notAfter
-                  - notBefore
-                  type: object
-                type: array
             type: object
           status:
             description: MaintenanceWindowStatus defines the observed state of MaintenanceWindow
@@ -197,7 +129,7 @@ spec:
                 default: UnderReview
                 description: Specifies the current phase of the database
                 enum:
-                - UnderReview
+                - Pending
                 - Approved
                 - Rejected
                 type: string

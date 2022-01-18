@@ -1,0 +1,6 @@
+apiVersion: supervisor.appscode.com/v1alpha1
+kind: ApprovalPolicy
+metadata:
+  name: approvalpolicy-sample
+spec:
+  # TODO(user): Add fields here
