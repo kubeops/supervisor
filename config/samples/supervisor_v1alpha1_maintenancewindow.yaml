@@ -1,0 +1,6 @@
+apiVersion: supervisor.appscode.com/v1alpha1
+kind: Maintenancewindow
+metadata:
+  name: maintenancewindow-sample
+spec:
+  # TODO(user): Add fields here

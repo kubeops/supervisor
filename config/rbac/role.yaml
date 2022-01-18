@@ -1,0 +1,86 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - clustermaintenancewindows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - clustermaintenancewindows/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - clustermaintenancewindows/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - maintenancewindows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - maintenancewindows/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - maintenancewindows/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - recommendations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - recommendations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - recommendations/status
+  verbs:
+  - get
+  - patch
+  - update

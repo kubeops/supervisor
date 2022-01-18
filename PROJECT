@@ -1,0 +1,34 @@
+domain: appscode.com
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+projectName: supervisor
+repo: kubeops.dev/supervisor
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: appscode.com
+  group: supervisor
+  kind: Recommendation
+  path: kubeops.dev/supervisor/apis/supervisor/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: appscode.com
+  group: supervisor
+  kind: Maintenancewindow
+  path: kubeops.dev/supervisor/apis/supervisor/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: appscode.com
+  group: supervisor
+  kind: ClusterMaintenancewindow
+  path: kubeops.dev/supervisor/apis/supervisor/v1alpha1
+  version: v1alpha1
+version: "3"

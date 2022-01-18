@@ -1,0 +1,6 @@
+apiVersion: supervisor.appscode.com/v1alpha1
+kind: ClusterMaintenancewindow
+metadata:
+  name: clustermaintenancewindow-sample
+spec:
+  # TODO(user): Add fields here
