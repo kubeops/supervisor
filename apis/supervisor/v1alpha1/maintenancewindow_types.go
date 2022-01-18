@@ -18,15 +18,30 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
 // MaintenancewindowSpec defines the desired state of Maintenancewindow
 type MaintenancewindowSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +optional
+	Sunday []TimeWindow `json:"sunday,omitempty"`
+	// +optional
+	Monday []TimeWindow `json:"monday,omitempty"`
+	// +optional
+	Tuesday []TimeWindow `json:"tuesday,omitempty"`
+	// +optional
+	Wednesday []TimeWindow `json:"wednesday,omitempty"`
+	// +optional
+	Thursday []TimeWindow `json:"thursday,omitempty"`
+	// +optional
+	Friday []TimeWindow `json:"friday,omitempty"`
+	// +optional
+	Saturday []TimeWindow `json:"saturday,omitempty"`
+}
 
-	// Foo is an example field of Maintenancewindow. Edit maintenancewindow_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type TimeWindow struct {
+	NotBefore kmapi.TimeOfDay `json:"notBefore"`
+	NotAfter  kmapi.TimeOfDay `json:"notAfter"`
 }
 
 // MaintenancewindowStatus defines the observed state of Maintenancewindow

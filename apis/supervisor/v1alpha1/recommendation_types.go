@@ -18,15 +18,35 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	kmapi "kmodules.xyz/client-go/api/v1"
 )
 
 // RecommendationSpec defines the desired state of Recommendation
 type RecommendationSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Description string               `json:"description,omitempty"`
+	Operation   runtime.RawExtension `json:"operation"`
+	// +optional
+	MaintenanceWindow *kmapi.TypedObjectReference `json:"maintenanceWindow,omitempty"`
+	// +optional
+	// +kubebuilder:default=UnderReview
+	Status ApprovalStatus `json:"status"`
+	// +optional
+	Approver *ApproverInfo `json:"approver,omitempty"`
+}
 
-	// Foo is an example field of Recommendation. Edit recommendation_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+// +kubebuilder:validation:Enum=UnderReview;Approved;Rejected
+type ApprovalStatus string
+
+const (
+	RecommendationUnderReview ApprovalStatus = "UnderReview"
+	RecommendationApproved    ApprovalStatus = "Approved"
+	RecommendationRejected    ApprovalStatus = "Rejected"
+)
+
+type ApproverInfo struct {
+	Name  string `json:"name"`
+	Notes string `json:"notes,omitempty"`
 }
 
 // RecommendationStatus defines the observed state of Recommendation

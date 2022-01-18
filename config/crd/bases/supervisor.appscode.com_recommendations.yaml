@@ -3,8 +3,6 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
   creationTimestamp: null
   name: recommendations.supervisor.appscode.com
 spec:
@@ -36,10 +34,44 @@ spec:
           spec:
             description: RecommendationSpec defines the desired state of Recommendation
             properties:
-              foo:
-                description: Foo is an example field of Recommendation. Edit recommendation_types.go
-                  to remove/update
+              approver:
+                properties:
+                  name:
+                    type: string
+                  notes:
+                    type: string
+                required:
+                - name
+                type: object
+              description:
                 type: string
+              maintenanceWindow:
+                description: TypedObjectReference represents an typed namespaced object.
+                properties:
+                  apiGroup:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                    type: string
+                  namespace:
+                    description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                    type: string
+                required:
+                - name
+                type: object
+              operation:
+                type: object
+              status:
+                default: UnderReview
+                enum:
+                - UnderReview
+                - Approved
+                - Rejected
+                type: string
+            required:
+            - operation
             type: object
           status:
             description: RecommendationStatus defines the observed state of Recommendation
@@ -49,9 +81,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
