@@ -3,8 +3,6 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
   creationTimestamp: null
   name: maintenancewindows.supervisor.appscode.com
 spec:
@@ -36,10 +34,104 @@ spec:
           spec:
             description: MaintenancewindowSpec defines the desired state of Maintenancewindow
             properties:
-              foo:
-                description: Foo is an example field of Maintenancewindow. Edit maintenancewindow_types.go
-                  to remove/update
-                type: string
+              friday:
+                items:
+                  properties:
+                    notAfter:
+                      format: time
+                      type: string
+                    notBefore:
+                      format: time
+                      type: string
+                  required:
+                  - notAfter
+                  - notBefore
+                  type: object
+                type: array
+              monday:
+                items:
+                  properties:
+                    notAfter:
+                      format: time
+                      type: string
+                    notBefore:
+                      format: time
+                      type: string
+                  required:
+                  - notAfter
+                  - notBefore
+                  type: object
+                type: array
+              saturday:
+                items:
+                  properties:
+                    notAfter:
+                      format: time
+                      type: string
+                    notBefore:
+                      format: time
+                      type: string
+                  required:
+                  - notAfter
+                  - notBefore
+                  type: object
+                type: array
+              sunday:
+                items:
+                  properties:
+                    notAfter:
+                      format: time
+                      type: string
+                    notBefore:
+                      format: time
+                      type: string
+                  required:
+                  - notAfter
+                  - notBefore
+                  type: object
+                type: array
+              thursday:
+                items:
+                  properties:
+                    notAfter:
+                      format: time
+                      type: string
+                    notBefore:
+                      format: time
+                      type: string
+                  required:
+                  - notAfter
+                  - notBefore
+                  type: object
+                type: array
+              tuesday:
+                items:
+                  properties:
+                    notAfter:
+                      format: time
+                      type: string
+                    notBefore:
+                      format: time
+                      type: string
+                  required:
+                  - notAfter
+                  - notBefore
+                  type: object
+                type: array
+              wednesday:
+                items:
+                  properties:
+                    notAfter:
+                      format: time
+                      type: string
+                    notBefore:
+                      format: time
+                      type: string
+                  required:
+                  - notAfter
+                  - notBefore
+                  type: object
+                type: array
             type: object
           status:
             description: MaintenancewindowStatus defines the observed state of Maintenancewindow
@@ -49,9 +141,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

@@ -20,15 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ClusterMaintenancewindowSpec defines the desired state of ClusterMaintenancewindow
-type ClusterMaintenancewindowSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of ClusterMaintenancewindow. Edit clustermaintenancewindow_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
-
 // ClusterMaintenancewindowStatus defines the observed state of ClusterMaintenancewindow
 type ClusterMaintenancewindowStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
@@ -44,7 +35,7 @@ type ClusterMaintenancewindow struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterMaintenancewindowSpec   `json:"spec,omitempty"`
+	Spec   MaintenancewindowSpec          `json:"spec,omitempty"`
 	Status ClusterMaintenancewindowStatus `json:"status,omitempty"`
 }
 
