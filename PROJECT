@@ -20,7 +20,7 @@ resources:
   controller: true
   domain: appscode.com
   group: supervisor
-  kind: Maintenancewindow
+  kind: MaintenanceWindow
   path: kubeops.dev/supervisor/apis/supervisor/v1alpha1
   version: v1alpha1
 - api:
@@ -28,7 +28,7 @@ resources:
   controller: true
   domain: appscode.com
   group: supervisor
-  kind: ClusterMaintenancewindow
+  kind: ClusterMaintenanceWindow
   path: kubeops.dev/supervisor/apis/supervisor/v1alpha1
   version: v1alpha1
 version: "3"

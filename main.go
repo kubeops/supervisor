@@ -85,18 +85,18 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Recommendation")
 		os.Exit(1)
 	}
-	if err = (&supervisorcontrollers.MaintenancewindowReconciler{
+	if err = (&supervisorcontrollers.MaintenanceWindowReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Maintenancewindow")
+		setupLog.Error(err, "unable to create controller", "controller", "MaintenanceWindow")
 		os.Exit(1)
 	}
-	if err = (&supervisorcontrollers.ClusterMaintenancewindowReconciler{
+	if err = (&supervisorcontrollers.ClusterMaintenanceWindowReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ClusterMaintenancewindow")
+		setupLog.Error(err, "unable to create controller", "controller", "ClusterMaintenanceWindow")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

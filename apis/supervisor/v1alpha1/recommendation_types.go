@@ -20,12 +20,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	"kmodules.xyz/client-go/apiextensions"
+	"kubeops.dev/supervisor/crds"
+)
+
+const (
+	ResourceKindRecommendation = "Recommendation"
+	ResourceRecommendation     = "recommendation"
+	ResourceRecommendations    = "recommendations"
 )
 
 // RecommendationSpec defines the desired state of Recommendation
 type RecommendationSpec struct {
-	Description string               `json:"description,omitempty"`
-	Operation   runtime.RawExtension `json:"operation"`
+	Description string `json:"description,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:EmbeddedResource
+	Operation runtime.RawExtension `json:"operation"`
 	// +optional
 	MaintenanceWindow *kmapi.TypedObjectReference `json:"maintenanceWindow,omitempty"`
 	// +optional
@@ -51,8 +61,17 @@ type ApproverInfo struct {
 
 // RecommendationStatus defines the observed state of Recommendation
 type RecommendationStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Specifies the current phase of the database
+	// +optional
+	// +kubebuilder:default=UnderReview
+	Status ApprovalStatus `json:"status,omitempty"`
+	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
+	// resource's generation, which is updated on mutation by the API Server.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Conditions applied to the database, such as approval or denial.
+	// +optional
+	Conditions []kmapi.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -78,4 +97,8 @@ type RecommendationList struct {
 
 func init() {
 	SchemeBuilder.Register(&Recommendation{}, &RecommendationList{})
+}
+
+func (_ Recommendation) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+	return crds.MustCustomResourceDefinition(GroupVersion.WithResource(ResourceRecommendations))
 }

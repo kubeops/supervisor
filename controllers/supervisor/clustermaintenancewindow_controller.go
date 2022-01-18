@@ -27,8 +27,8 @@ import (
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 )
 
-// ClusterMaintenancewindowReconciler reconciles a ClusterMaintenancewindow object
-type ClusterMaintenancewindowReconciler struct {
+// ClusterMaintenanceWindowReconciler reconciles a ClusterMaintenanceWindow object
+type ClusterMaintenanceWindowReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
@@ -40,13 +40,13 @@ type ClusterMaintenancewindowReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the ClusterMaintenancewindow object against the actual cluster state, and then
+// the ClusterMaintenanceWindow object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
-func (r *ClusterMaintenancewindowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ClusterMaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
@@ -55,8 +55,8 @@ func (r *ClusterMaintenancewindowReconciler) Reconcile(ctx context.Context, req 
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ClusterMaintenancewindowReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ClusterMaintenanceWindowReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&supervisorv1alpha1.ClusterMaintenancewindow{}).
+		For(&supervisorv1alpha1.ClusterMaintenanceWindow{}).
 		Complete(r)
 }

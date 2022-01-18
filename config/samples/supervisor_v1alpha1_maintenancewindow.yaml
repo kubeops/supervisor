@@ -1,5 +1,5 @@
 apiVersion: supervisor.appscode.com/v1alpha1
-kind: Maintenancewindow
+kind: MaintenanceWindow
 metadata:
   name: maintenancewindow-sample
 spec:
