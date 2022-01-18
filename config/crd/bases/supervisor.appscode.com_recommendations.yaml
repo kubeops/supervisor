@@ -118,6 +118,10 @@ spec:
                     - name
                     type: object
                   window:
+                    enum:
+                    - Immediate
+                    - NextAvailable
+                    - SpecificDates
                     type: string
                 type: object
               comments:
@@ -176,6 +180,13 @@ spec:
                   which is updated on mutation by the API Server.
                 format: int64
                 type: integer
+              parallelism:
+                default: Namespace
+                enum:
+                - Namespace
+                - Target
+                - TargetAndNamespace
+                type: string
               reviewer:
                 description: Subject contains a reference to the object or user identities
                   a role binding applies to.  This can either hold a direct API object

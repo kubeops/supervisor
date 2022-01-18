@@ -83,6 +83,9 @@ type RecommendationStatus struct {
 	Comments string `json:"comments,omitempty"`
 	// +optional
 	ApprovedWindow *ApprovedWindow `json:"approvedWindow,omitempty"`
+	// +optional
+	// +kubebuilder:default=Namespace
+	Parallelism Parallelism `json:"parallelism,omitempty"`
 	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
 	// resource's generation, which is updated on mutation by the API Server.
 	// +optional
@@ -92,6 +95,7 @@ type RecommendationStatus struct {
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=Immediate;NextAvailable;SpecificDates
 type WindowType string
 
 const (
@@ -107,6 +111,15 @@ type ApprovedWindow struct {
 	// +optional
 	Dates []DateWindow `json:"dates,omitempty"`
 }
+
+// +kubebuilder:validation:Enum=Namespace;Target;TargetAndNamespace
+type Parallelism string
+
+const (
+	QueuePerNamespace          Parallelism = "Namespace"
+	QueuePerTarget             Parallelism = "Target"
+	QueuePerTargetAndNamespace Parallelism = "TargetAndNamespace"
+)
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

@@ -66,7 +66,7 @@ type TimeWindow struct {
 type MaintenanceWindowStatus struct {
 	// Specifies the current phase of the database
 	// +optional
-	// +kubebuilder:default=UnderReview
+	// +kubebuilder:default=Pending
 	Status ApprovalStatus `json:"status,omitempty"`
 	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
 	// resource's generation, which is updated on mutation by the API Server.

@@ -125,7 +125,7 @@ spec:
                 format: int64
                 type: integer
               status:
-                default: UnderReview
+                default: Pending
                 description: Specifies the current phase of the database
                 enum:
                 - Pending
