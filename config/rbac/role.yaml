@@ -9,6 +9,32 @@ rules:
 - apiGroups:
   - supervisor.appscode.com
   resources:
+  - approvalpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - approvalpolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - approvalpolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
   - clustermaintenancewindows
   verbs:
   - create

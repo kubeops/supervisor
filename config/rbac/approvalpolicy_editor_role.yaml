@@ -1,0 +1,24 @@
+# permissions for end users to edit approvalpolicies.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: approvalpolicy-editor-role
+rules:
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - approvalpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - supervisor.appscode.com
+  resources:
+  - approvalpolicies/status
+  verbs:
+  - get

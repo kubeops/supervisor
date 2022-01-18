@@ -34,24 +34,32 @@ type MaintenanceWindowSpec struct {
 	// +optional
 	IsDefault bool `json:"isDefault,omitempty"`
 	// +optional
-	Sunday []TimeWindow `json:"sunday,omitempty"`
+	Days map[DayOfWeek][]TimeWindow `json:"days,omitempty"`
 	// +optional
-	Monday []TimeWindow `json:"monday,omitempty"`
-	// +optional
-	Tuesday []TimeWindow `json:"tuesday,omitempty"`
-	// +optional
-	Wednesday []TimeWindow `json:"wednesday,omitempty"`
-	// +optional
-	Thursday []TimeWindow `json:"thursday,omitempty"`
-	// +optional
-	Friday []TimeWindow `json:"friday,omitempty"`
-	// +optional
-	Saturday []TimeWindow `json:"saturday,omitempty"`
+	Dates []DateWindow `json:"dates,omitempty"`
+}
+
+// +kubebuilder:validation:Enum=Sunday;Monday;Tuesday;Wednesda;Thursday;Friday;Saturday
+type DayOfWeek string
+
+const (
+	Sunday    DayOfWeek = "Sunday"
+	Monday    DayOfWeek = "Monday"
+	Tuesday   DayOfWeek = "Tuesday"
+	Wednesday DayOfWeek = "Wednesday"
+	Thursday  DayOfWeek = "Thursday"
+	Friday    DayOfWeek = "Friday"
+	Saturday  DayOfWeek = "Saturday"
+)
+
+type DateWindow struct {
+	Start metav1.Time `json:"start"`
+	End   metav1.Time `json:"end"`
 }
 
 type TimeWindow struct {
-	NotBefore kmapi.TimeOfDay `json:"notBefore"`
-	NotAfter  kmapi.TimeOfDay `json:"notAfter"`
+	Start kmapi.TimeOfDay `json:"start"`
+	End   kmapi.TimeOfDay `json:"end"`
 }
 
 // MaintenanceWindowStatus defines the observed state of MaintenanceWindow

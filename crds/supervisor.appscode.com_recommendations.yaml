@@ -34,24 +34,19 @@ spec:
           spec:
             description: RecommendationSpec defines the desired state of Recommendation
             properties:
-              approver:
-                properties:
-                  name:
-                    type: string
-                  notes:
-                    type: string
-                required:
-                - name
-                type: object
+              deadline:
+                format: date-time
+                type: string
               description:
                 type: string
-              maintenanceWindow:
-                description: TypedObjectReference represents an typed namespaced object.
+              operation:
+                type: object
+                x-kubernetes-embedded-resource: true
+                x-kubernetes-preserve-unknown-fields: true
+              recommender:
+                description: ObjectReference contains enough information to let you
+                  inspect or modify the referred object.
                 properties:
-                  apiGroup:
-                    type: string
-                  kind:
-                    type: string
                   name:
                     description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                     type: string
@@ -61,35 +56,72 @@ spec:
                 required:
                 - name
                 type: object
-              operation:
-                type: object
-                x-kubernetes-embedded-resource: true
-                x-kubernetes-preserve-unknown-fields: true
-              status:
-                default: UnderReview
-                enum:
-                - UnderReview
-                - Approved
-                - Rejected
-                type: string
               target:
+                description: TypedLocalObjectReference contains enough information
+                  to let you locate the typed referenced object inside the same namespace.
                 properties:
-                  group:
+                  apiGroup:
+                    description: APIGroup is the group for the resource being referenced.
+                      If APIGroup is not specified, the specified Kind must be in
+                      the core API group. For any other third-party types, APIGroup
+                      is required.
                     type: string
                   kind:
+                    description: Kind is the type of resource being referenced
                     type: string
                   name:
+                    description: Name is the name of resource being referenced
                     type: string
-                  namespace:
-                    type: string
+                required:
+                - kind
+                - name
                 type: object
             required:
             - operation
+            - recommender
             - target
             type: object
           status:
             description: RecommendationStatus defines the observed state of Recommendation
             properties:
+              approvedWindow:
+                properties:
+                  dates:
+                    items:
+                      properties:
+                        end:
+                          format: date-time
+                          type: string
+                        start:
+                          format: date-time
+                          type: string
+                      required:
+                      - end
+                      - start
+                      type: object
+                    type: array
+                  maintenanceWindow:
+                    description: TypedObjectReference represents an typed namespaced
+                      object.
+                    properties:
+                      apiGroup:
+                        type: string
+                      kind:
+                        type: string
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      namespace:
+                        description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  window:
+                    type: string
+                type: object
+              comments:
+                type: string
               conditions:
                 description: Conditions applied to the database, such as approval
                   or denial.
@@ -144,11 +176,38 @@ spec:
                   which is updated on mutation by the API Server.
                 format: int64
                 type: integer
+              reviewer:
+                description: Subject contains a reference to the object or user identities
+                  a role binding applies to.  This can either hold a direct API object
+                  reference, or a value for non-objects such as user and group names.
+                properties:
+                  apiGroup:
+                    description: APIGroup holds the API group of the referenced subject.
+                      Defaults to "" for ServiceAccount subjects. Defaults to "rbac.authorization.k8s.io"
+                      for User and Group subjects.
+                    type: string
+                  kind:
+                    description: Kind of object being referenced. Values defined by
+                      this API group are "User", "Group", and "ServiceAccount". If
+                      the Authorizer does not recognized the kind value, the Authorizer
+                      should report an error.
+                    type: string
+                  name:
+                    description: Name of the object being referenced.
+                    type: string
+                  namespace:
+                    description: Namespace of the referenced object.  If the object
+                      kind is non-namespace, such as "User" or "Group", and this value
+                      is not empty the Authorizer should report an error.
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
               status:
                 default: UnderReview
-                description: Specifies the current phase of the database
                 enum:
-                - UnderReview
+                - Pending
                 - Approved
                 - Rejected
                 type: string

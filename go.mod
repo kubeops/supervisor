@@ -6,6 +6,7 @@ require (
 	github.com/google/gofuzz v1.1.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
+	k8s.io/api v0.21.1
 	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v0.21.1
 	kmodules.xyz/client-go v0.0.0-20220118075929-b97899bcb4e9
@@ -79,7 +80,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/api v0.21.1 // indirect
 	k8s.io/apiextensions-apiserver v0.21.1 // indirect
 	k8s.io/component-base v0.21.1 // indirect
 	k8s.io/klog/v2 v2.8.0 // indirect
