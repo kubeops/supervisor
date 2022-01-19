@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	supervisorv1alpha1install "kubeops.dev/supervisor/apis/supervisor/install"
 	supervisorcontrollers "kubeops.dev/supervisor/controllers/supervisor"
 	//+kubebuilder:scaffold:imports
 )
@@ -42,9 +42,10 @@ var (
 )
 
 func init() {
+	supervisorv1alpha1install.Install(scheme)
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(supervisorv1alpha1.AddToScheme(scheme))
+	//utilruntime.Must(supervisorv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
