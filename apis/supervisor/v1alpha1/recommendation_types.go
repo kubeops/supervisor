@@ -75,8 +75,8 @@ type Subject struct {
 // RecommendationStatus defines the observed state of Recommendation
 type RecommendationStatus struct {
 	// +optional
-	// +kubebuilder:default=UnderReview
-	Status ApprovalStatus `json:"status"`
+	// +kubebuilder:default=Pending
+	ApprovalStatus ApprovalStatus `json:"approvalStatus"`
 	// +optional
 	Reviewer *Subject `json:"reviewer,omitempty"`
 	// +optional
@@ -123,8 +123,10 @@ const (
 	QueuePerTargetAndNamespace Parallelism = "TargetAndNamespace"
 )
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Approval",type="string",JSONPath=".status.approvalStatus"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Recommendation is the Schema for the recommendations API
 type Recommendation struct {

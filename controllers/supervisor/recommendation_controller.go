@@ -18,8 +18,13 @@ package supervisor
 
 import (
 	"context"
+	"k8s.io/klog/v2"
+	kmc "kmodules.xyz/client-go/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	meta_util "kmodules.xyz/client-go/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -49,8 +54,24 @@ type RecommendationReconciler struct {
 func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	key := req.NamespacedName
+	klog.Info("got event for ", key.String())
 
+	rcmd := &supervisorv1alpha1.Recommendation{}
+	if err := r.Client.Get(ctx, key, rcmd); err != nil {
+		klog.Infof("Recommendation %q doesn't exist anymore", key.String())
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+		in := obj.(*supervisorv1alpha1.Recommendation)
+		in.Status.ObservedGeneration = in.Generation
+		return in
+	})
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	klog.Info(obj.(*supervisorv1alpha1.Recommendation).Status)
 	return ctrl.Result{}, nil
 }
 
@@ -58,5 +79,13 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&supervisorv1alpha1.Recommendation{}).
+		WithEventFilter(predicate.Funcs{
+			CreateFunc: func(e event.CreateEvent) bool {
+				return !meta_util.MustAlreadyReconciled(e.Object)
+			},
+			UpdateFunc: func(e event.UpdateEvent) bool {
+				return !meta_util.MustAlreadyReconciled(e.ObjectNew)
+			},
+		}).
 		Complete(r)
 }

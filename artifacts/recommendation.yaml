@@ -1,0 +1,27 @@
+apiVersion: supervisor.appscode.com/v1alpha1
+kind: Recommendation
+metadata:
+  name: upgrade-recommendation
+  namespace: demo
+spec:
+  description: "MongoDB Version upgrade from 4.2.3 to 4.4.6"
+  target:
+    apiGroup: kubedb.com/v1alpha2
+    kind: MongoDB
+    name: mg-sh
+  operation:
+    apiVersion: ops.kubedb.com/v1alpha1
+    kind: MongoDBOpsRequest
+    metadata:
+      name: mops-shard-upgrade
+      namespace: demo
+    spec:
+      type: Upgrade
+      databaseRef:
+        name: mg-sharding
+      upgrade:
+        targetVersion: 4.0.5-v3
+  recommender:
+    name: kubedb-ops-manager
+
+

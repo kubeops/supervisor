@@ -14,7 +14,14 @@ spec:
     singular: recommendation
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.approvalStatus
+      name: Approval
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Recommendation is the Schema for the recommendations API
@@ -84,6 +91,13 @@ spec:
           status:
             description: RecommendationStatus defines the observed state of Recommendation
             properties:
+              approvalStatus:
+                default: Pending
+                enum:
+                - Pending
+                - Approved
+                - Rejected
+                type: string
               approvedWindow:
                 properties:
                   dates:
@@ -218,13 +232,6 @@ spec:
                 - kind
                 - name
                 type: object
-              status:
-                default: UnderReview
-                enum:
-                - Pending
-                - Approved
-                - Rejected
-                type: string
             type: object
         type: object
     served: true
