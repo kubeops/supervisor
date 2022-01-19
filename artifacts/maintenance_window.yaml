@@ -1,0 +1,11 @@
+apiVersion: supervisor.appscode.com/v1alpha1
+kind: MaintenanceWindow
+metadata:
+  name: default-mw
+  namespace: demo
+spec:
+  isDefault: true
+  days:
+    wednesday:
+      - start: 3:00PM
+        end: 7:00PM

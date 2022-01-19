@@ -18,6 +18,7 @@ package supervisor
 
 import (
 	"context"
+	"k8s.io/klog/v2"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -49,7 +50,8 @@ type MaintenanceWindowReconciler struct {
 func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	key := req.NamespacedName
+	klog.Info("got event for Maintenance window: ", key.String())
 
 	return ctrl.Result{}, nil
 }

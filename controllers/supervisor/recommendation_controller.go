@@ -55,7 +55,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	_ = log.FromContext(ctx)
 
 	key := req.NamespacedName
-	klog.Info("got event for ", key.String())
+	klog.Info("got event for Recommendation: ", key.String())
 
 	rcmd := &supervisorv1alpha1.Recommendation{}
 	if err := r.Client.Get(ctx, key, rcmd); err != nil {
