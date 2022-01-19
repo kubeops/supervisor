@@ -4,7 +4,7 @@ metadata:
   name: upgrade-recommendation
   namespace: demo
 spec:
-  description: "MongoDB Version upgrade from 4.2.3 to 4.4.6"
+  description: "MongoDB Version upgrade from 4.2.3 to 5.0.3"
   target:
     apiGroup: kubedb.com/v1alpha2
     kind: MongoDB
@@ -18,9 +18,9 @@ spec:
     spec:
       type: Upgrade
       databaseRef:
-        name: mg-sharding
+        name: mg-sh
       upgrade:
-        targetVersion: 4.0.5-v3
+        targetVersion: 5.0.3
   recommender:
     name: kubedb-ops-manager
 

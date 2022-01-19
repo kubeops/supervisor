@@ -125,7 +125,7 @@ const (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Approval",type="string",JSONPath=".status.approvalStatus"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.approvalStatus"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Recommendation is the Schema for the recommendations API
