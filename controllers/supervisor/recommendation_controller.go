@@ -46,10 +46,6 @@ type RecommendationReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Recommendation object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
@@ -77,7 +73,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	rcmd = obj.(*supervisorv1alpha1.Recommendation)
 
 	if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
-		exeObj, err := shared.GetExecutableObject(rcmd.Spec.Operation)
+		exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -88,7 +84,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	return ctrl.Result{}, nil
 }
 
-func (r *RecommendationReconciler) ExecuteOperation(e apis.Executable) error {
+func (r *RecommendationReconciler) ExecuteOperation(e apis.OpsRequest) error {
 	return e.Execute(r.Client)
 }
 

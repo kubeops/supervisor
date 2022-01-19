@@ -4,23 +4,21 @@ metadata:
   name: upgrade-recommendation
   namespace: demo
 spec:
-  description: "MongoDB Version upgrade from 4.2.3 to 5.0.3"
+  description: "MongoDB Database Restart"
   target:
     apiGroup: kubedb.com/v1alpha2
     kind: MongoDB
-    name: mg-sh
+    name: mg-rs
   operation:
     apiVersion: ops.kubedb.com/v1alpha1
     kind: MongoDBOpsRequest
     metadata:
-      name: mops-shard-upgrade
+      name: mongo-restart
       namespace: demo
     spec:
-      type: Upgrade
+      type: Restart
       databaseRef:
-        name: mg-sh
-      upgrade:
-        targetVersion: 5.0.3
+        name: mg-rs
   recommender:
     name: kubedb-ops-manager
 
