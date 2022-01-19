@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"os"
 
@@ -45,6 +46,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(supervisorv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(opsapi.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

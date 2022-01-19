@@ -20,6 +20,8 @@ import (
 	"context"
 	"k8s.io/klog/v2"
 	kmc "kmodules.xyz/client-go/client"
+	"kubeops.dev/supervisor/apis"
+	"kubeops.dev/supervisor/pkg/shared"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -66,13 +68,28 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 		in := obj.(*supervisorv1alpha1.Recommendation)
 		in.Status.ObservedGeneration = in.Generation
+		in.Status.ApprovalStatus = supervisorv1alpha1.ApprovalApproved
 		return in
 	})
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	klog.Info(obj.(*supervisorv1alpha1.Recommendation).Status)
+	rcmd = obj.(*supervisorv1alpha1.Recommendation)
+
+	if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
+		exeObj, err := shared.GetExecutableObject(rcmd.Spec.Operation)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if err := r.ExecuteOperation(exeObj); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 	return ctrl.Result{}, nil
+}
+
+func (r *RecommendationReconciler) ExecuteOperation(e apis.Executable) error {
+	return e.Execute(r.Client)
 }
 
 // SetupWithManager sets up the controller with the Manager.

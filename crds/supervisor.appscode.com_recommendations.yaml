@@ -16,7 +16,7 @@ spec:
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.approvalStatus
-      name: Approval
+      name: Status
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
