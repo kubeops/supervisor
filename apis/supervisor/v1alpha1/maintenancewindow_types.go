@@ -77,8 +77,10 @@ type MaintenanceWindowStatus struct {
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Default",type="boolean",JSONPath=".spec.isDefault"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // MaintenanceWindow is the Schema for the maintenancewindows API
 type MaintenanceWindow struct {
