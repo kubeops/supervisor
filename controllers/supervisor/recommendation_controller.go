@@ -18,12 +18,16 @@ package supervisor
 
 import (
 	"context"
+	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
 	"kubeops.dev/supervisor/apis"
 	"kubeops.dev/supervisor/pkg/shared"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -61,31 +65,60 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-		in := obj.(*supervisorv1alpha1.Recommendation)
-		in.Status.ObservedGeneration = in.Generation
-		in.Status.ApprovalStatus = supervisorv1alpha1.ApprovalApproved
-		return in
-	})
-	if err != nil {
-		return ctrl.Result{}, err
+	if len(rcmd.Status.Conditions) == 0 {
+		obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.Conditions = []kmapi.Condition{
+				{
+					Type:               "Create",
+					Status:             core.ConditionTrue,
+					LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+					Reason:             "Create",
+					Message:            "Recommendation has created successfully",
+				},
+			}
+			return in
+		})
+
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		rcmd = obj.(*supervisorv1alpha1.Recommendation)
 	}
-	rcmd = obj.(*supervisorv1alpha1.Recommendation)
 
 	if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
 		exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		if err := r.ExecuteOperation(exeObj); err != nil {
+
+		if err := r.executeOperation(exeObj); err != nil {
 			return ctrl.Result{}, err
+		}
+
+		_, err = r.updateObservedGeneration(ctx, rcmd)
+		if err != nil {
+			return ctrl.Result{}, nil
 		}
 	}
 	return ctrl.Result{}, nil
 }
 
-func (r *RecommendationReconciler) ExecuteOperation(e apis.OpsRequest) error {
+func (r *RecommendationReconciler) executeOperation(e apis.OpsRequest) error {
 	return e.Execute(r.Client)
+}
+
+func (r *RecommendationReconciler) updateObservedGeneration(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (*supervisorv1alpha1.Recommendation, error) {
+	obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+		in := obj.(*supervisorv1alpha1.Recommendation)
+		in.Status.ObservedGeneration = in.Generation
+		return in
+	})
+	if err != nil {
+		return nil, err
+	}
+	rcmd = obj.(*supervisorv1alpha1.Recommendation)
+	return rcmd, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

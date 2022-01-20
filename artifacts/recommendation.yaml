@@ -1,7 +1,7 @@
 apiVersion: supervisor.appscode.com/v1alpha1
 kind: Recommendation
 metadata:
-  name: upgrade-recommendation
+  name: mongo-restart
   namespace: demo
 spec:
   description: "MongoDB Database Restart"
