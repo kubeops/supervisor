@@ -17,10 +17,13 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
+	"k8s.io/klog/v2"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -77,6 +80,17 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &supervisorv1alpha1.MaintenanceWindow{}, supervisorv1alpha1.DefaultMaintenanceWindowKey, func(rawObj client.Object) []string {
+		app := rawObj.(*supervisorv1alpha1.MaintenanceWindow)
+		if v, ok := app.Annotations[supervisorv1alpha1.DefaultMaintenanceWindowKey]; ok && v == "true" {
+			return []string{"true"}
+		}
+		return nil
+	}); err != nil {
+		klog.Error(err, "unable to set up AppBinding Indexer", "field", supervisorv1alpha1.DefaultMaintenanceWindowKey)
 		os.Exit(1)
 	}
 

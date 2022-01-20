@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/google/gofuzz v1.2.0
+	github.com/jonboulle/clockwork v0.1.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
 	gomodules.xyz/x v0.0.8
@@ -77,6 +78,7 @@ require (
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
+	golang.org/x/tools v0.1.1-0.20210427153610-6397a11608ad // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	gomodules.xyz/mergo v0.3.13-0.20210702100041-9d62ff8ece4d // indirect
 	gomodules.xyz/password-generator v0.2.7 // indirect

@@ -39,7 +39,7 @@ type MaintenanceWindowSpec struct {
 	Dates []DateWindow `json:"dates,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Sunday;Monday;Tuesday;Wednesda;Thursday;Friday;Saturday
+// +kubebuilder:validation:Enum=Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday
 type DayOfWeek string
 
 const (
