@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/google/gofuzz v1.2.0
+	github.com/jonboulle/clockwork v0.1.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
 	gomodules.xyz/x v0.0.8

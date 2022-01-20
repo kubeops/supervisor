@@ -5,7 +5,11 @@ metadata:
   namespace: demo
 spec:
   isDefault: true
-  days:
-    wednesday:
-      - start: 3:00PM
-        end: 7:00PM
+#  days:
+#    Thursday:
+#      - start: 6:00AM
+#        end: 6:00PM
+  dates:
+    - start: 2022-01-20T11:41:18Z
+      end: 2022-01-20T12:41:18Z
+

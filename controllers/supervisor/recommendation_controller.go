@@ -18,24 +18,24 @@ package supervisor
 
 import (
 	"context"
+	"time"
+
+	"github.com/jonboulle/clockwork"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
-	"kubeops.dev/supervisor/apis"
-	"kubeops.dev/supervisor/pkg/shared"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"time"
-
-	"k8s.io/apimachinery/pkg/runtime"
 	meta_util "kmodules.xyz/client-go/meta"
+	"kubeops.dev/supervisor/apis"
+	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	"kubeops.dev/supervisor/pkg/shared"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // RecommendationReconciler reconciles a Recommendation object
@@ -87,24 +87,36 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
-		exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
-		if err != nil {
-			return ctrl.Result{}, err
+		mw := &supervisorv1alpha1.MaintenanceWindow{}
+		if rcmd.Status.ApprovedWindow == nil {
+			var err error
+			mw, err = getDefaultMaintenanceWindow(ctx, r.Client)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 
-		if err := r.executeOperation(exeObj); err != nil {
-			return ctrl.Result{}, err
-		}
+		if isMaintenanceTime(mw, clockwork.NewRealClock()) {
+			exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 
-		_, err = r.updateObservedGeneration(ctx, rcmd)
-		if err != nil {
-			return ctrl.Result{}, nil
+			if err := r.executeOpsRequest(exeObj); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			_, err = r.updateObservedGeneration(ctx, rcmd)
+			if err != nil {
+				return ctrl.Result{}, nil
+			}
 		}
 	}
+
 	return ctrl.Result{}, nil
 }
 
-func (r *RecommendationReconciler) executeOperation(e apis.OpsRequest) error {
+func (r *RecommendationReconciler) executeOpsRequest(e apis.OpsRequest) error {
 	return e.Execute(r.Client)
 }
 
