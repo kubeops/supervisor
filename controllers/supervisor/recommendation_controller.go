@@ -18,6 +18,7 @@ package supervisor
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/jonboulle/clockwork"
@@ -63,11 +64,12 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	key := req.NamespacedName
 	klog.Info("got event for Recommendation: ", key.String())
 
-	rcmd := &supervisorv1alpha1.Recommendation{}
-	if err := r.Client.Get(ctx, key, rcmd); err != nil {
+	obj := &supervisorv1alpha1.Recommendation{}
+	if err := r.Client.Get(ctx, key, obj); err != nil {
 		klog.Infof("Recommendation %q doesn't exist anymore", key.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	rcmd := obj.DeepCopy()
 
 	if len(rcmd.Status.Conditions) == 0 {
 		err := r.addCondition(ctx, rcmd, kmapi.Condition{
@@ -81,20 +83,15 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
-		if isConditionExist(rcmd.Status.Conditions, supervisorv1alpha1.OpsRequestSuccessfullyCreated) {
+		if isConditionTrue(rcmd.Status.Conditions, supervisorv1alpha1.OpsRequestSuccessfullyCreated) {
 			return ctrl.Result{}, nil
 		}
 
-		mw := &supervisorv1alpha1.MaintenanceWindow{}
-		if rcmd.Status.ApprovedWindow == nil {
-			var err error
-			mw, err = getDefaultMaintenanceWindow(ctx, r.Client)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
+		ok, err := isMaintenanceTime(ctx, r.Client, rcmd, GetClock())
+		if err != nil {
+			return ctrl.Result{}, err
 		}
-
-		if isMaintenanceTime(mw, clockwork.NewRealClock()) {
+		if ok {
 			exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
 			if err != nil {
 				return ctrl.Result{}, err
@@ -119,6 +116,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 			return ctrl.Result{}, err
 		}
+
 		return ctrl.Result{RequeueAfter: RequeueAfterDuration}, nil
 	}
 
@@ -142,9 +140,9 @@ func (r *RecommendationReconciler) updateObservedGeneration(ctx context.Context,
 	return rcmd, nil
 }
 
-func isConditionExist(conditions []kmapi.Condition, key string) bool {
+func isConditionTrue(conditions []kmapi.Condition, key string) bool {
 	for _, c := range conditions {
-		if c.Reason == key {
+		if c.Reason == key && c.Status == core.ConditionTrue {
 			return true
 		}
 	}
@@ -159,6 +157,13 @@ func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *super
 	})
 
 	return err
+}
+
+func GetClock() clockwork.Clock {
+	if os.Getenv("APPSCODE_SUPERVISOR_TEST") == "TRUE" {
+		return clockwork.NewFakeClock()
+	}
+	return clockwork.NewRealClock()
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -106,10 +106,25 @@ const (
 	SpecificDates WindowType = "SpecificDates"
 )
 
+// ApprovedWindow Scenarios
+//
+// Scenario 1: User provides nothing and default MaintenanceWindow will be used, if default window is not found, an error will be thrown
+//
+// Scenario 2: User provides window type `Immediate` and ops request will be created immediately
+//
+// Scenario 3: User provides a specific MaintenanceWindow and that be used or an error will be thrown if given MaintenanceWindow is not found
+//
+// Scenario 4: User provides window type `NextAvailable` and the ops request will be executed in the next available MaintenanceWindow.
+//             If there is no available Window is found in that time, controller will wait for any available MaintenanceWindow instead of throwing an error.
+//
+// Scenario 5: User provides window type `SpecificDates`. In this case, user must provide at least one DateWindows in the dates field.
+//             Otherwise controller will throw an error. DateWindow is only be used for window type `SpecificDates`
+//
+
 type ApprovedWindow struct {
 	Window WindowType `json:"window,omitempty"`
 	// +optional
-	MaintenanceWindow kmapi.TypedObjectReference `json:"maintenanceWindow"`
+	MaintenanceWindow *kmapi.TypedObjectReference `json:"maintenanceWindow,omitempty"`
 	// +optional
 	Dates []DateWindow `json:"dates,omitempty"`
 }

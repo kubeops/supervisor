@@ -21,10 +21,10 @@ import (
 	"fmt"
 
 	"github.com/jonboulle/clockwork"
-	kmapi "kmodules.xyz/client-go/api/v1"
-
+	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -95,31 +95,77 @@ func getDefaultMaintenanceWindow(ctx context.Context, kc client.Client) (*superv
 	return &mwList.Items[0], nil
 }
 
-func isMaintenanceTime(mw *supervisorv1alpha1.MaintenanceWindow, clock clockwork.Clock) bool {
+func getMaintenanceWindow(ctx context.Context, kc client.Client, key client.ObjectKey) (*supervisorv1alpha1.MaintenanceWindow, error) {
+	mw := &supervisorv1alpha1.MaintenanceWindow{}
+	if key.Namespace == "" {
+		key.Namespace = core.NamespaceDefault
+	}
+	if err := kc.Get(ctx, key, mw); err != nil {
+		return nil, err
+	}
+	return mw, nil
+}
+
+func getMaintenanceWindows(ctx context.Context, kc client.Client, ns string) (*supervisorv1alpha1.MaintenanceWindowList, error) {
+	mwList := &supervisorv1alpha1.MaintenanceWindowList{}
+	if err := kc.List(ctx, mwList, client.InNamespace(ns)); err != nil {
+		return nil, err
+	}
+	return mwList, nil
+}
+
+func isMaintenanceTime(ctx context.Context, kc client.Client, rcmd *supervisorv1alpha1.Recommendation, clock clockwork.Clock) (bool, error) {
+	aw := rcmd.Status.ApprovedWindow
+	if aw != nil && aw.Window == supervisorv1alpha1.Immediately {
+		return true, nil
+	}
+
+	mwList := &supervisorv1alpha1.MaintenanceWindowList{}
+	if aw == nil {
+		mw, err := getDefaultMaintenanceWindow(ctx, kc)
+		if err != nil {
+			return false, err
+		}
+		mwList.Items = append(mwList.Items, *mw)
+	} else if aw.MaintenanceWindow != nil {
+		mw, err := getMaintenanceWindow(ctx, kc, client.ObjectKey{Namespace: aw.MaintenanceWindow.Namespace, Name: aw.MaintenanceWindow.Name})
+		if err != nil {
+			return false, err
+		}
+		mwList.Items = append(mwList.Items, *mw)
+	} else if aw.Window == supervisorv1alpha1.NextAvailable {
+		var err error
+		mwList, err = getMaintenanceWindows(ctx, kc, rcmd.Namespace)
+		if err != nil {
+			return false, err
+		}
+	}
 	day := clock.Now().UTC().Weekday().String()
 
-	mTimes, found := mw.Spec.Days[supervisorv1alpha1.DayOfWeek(day)]
-	if found {
-		for _, tw := range mTimes {
-			now := kmapi.NewTime(clock.Now().UTC())
-			start := kmapi.NewTime(tw.Start.UTC())
-			end := kmapi.NewTime(tw.End.UTC())
+	for _, mw := range mwList.Items {
+		mTimes, found := mw.Spec.Days[supervisorv1alpha1.DayOfWeek(day)]
+		if found {
+			for _, tw := range mTimes {
+				now := kmapi.NewTime(clock.Now().UTC())
+				start := kmapi.NewTime(tw.Start.UTC())
+				end := kmapi.NewTime(tw.End.UTC())
 
-			if now.Before(&end) && start.Before(&now) {
-				return true
+				if now.Before(&end) && start.Before(&now) {
+					return true, nil
+				}
+			}
+		}
+
+		for _, d := range mw.Spec.Dates {
+			start := d.Start.UTC().Unix()
+			end := d.End.UTC().Unix()
+			now := clock.Now().UTC().Unix()
+
+			if now >= start && now <= end {
+				return true, nil
 			}
 		}
 	}
 
-	for _, d := range mw.Spec.Dates {
-		start := d.Start.UTC().Unix()
-		end := d.End.UTC().Unix()
-		now := clock.Now().UTC().Unix()
-
-		if now >= start && now <= end {
-			return true
-		}
-	}
-
-	return false
+	return false, nil
 }
