@@ -19,10 +19,11 @@ package main
 import (
 	"context"
 	"flag"
+	"os"
+
 	"k8s.io/klog/v2"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -90,7 +91,7 @@ func main() {
 		}
 		return nil
 	}); err != nil {
-		klog.Error(err, "unable to set up AppBinding Indexer", "field", supervisorv1alpha1.DefaultMaintenanceWindowKey)
+		klog.Error(err, "unable to set up MaintenanceWindow Indexer", "field", supervisorv1alpha1.DefaultMaintenanceWindowKey)
 		os.Exit(1)
 	}
 

@@ -21,6 +21,8 @@ import (
 	"os"
 	"time"
 
+	"kubeops.dev/supervisor/pkg/maintenance"
+
 	"github.com/jonboulle/clockwork"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,7 +89,8 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, nil
 		}
 
-		ok, err := isMaintenanceTime(ctx, r.Client, rcmd, GetClock())
+		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, rcmd, GetClock())
+		ok, err := rcmdMaintenance.IsMaintenanceTime()
 		if err != nil {
 			return ctrl.Result{}, err
 		}
