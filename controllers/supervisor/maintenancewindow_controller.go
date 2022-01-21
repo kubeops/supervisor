@@ -18,6 +18,7 @@ package supervisor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jonboulle/clockwork"
@@ -118,54 +119,84 @@ func isMaintenanceTime(ctx context.Context, kc client.Client, rcmd *supervisorv1
 	aw := rcmd.Status.ApprovedWindow
 	if aw != nil && aw.Window == supervisorv1alpha1.Immediately {
 		return true, nil
+	} else if aw != nil && aw.Window == supervisorv1alpha1.SpecificDates {
+		if len(aw.Dates) == 0 {
+			return false, errors.New("WindowType is SpecificDates but no DateWindow is provided")
+		}
+		if isMaintenanceDateWindow(clock, aw.Dates) {
+			return true, nil
+		}
+		return false, nil
 	}
 
-	mwList := &supervisorv1alpha1.MaintenanceWindowList{}
-	if aw == nil {
-		mw, err := getDefaultMaintenanceWindow(ctx, kc)
-		if err != nil {
-			return false, err
-		}
-		mwList.Items = append(mwList.Items, *mw)
-	} else if aw.MaintenanceWindow != nil {
-		mw, err := getMaintenanceWindow(ctx, kc, client.ObjectKey{Namespace: aw.MaintenanceWindow.Namespace, Name: aw.MaintenanceWindow.Name})
-		if err != nil {
-			return false, err
-		}
-		mwList.Items = append(mwList.Items, *mw)
-	} else if aw.Window == supervisorv1alpha1.NextAvailable {
-		var err error
-		mwList, err = getMaintenanceWindows(ctx, kc, rcmd.Namespace)
-		if err != nil {
-			return false, err
-		}
+	mwList, err := getAvailableMaintenanceWindowList(ctx, kc, aw, rcmd.Namespace)
+	if err != nil {
+		return false, err
 	}
 	day := clock.Now().UTC().Weekday().String()
 
 	for _, mw := range mwList.Items {
 		mTimes, found := mw.Spec.Days[supervisorv1alpha1.DayOfWeek(day)]
 		if found {
-			for _, tw := range mTimes {
-				now := kmapi.NewTime(clock.Now().UTC())
-				start := kmapi.NewTime(tw.Start.UTC())
-				end := kmapi.NewTime(tw.End.UTC())
-
-				if now.Before(&end) && start.Before(&now) {
-					return true, nil
-				}
+			if isMaintenanceTimeWindow(clock, mTimes) {
+				return true, nil
 			}
 		}
 
-		for _, d := range mw.Spec.Dates {
-			start := d.Start.UTC().Unix()
-			end := d.End.UTC().Unix()
-			now := clock.Now().UTC().Unix()
-
-			if now >= start && now <= end {
-				return true, nil
-			}
+		if isMaintenanceDateWindow(clock, mw.Spec.Dates) {
+			return true, nil
 		}
 	}
 
 	return false, nil
+}
+
+func isMaintenanceDateWindow(clock clockwork.Clock, dates []supervisorv1alpha1.DateWindow) bool {
+	for _, d := range dates {
+		start := d.Start.UTC().Unix()
+		end := d.End.UTC().Unix()
+		now := clock.Now().UTC().Unix()
+
+		if now >= start && now <= end {
+			return true
+		}
+	}
+	return false
+}
+
+func isMaintenanceTimeWindow(clock clockwork.Clock, timeWindows []supervisorv1alpha1.TimeWindow) bool {
+	for _, tw := range timeWindows {
+		now := kmapi.NewTime(clock.Now().UTC())
+		start := kmapi.NewTime(tw.Start.UTC())
+		end := kmapi.NewTime(tw.End.UTC())
+
+		if now.Before(&end) && start.Before(&now) {
+			return true
+		}
+	}
+	return false
+}
+
+func getAvailableMaintenanceWindowList(ctx context.Context, kc client.Client, aw *supervisorv1alpha1.ApprovedWindow, ns string) (*supervisorv1alpha1.MaintenanceWindowList, error) {
+	mwList := &supervisorv1alpha1.MaintenanceWindowList{}
+	if aw == nil {
+		mw, err := getDefaultMaintenanceWindow(ctx, kc)
+		if err != nil {
+			return nil, err
+		}
+		mwList.Items = append(mwList.Items, *mw)
+	} else if aw.MaintenanceWindow != nil {
+		mw, err := getMaintenanceWindow(ctx, kc, client.ObjectKey{Namespace: aw.MaintenanceWindow.Namespace, Name: aw.MaintenanceWindow.Name})
+		if err != nil {
+			return nil, err
+		}
+		mwList.Items = append(mwList.Items, *mw)
+	} else if aw.Window == supervisorv1alpha1.NextAvailable {
+		var err error
+		mwList, err = getMaintenanceWindows(ctx, kc, ns)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return mwList, nil
 }
