@@ -38,6 +38,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
+const (
+	RequeueAfterDuration = time.Minute
+)
+
 // RecommendationReconciler reconciles a Recommendation object
 type RecommendationReconciler struct {
 	client.Client
@@ -66,27 +70,21 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if len(rcmd.Status.Conditions) == 0 {
-		obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
-			in.Status.Conditions = []kmapi.Condition{
-				{
-					Type:               "Create",
-					Status:             core.ConditionTrue,
-					LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-					Reason:             "Create",
-					Message:            "Recommendation has created successfully",
-				},
-			}
-			return in
+		err := r.addCondition(ctx, rcmd, kmapi.Condition{
+			Type:               "Create",
+			Status:             core.ConditionTrue,
+			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+			Reason:             supervisorv1alpha1.RecommendationSuccessfullyCreated,
+			Message:            "Recommendation has created successfully",
 		})
-
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		rcmd = obj.(*supervisorv1alpha1.Recommendation)
+		return ctrl.Result{}, err
 	}
 
 	if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
+		if isConditionExist(rcmd.Status.Conditions, supervisorv1alpha1.OpsRequestSuccessfullyCreated) {
+			return ctrl.Result{}, nil
+		}
+
 		mw := &supervisorv1alpha1.MaintenanceWindow{}
 		if rcmd.Status.ApprovedWindow == nil {
 			var err error
@@ -108,9 +106,20 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 			_, err = r.updateObservedGeneration(ctx, rcmd)
 			if err != nil {
-				return ctrl.Result{}, nil
+				return ctrl.Result{}, err
 			}
+
+			err = r.addCondition(ctx, rcmd, kmapi.Condition{
+				Type:               "Create",
+				Status:             core.ConditionTrue,
+				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+				Reason:             supervisorv1alpha1.OpsRequestSuccessfullyCreated,
+				Message:            "OpsRequest is successfully created",
+			})
+
+			return ctrl.Result{}, err
 		}
+		return ctrl.Result{RequeueAfter: RequeueAfterDuration}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -131,6 +140,25 @@ func (r *RecommendationReconciler) updateObservedGeneration(ctx context.Context,
 	}
 	rcmd = obj.(*supervisorv1alpha1.Recommendation)
 	return rcmd, nil
+}
+
+func isConditionExist(conditions []kmapi.Condition, key string) bool {
+	for _, c := range conditions {
+		if c.Reason == key {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, condition kmapi.Condition) error {
+	_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+		in := obj.(*supervisorv1alpha1.Recommendation)
+		in.Status.Conditions = append(in.Status.Conditions, condition)
+		return in
+	})
+
+	return err
 }
 
 // SetupWithManager sets up the controller with the Manager.
