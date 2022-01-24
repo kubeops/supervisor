@@ -2,7 +2,11 @@ package shared
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
@@ -16,11 +20,10 @@ import (
 )
 
 func GetOpsRequestObject(obj runtime.RawExtension) (apis.OpsRequest, error) {
-	unObj := &unstructured.Unstructured{}
-	if err := json.Unmarshal(obj.Raw, unObj); err != nil {
+	gvk, err := GetGVK(obj)
+	if err != nil {
 		return nil, err
 	}
-	gvk := unObj.GetObjectKind().GroupVersionKind()
 
 	if gvk.Group == opsapi.SchemeGroupVersion.Group && gvk.Kind == opsapi.ResourceKindMongoDBOpsRequest {
 		return mongodb_ops.NewMongoDBOpsRequest(obj)
@@ -47,4 +50,28 @@ func GetOpsRequestObject(obj runtime.RawExtension) (apis.OpsRequest, error) {
 	}
 
 	return nil, fmt.Errorf("invalid operation, Group: %v Kind: %v is not supported", gvk.Group, gvk.Kind)
+}
+
+func GetGVK(obj runtime.RawExtension) (schema.GroupVersionKind, error) {
+	unObj := &unstructured.Unstructured{}
+	if err := json.Unmarshal(obj.Raw, unObj); err != nil {
+		return schema.GroupVersionKind{}, err
+	}
+	return unObj.GetObjectKind().GroupVersionKind(), nil
+}
+
+func GetType(obj runtime.RawExtension) (string, error) {
+	unObj := &unstructured.Unstructured{}
+	if err := json.Unmarshal(obj.Raw, unObj); err != nil {
+		return "", err
+	}
+	spec, ok := unObj.Object["spec"].(map[string]interface{})
+	if !ok {
+		return "", errors.New("failed to parse spec section of raw operation object")
+	}
+	opsType, ok := spec["type"].(string)
+	if !ok {
+		return "", errors.New("failed to parse .spec.type from raw operation object")
+	}
+	return opsType, nil
 }

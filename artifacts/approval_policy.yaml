@@ -1,0 +1,14 @@
+apiVersion: supervisor.appscode.com/v1alpha1
+kind: ApprovalPolicy
+metadata:
+  name: mongo-policy
+  namespace: demo
+maintenanceWindowRef:
+  name: default-mw
+targets:
+  - group: kubedb.com
+    kind: MongoDB
+    operations:
+      - group: ops.kubedb.com
+        kind: MongoDBOpsRequest
+        type: Restart

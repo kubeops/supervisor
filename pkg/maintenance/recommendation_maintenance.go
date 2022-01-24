@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/jonboulle/clockwork"
-	core "k8s.io/api/core/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,12 +19,12 @@ type RecommendationMaintenance struct {
 	clock clockwork.Clock
 }
 
-func NewRecommendationMaintenance(ctx context.Context, kc client.Client, rcmd *supervisorv1alpha1.Recommendation, clock clockwork.Clock) *RecommendationMaintenance {
+func NewRecommendationMaintenance(ctx context.Context, kc client.Client, rcmd *supervisorv1alpha1.Recommendation) *RecommendationMaintenance {
 	return &RecommendationMaintenance{
 		ctx:   ctx,
 		kc:    kc,
 		rcmd:  rcmd,
-		clock: clock,
+		clock: getClock(),
 	}
 }
 
@@ -39,6 +39,9 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 		if r.isMaintenanceDateWindow(aw.Dates) {
 			return true, nil
 		}
+		if r.isMaintenanceDateWindowPassed(aw.Dates) {
+			return false, errors.New("given date windows have been already passed")
+		}
 		return false, nil
 	}
 
@@ -48,7 +51,12 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 	}
 	day := r.clock.Now().UTC().Weekday().String()
 
+	mwPassedFlag := true
+
 	for _, mw := range mwList.Items {
+		if mw.Spec.Days != nil {
+			mwPassedFlag = false
+		}
 		mTimes, found := mw.Spec.Days[supervisorv1alpha1.DayOfWeek(day)]
 		if found {
 			if r.isMaintenanceTimeWindow(mTimes) {
@@ -58,7 +66,13 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 
 		if r.isMaintenanceDateWindow(mw.Spec.Dates) {
 			return true, nil
+		} else if mwPassedFlag && !r.isMaintenanceDateWindowPassed(mw.Spec.Dates) {
+			mwPassedFlag = false
 		}
+	}
+
+	if mwPassedFlag {
+		return false, errors.New("given MaintenanceWindow dates have been already passed")
 	}
 
 	return false, nil
@@ -81,7 +95,7 @@ func (r *RecommendationMaintenance) getDefaultMaintenanceWindow() (*supervisorv1
 func (r *RecommendationMaintenance) getMaintenanceWindow(key client.ObjectKey) (*supervisorv1alpha1.MaintenanceWindow, error) {
 	mw := &supervisorv1alpha1.MaintenanceWindow{}
 	if key.Namespace == "" {
-		key.Namespace = core.NamespaceDefault
+		key.Namespace = r.rcmd.Namespace
 	}
 	if err := r.kc.Get(r.ctx, key, mw); err != nil {
 		return nil, err
@@ -108,6 +122,18 @@ func (r *RecommendationMaintenance) isMaintenanceDateWindow(dates []supervisorv1
 		}
 	}
 	return false
+}
+
+func (r *RecommendationMaintenance) isMaintenanceDateWindowPassed(dates []supervisorv1alpha1.DateWindow) bool {
+	for _, d := range dates {
+		end := d.End.UTC().Unix()
+		now := r.clock.Now().UTC().Unix()
+
+		if now <= end {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *RecommendationMaintenance) isMaintenanceTimeWindow(timeWindows []supervisorv1alpha1.TimeWindow) bool {
@@ -146,4 +172,11 @@ func (r *RecommendationMaintenance) getAvailableMaintenanceWindowList() (*superv
 		}
 	}
 	return mwList, nil
+}
+
+func getClock() clockwork.Clock {
+	if os.Getenv("APPSCODE_SUPERVISOR_TEST") == "TRUE" {
+		return clockwork.NewFakeClock()
+	}
+	return clockwork.NewRealClock()
 }
