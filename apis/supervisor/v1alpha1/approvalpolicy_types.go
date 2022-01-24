@@ -34,10 +34,15 @@ type ApprovalPolicy struct {
 	Targets []TargetRef `json:"targets"`
 }
 
+type Operation struct {
+	metav1.GroupKind `json:",inline"`
+	Type             string `json:"type"`
+}
+
 type TargetRef struct {
 	metav1.GroupKind `json:",inline"`
 	// +optional
-	Operations []metav1.GroupKind `json:"operations,omitempty"`
+	Operations []Operation `json:"operations,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -18,12 +18,12 @@ package supervisor
 
 import (
 	"context"
-	"os"
 	"time"
+
+	"kubeops.dev/supervisor/pkg/policy"
 
 	"kubeops.dev/supervisor/pkg/maintenance"
 
-	"github.com/jonboulle/clockwork"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -89,7 +89,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, nil
 		}
 
-		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, rcmd, GetClock())
+		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, rcmd)
 		ok, err := rcmdMaintenance.IsMaintenanceTime()
 		if err != nil {
 			return ctrl.Result{}, err
@@ -123,6 +123,25 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{RequeueAfter: RequeueAfterDuration}, nil
 	}
 
+	policyFinder := policy.NewApprovalPolicyFinder(ctx, r.Client, rcmd)
+	approvalPolicy, err := policyFinder.FindApprovalPolicy()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if approvalPolicy != nil {
+		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.ApprovalStatus = supervisorv1alpha1.ApprovalApproved
+			in.Status.ApprovedWindow = &supervisorv1alpha1.ApprovedWindow{
+				MaintenanceWindow: &approvalPolicy.MaintenanceWindowRef,
+			}
+			return in
+		})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -143,15 +162,6 @@ func (r *RecommendationReconciler) updateObservedGeneration(ctx context.Context,
 	return rcmd, nil
 }
 
-func isConditionTrue(conditions []kmapi.Condition, key string) bool {
-	for _, c := range conditions {
-		if c.Reason == key && c.Status == core.ConditionTrue {
-			return true
-		}
-	}
-	return false
-}
-
 func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, condition kmapi.Condition) error {
 	_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 		in := obj.(*supervisorv1alpha1.Recommendation)
@@ -160,13 +170,6 @@ func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *super
 	})
 
 	return err
-}
-
-func GetClock() clockwork.Clock {
-	if os.Getenv("APPSCODE_SUPERVISOR_TEST") == "TRUE" {
-		return clockwork.NewFakeClock()
-	}
-	return clockwork.NewRealClock()
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -182,4 +185,13 @@ func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			},
 		}).
 		Complete(r)
+}
+
+func isConditionTrue(conditions []kmapi.Condition, key string) bool {
+	for _, c := range conditions {
+		if c.Reason == key && c.Status == core.ConditionTrue {
+			return true
+		}
+	}
+	return false
 }

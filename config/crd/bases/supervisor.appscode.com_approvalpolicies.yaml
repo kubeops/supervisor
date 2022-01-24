@@ -56,17 +56,17 @@ spec:
                   type: string
                 operations:
                   items:
-                    description: GroupKind specifies a Group and a Kind, but does
-                      not force a version.  This is useful for identifying concepts
-                      during lookup stages without having partially valid types
                     properties:
                       group:
                         type: string
                       kind:
                         type: string
+                      type:
+                        type: string
                     required:
                     - group
                     - kind
+                    - type
                     type: object
                   type: array
               required:
