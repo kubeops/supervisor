@@ -14,7 +14,14 @@ spec:
     singular: clustermaintenancewindow
   scope: Cluster
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.isDefault
+      name: Default
+      type: boolean
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: ClusterMaintenanceWindow is the Schema for the clustermaintenancewindows

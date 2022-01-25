@@ -28,9 +28,11 @@ const (
 	ResourceClusterMaintenanceWindows    = "clustermaintenancewindows"
 )
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Cluster
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolumn:name="Default",type="boolean",JSONPath=".spec.isDefault"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // ClusterMaintenanceWindow is the Schema for the clustermaintenancewindows API
 type ClusterMaintenanceWindow struct {
