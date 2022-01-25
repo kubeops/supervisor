@@ -49,6 +49,10 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	if len(mwList.Items) == 0 {
+		return false, errors.New("no available MaintenanceWindow is found")
+	}
+
 	day := r.clock.Now().UTC().Weekday().String()
 
 	mwPassedFlag := true
