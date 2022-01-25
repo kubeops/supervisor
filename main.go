@@ -95,6 +95,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &supervisorv1alpha1.ClusterMaintenanceWindow{}, supervisorv1alpha1.DefaultClusterMaintenanceWindowKey, func(rawObj client.Object) []string {
+		app := rawObj.(*supervisorv1alpha1.ClusterMaintenanceWindow)
+		if v, ok := app.Annotations[supervisorv1alpha1.DefaultClusterMaintenanceWindowKey]; ok && v == "true" {
+			return []string{"true"}
+		}
+		return nil
+	}); err != nil {
+		klog.Error(err, "unable to set up ClusterMaintenanceWindow Indexer", "field", supervisorv1alpha1.DefaultClusterMaintenanceWindowKey)
+		os.Exit(1)
+	}
+
 	if err = (&supervisorcontrollers.RecommendationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

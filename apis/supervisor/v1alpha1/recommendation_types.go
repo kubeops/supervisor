@@ -108,13 +108,18 @@ const (
 
 // ApprovedWindow Scenarios
 //
-// Scenario 1: User provides nothing and default MaintenanceWindow will be used, if default window is not found, an error will be thrown
+// Scenario 1: User provides nothing and default MaintenanceWindow will be used. If any default window(cluster scoped or namespaced) is not found, controller will wait for any default
+//             maintenance window / any provided maintenance window instead of throwing an error.
+//             Default MaintenanceWindow Priority: NamespaceScoped > ClusterScoped.
+//             Note: If NamespaceScoped default MaintenanceWindow is found, ClusterScoped default MaintenanceWindow is skipped(if any).
 //
 // Scenario 2: User provides window type `Immediate` and ops request will be created immediately
 //
-// Scenario 3: User provides a specific MaintenanceWindow and that be used or an error will be thrown if given MaintenanceWindow is not found
+// Scenario 3: User provides a specific MaintenanceWindow and that will be used or an error will be thrown if given MaintenanceWindow is not found
 //
 // Scenario 4: User provides window type `NextAvailable` and the ops request will be executed in the next available MaintenanceWindow.
+//             Next namespace scoped available window will be used. If there is no MaintenanceWindow is found in the same namespace
+//             then next available ClusterMaintenanceWindow will be used.
 //             If there is no available Window is found in that time, controller will wait for any available MaintenanceWindow instead of throwing an error.
 //
 // Scenario 5: User provides window type `SpecificDates`. In this case, user must provide at least one DateWindows in the dates field.
