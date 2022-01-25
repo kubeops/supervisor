@@ -86,10 +86,33 @@ func (r *RecommendationMaintenance) getDefaultMaintenanceWindow() (*supervisorv1
 		return nil, err
 	}
 
-	if len(mwList.Items) != 1 {
+	if len(mwList.Items) > 1 {
 		return nil, fmt.Errorf("can't get default Maintenance window, expect one default maintenance window but got %v", len(mwList.Items))
+	} else if len(mwList.Items) == 0 {
+		return nil, nil
 	}
 	return &mwList.Items[0], nil
+}
+
+func (r *RecommendationMaintenance) getDefaultClusterMaintenanceWindow() (*supervisorv1alpha1.MaintenanceWindow, error) {
+	clusterMWList := &supervisorv1alpha1.ClusterMaintenanceWindowList{}
+	if err := r.kc.List(r.ctx, clusterMWList, client.MatchingFields{
+		supervisorv1alpha1.DefaultClusterMaintenanceWindowKey: "true",
+	}); err != nil {
+		return nil, err
+	}
+
+	if len(clusterMWList.Items) > 1 {
+		return nil, fmt.Errorf("can't get default Maintenance window, expect one default maintenance window but got %v", len(clusterMWList.Items))
+	} else if len(clusterMWList.Items) == 0 {
+		return nil, nil
+	}
+
+	mw := &supervisorv1alpha1.MaintenanceWindow{
+		Spec:   clusterMWList.Items[0].Spec,
+		Status: clusterMWList.Items[0].Status,
+	}
+	return mw, nil
 }
 
 func (r *RecommendationMaintenance) getMaintenanceWindow(key client.ObjectKey) (*supervisorv1alpha1.MaintenanceWindow, error) {
@@ -107,6 +130,22 @@ func (r *RecommendationMaintenance) getMaintenanceWindows() (*supervisorv1alpha1
 	mwList := &supervisorv1alpha1.MaintenanceWindowList{}
 	if err := r.kc.List(r.ctx, mwList, client.InNamespace(r.rcmd.Namespace)); err != nil {
 		return nil, err
+	}
+	return mwList, nil
+}
+
+func (r *RecommendationMaintenance) getMWListFromClusterMWList() (*supervisorv1alpha1.MaintenanceWindowList, error) {
+	clusterMWList := &supervisorv1alpha1.ClusterMaintenanceWindowList{}
+	if err := r.kc.List(r.ctx, clusterMWList); err != nil {
+		return nil, err
+	}
+	mwList := &supervisorv1alpha1.MaintenanceWindowList{}
+	for _, cMW := range clusterMWList.Items {
+		mw := supervisorv1alpha1.MaintenanceWindow{
+			Spec:   cMW.Spec,
+			Status: cMW.Status,
+		}
+		mwList.Items = append(mwList.Items, mw)
 	}
 	return mwList, nil
 }
@@ -157,7 +196,19 @@ func (r *RecommendationMaintenance) getAvailableMaintenanceWindowList() (*superv
 		if err != nil {
 			return nil, err
 		}
-		mwList.Items = append(mwList.Items, *mw)
+		if mw != nil {
+			mwList.Items = append(mwList.Items, *mw)
+		}
+
+		if len(mwList.Items) == 0 {
+			cMW, err := r.getDefaultClusterMaintenanceWindow()
+			if err != nil {
+				return nil, err
+			}
+			if cMW != nil {
+				mwList.Items = append(mwList.Items, *cMW)
+			}
+		}
 	} else if aw.MaintenanceWindow != nil {
 		mw, err := r.getMaintenanceWindow(client.ObjectKey{Namespace: aw.MaintenanceWindow.Namespace, Name: aw.MaintenanceWindow.Name})
 		if err != nil {
@@ -169,6 +220,13 @@ func (r *RecommendationMaintenance) getAvailableMaintenanceWindowList() (*superv
 		mwList, err = r.getMaintenanceWindows()
 		if err != nil {
 			return nil, err
+		}
+		if len(mwList.Items) == 0 {
+			cMWList, err := r.getMWListFromClusterMWList()
+			if err != nil {
+				return nil, err
+			}
+			mwList.Items = append(mwList.Items, cMWList.Items...)
 		}
 	}
 	return mwList, nil

@@ -19,6 +19,9 @@ package supervisor
 import (
 	"context"
 
+	"k8s.io/klog/v2"
+	kmc "kmodules.xyz/client-go/client"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,17 +42,32 @@ type ClusterMaintenanceWindowReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the ClusterMaintenanceWindow object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *ClusterMaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	key := req.NamespacedName
+	klog.Info("got event for ClusterMaintenanceWindow: ", key.String())
+
+	clusterMW := &supervisorv1alpha1.ClusterMaintenanceWindow{}
+	if err := r.Client.Get(ctx, key, clusterMW); err != nil {
+		klog.Infof("ClusterMaintenanceWindow %q doesn't exist anymore", key.String())
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Todo(Pulak): Implement webhook to make sure only one default ClusterMaintenanceWindow at a time
+	if clusterMW.Spec.IsDefault {
+		if _, ok := clusterMW.Annotations[supervisorv1alpha1.DefaultClusterMaintenanceWindowKey]; !ok {
+			_, _, err := kmc.CreateOrPatch(ctx, r.Client, clusterMW, func(obj client.Object, createOp bool) client.Object {
+				in := obj.(*supervisorv1alpha1.ClusterMaintenanceWindow)
+				in.Annotations[supervisorv1alpha1.DefaultClusterMaintenanceWindowKey] = "true"
+				return in
+			})
+			return ctrl.Result{}, err
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
