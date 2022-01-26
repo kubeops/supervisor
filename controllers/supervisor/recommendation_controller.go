@@ -18,13 +18,8 @@ package supervisor
 
 import (
 	"context"
+	"fmt"
 	"time"
-
-	"kubeops.dev/supervisor/pkg/parallelism"
-
-	"kubeops.dev/supervisor/pkg/policy"
-
-	"kubeops.dev/supervisor/pkg/maintenance"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,6 +30,9 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 	"kubeops.dev/supervisor/apis"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	"kubeops.dev/supervisor/pkg/maintenance"
+	"kubeops.dev/supervisor/pkg/parallelism"
+	"kubeops.dev/supervisor/pkg/policy"
 	"kubeops.dev/supervisor/pkg/shared"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -87,7 +85,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
-		if isConditionTrue(rcmd.Status.Conditions, supervisorv1alpha1.StartedExecutingOperation) {
+		if kmapi.IsConditionTrue(rcmd.Status.Conditions, supervisorv1alpha1.SuccessfullyCreatedOperation) {
 			return ctrl.Result{}, nil
 		}
 
@@ -118,7 +116,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				Type:               "Create",
 				Status:             core.ConditionTrue,
 				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-				Reason:             supervisorv1alpha1.StartedExecutingOperation,
+				Reason:             supervisorv1alpha1.SuccessfullyCreatedOperation,
 				Message:            "OpsRequest is successfully created",
 			})
 			if err != nil {
@@ -126,6 +124,17 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			}
 
 			if err := r.waitForOperationToBeCompleted(ctx, exeObj); err != nil {
+				_, cErr := r.addCondition(ctx, rcmd, kmapi.Condition{
+					Type:               "Failure",
+					Status:             core.ConditionFalse,
+					LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+					Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
+					Message:            err.Error(),
+				})
+				if cErr != nil {
+					return ctrl.Result{},
+						fmt.Errorf("failed to update conditions for failed operation. operation error: %v, condition update error: %v", err, cErr)
+				}
 				return ctrl.Result{}, err
 			}
 
@@ -133,7 +142,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				Type:               "Successful",
 				Status:             core.ConditionTrue,
 				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-				Reason:             supervisorv1alpha1.FinishedExecutingOperation,
+				Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
 				Message:            "OpsRequest is successfully executed",
 			})
 			if err != nil {
@@ -223,13 +232,4 @@ func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			},
 		}).
 		Complete(r)
-}
-
-func isConditionTrue(conditions []kmapi.Condition, key string) bool {
-	for _, c := range conditions {
-		if c.Reason == key && c.Status == core.ConditionTrue {
-			return true
-		}
-	}
-	return false
 }
