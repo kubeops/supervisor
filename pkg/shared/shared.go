@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+
+	"github.com/jonboulle/clockwork"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -74,4 +77,11 @@ func GetType(obj runtime.RawExtension) (string, error) {
 		return "", errors.New("failed to parse .spec.type from raw operation object")
 	}
 	return opsType, nil
+}
+
+func GetClock() clockwork.Clock {
+	if os.Getenv("APPSCODE_SUPERVISOR_TEST") == "TRUE" {
+		return clockwork.NewFakeClock()
+	}
+	return clockwork.NewRealClock()
 }

@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+
+	"kubeops.dev/supervisor/pkg/shared"
 
 	"github.com/jonboulle/clockwork"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -24,7 +25,7 @@ func NewRecommendationMaintenance(ctx context.Context, kc client.Client, rcmd *s
 		ctx:   ctx,
 		kc:    kc,
 		rcmd:  rcmd,
-		clock: getClock(),
+		clock: shared.GetClock(),
 	}
 }
 
@@ -234,11 +235,4 @@ func (r *RecommendationMaintenance) getAvailableMaintenanceWindowList() (*superv
 		}
 	}
 	return mwList, nil
-}
-
-func getClock() clockwork.Clock {
-	if os.Getenv("APPSCODE_SUPERVISOR_TEST") == "TRUE" {
-		return clockwork.NewFakeClock()
-	}
-	return clockwork.NewRealClock()
 }
