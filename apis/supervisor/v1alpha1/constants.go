@@ -8,5 +8,6 @@ const (
 // List of Condition reasons
 const (
 	RecommendationSuccessfullyCreated = "RecommendationSuccessfullyCreated"
-	OpsRequestSuccessfullyCreated     = "OpsRequestSuccessfullyCreated"
+	StartedExecutingOperation         = "StartedExecutingOperation"
+	FinishedExecutingOperation        = "FinishedExecutingOperation"
 )

@@ -45,7 +45,7 @@ Namespace
 GK
 G
 
-
+```
 apiVersion: 
 kind: MaintenanceWindow
 spec:
@@ -68,7 +68,10 @@ spec:
 	    end: 2022/01/20 6:00 AM
 	  - start: 2022/01/22 6:00 PM
 	    end: 2022/01/24 6:00 AM
+        
+```
 
+```
 apiVersion: 
 kind: ApprovalPolicy
 spec:
@@ -86,3 +89,4 @@ spec:
     operation:
     - group: ops.kubedb.com
       kind: ReconfigureTLS
+```
