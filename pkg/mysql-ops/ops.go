@@ -34,7 +34,7 @@ func NewMySQLOpsRequest(obj runtime.RawExtension) (*MySQLOpsRequest, error) {
 
 func (o *MySQLOpsRequest) Execute(ctx context.Context, kc client.Client) error {
 	req := o.req.DeepCopy()
-	return kc.Create(context.TODO(), req)
+	return kc.Create(ctx, req)
 }
 
 func (o *MySQLOpsRequest) WaitForOpsRequestToBeCompleted(ctx context.Context, kc client.Client) error {
