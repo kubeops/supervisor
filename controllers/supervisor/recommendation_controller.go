@@ -21,10 +21,6 @@ import (
 	"fmt"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
-	deadline_manager "kubeops.dev/supervisor/pkg/deadline-manager"
-
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,12 +30,14 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 	"kubeops.dev/supervisor/apis"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	deadline_manager "kubeops.dev/supervisor/pkg/deadline-manager"
 	"kubeops.dev/supervisor/pkg/maintenance"
 	"kubeops.dev/supervisor/pkg/parallelism"
 	"kubeops.dev/supervisor/pkg/policy"
 	"kubeops.dev/supervisor/pkg/shared"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -112,57 +110,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			deadlineKnocking = deadlineMgr.IsDeadlineLessThanADay()
 		}
 		if isMaintenanceTime && (maintainParallelism || deadlineKnocking) {
-			exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-
-			if err := r.executeOpsRequest(ctx, exeObj); err != nil {
-				return ctrl.Result{}, err
-			}
-
-			rcmd, err = r.addCondition(ctx, rcmd, kmapi.Condition{
-				Type:               supervisorv1alpha1.SuccessfullyCreatedOperation,
-				Status:             core.ConditionTrue,
-				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-				Reason:             supervisorv1alpha1.SuccessfullyCreatedOperation,
-				Message:            "OpsRequest is successfully created",
-			})
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-
-			if err := r.waitForOperationToBeCompleted(ctx, exeObj); err != nil {
-				_, cErr := r.addCondition(ctx, rcmd, kmapi.Condition{
-					Type:               supervisorv1alpha1.RecommendationSuccessfullyCreated,
-					Status:             core.ConditionFalse,
-					LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-					Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
-					Message:            err.Error(),
-				})
-				if cErr != nil {
-					return ctrl.Result{},
-						fmt.Errorf("failed to update conditions for failed operation. operation error: %v, condition update error: %v", err, cErr)
-				}
-				return ctrl.Result{}, err
-			}
-
-			rcmd, err = r.addCondition(ctx, rcmd, kmapi.Condition{
-				Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
-				Status:             core.ConditionTrue,
-				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-				Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
-				Message:            "OpsRequest is successfully executed",
-			})
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-
-			_, err = r.updateObservedGeneration(ctx, rcmd)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-
+			err := r.executeRecommendation(ctx, rcmd)
 			return ctrl.Result{}, err
 		}
 
@@ -192,6 +140,56 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *RecommendationReconciler) executeRecommendation(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) error {
+	exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
+	if err != nil {
+		return err
+	}
+
+	if err := r.executeOpsRequest(ctx, exeObj); err != nil {
+		return err
+	}
+
+	rcmd, err = r.addCondition(ctx, rcmd, kmapi.Condition{
+		Type:               supervisorv1alpha1.SuccessfullyCreatedOperation,
+		Status:             core.ConditionTrue,
+		LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+		Reason:             supervisorv1alpha1.SuccessfullyCreatedOperation,
+		Message:            "OpsRequest is successfully created",
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := r.waitForOperationToBeCompleted(ctx, exeObj); err != nil {
+		_, cErr := r.addCondition(ctx, rcmd, kmapi.Condition{
+			Type:               supervisorv1alpha1.RecommendationSuccessfullyCreated,
+			Status:             core.ConditionFalse,
+			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+			Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
+			Message:            err.Error(),
+		})
+		if cErr != nil {
+			return fmt.Errorf("failed to update conditions for failed operation. operation error: %v, condition update error: %v", err, cErr)
+		}
+		return err
+	}
+
+	rcmd, err = r.addCondition(ctx, rcmd, kmapi.Condition{
+		Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
+		Status:             core.ConditionTrue,
+		LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+		Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
+		Message:            "OpsRequest is successfully executed",
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = r.updateObservedGeneration(ctx, rcmd)
+	return err
 }
 
 func (r *RecommendationReconciler) executeOpsRequest(ctx context.Context, e apis.OpsRequest) error {
