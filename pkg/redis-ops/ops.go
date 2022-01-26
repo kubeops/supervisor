@@ -34,7 +34,7 @@ func NewRedisOpsRequest(obj runtime.RawExtension) (*RedisOpsRequest, error) {
 
 func (o *RedisOpsRequest) Execute(ctx context.Context, kc client.Client) error {
 	req := o.req.DeepCopy()
-	return kc.Create(context.TODO(), req)
+	return kc.Create(ctx, req)
 }
 
 func (o *RedisOpsRequest) WaitForOpsRequestToBeCompleted(ctx context.Context, kc client.Client) error {
