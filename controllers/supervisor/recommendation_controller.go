@@ -20,6 +20,8 @@ import (
 	"context"
 	"time"
 
+	"kubeops.dev/supervisor/pkg/parallelism"
+
 	"kubeops.dev/supervisor/pkg/policy"
 
 	"kubeops.dev/supervisor/pkg/maintenance"
@@ -74,7 +76,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	rcmd := obj.DeepCopy()
 
 	if len(rcmd.Status.Conditions) == 0 {
-		err := r.addCondition(ctx, rcmd, kmapi.Condition{
+		_, err := r.addCondition(ctx, rcmd, kmapi.Condition{
 			Type:               "Create",
 			Status:             core.ConditionTrue,
 			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
@@ -85,22 +87,56 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
-		if isConditionTrue(rcmd.Status.Conditions, supervisorv1alpha1.OpsRequestSuccessfullyCreated) {
+		if isConditionTrue(rcmd.Status.Conditions, supervisorv1alpha1.StartedExecutingOperation) {
 			return ctrl.Result{}, nil
 		}
 
 		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, rcmd)
-		ok, err := rcmdMaintenance.IsMaintenanceTime()
+		isMaintenanceTime, err := rcmdMaintenance.IsMaintenanceTime()
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		if ok {
+		maintainParallelism := false
+		if isMaintenanceTime {
+			runner := parallelism.NewParallelRunner(ctx, r.Client, rcmd)
+			maintainParallelism, err = runner.MaintainParallelism()
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		if isMaintenanceTime && maintainParallelism {
 			exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
 
-			if err := r.executeOpsRequest(exeObj); err != nil {
+			if err := r.executeOpsRequest(ctx, exeObj); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			rcmd, err = r.addCondition(ctx, rcmd, kmapi.Condition{
+				Type:               "Create",
+				Status:             core.ConditionTrue,
+				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+				Reason:             supervisorv1alpha1.StartedExecutingOperation,
+				Message:            "OpsRequest is successfully created",
+			})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+			if err := r.waitForOperationToBeCompleted(ctx, exeObj); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			rcmd, err = r.addCondition(ctx, rcmd, kmapi.Condition{
+				Type:               "Successful",
+				Status:             core.ConditionTrue,
+				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+				Reason:             supervisorv1alpha1.FinishedExecutingOperation,
+				Message:            "OpsRequest is successfully executed",
+			})
+			if err != nil {
 				return ctrl.Result{}, err
 			}
 
@@ -109,18 +145,13 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				return ctrl.Result{}, err
 			}
 
-			err = r.addCondition(ctx, rcmd, kmapi.Condition{
-				Type:               "Create",
-				Status:             core.ConditionTrue,
-				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-				Reason:             supervisorv1alpha1.OpsRequestSuccessfullyCreated,
-				Message:            "OpsRequest is successfully created",
-			})
-
 			return ctrl.Result{}, err
 		}
 
 		return ctrl.Result{RequeueAfter: RequeueAfterDuration}, nil
+	} else if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalRejected {
+		_, err := r.updateObservedGeneration(ctx, rcmd)
+		return ctrl.Result{}, err
 	}
 
 	policyFinder := policy.NewApprovalPolicyFinder(ctx, r.Client, rcmd)
@@ -145,8 +176,12 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	return ctrl.Result{}, nil
 }
 
-func (r *RecommendationReconciler) executeOpsRequest(e apis.OpsRequest) error {
-	return e.Execute(r.Client)
+func (r *RecommendationReconciler) executeOpsRequest(ctx context.Context, e apis.OpsRequest) error {
+	return e.Execute(ctx, r.Client)
+}
+
+func (r *RecommendationReconciler) waitForOperationToBeCompleted(ctx context.Context, e apis.OpsRequest) error {
+	return e.WaitForOpsRequestToBeCompleted(ctx, r.Client)
 }
 
 func (r *RecommendationReconciler) updateObservedGeneration(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (*supervisorv1alpha1.Recommendation, error) {
@@ -158,18 +193,21 @@ func (r *RecommendationReconciler) updateObservedGeneration(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	rcmd = obj.(*supervisorv1alpha1.Recommendation)
+	rcmd = obj.(*supervisorv1alpha1.Recommendation).DeepCopy()
 	return rcmd, nil
 }
 
-func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, condition kmapi.Condition) error {
-	_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, condition kmapi.Condition) (*supervisorv1alpha1.Recommendation, error) {
+	obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 		in := obj.(*supervisorv1alpha1.Recommendation)
 		in.Status.Conditions = append(in.Status.Conditions, condition)
 		return in
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	return err
+	return obj.(*supervisorv1alpha1.Recommendation).DeepCopy(), nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
