@@ -21,6 +21,10 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	deadline_manager "kubeops.dev/supervisor/pkg/deadline-manager"
+
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,7 +46,8 @@ import (
 )
 
 const (
-	RequeueAfterDuration = time.Minute
+	requeueAfterDuration    = time.Minute
+	maxConcurrentReconciles = 5
 )
 
 // RecommendationReconciler reconciles a Recommendation object
@@ -75,7 +80,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	if len(rcmd.Status.Conditions) == 0 {
 		_, err := r.addCondition(ctx, rcmd, kmapi.Condition{
-			Type:               "Create",
+			Type:               supervisorv1alpha1.RecommendationSuccessfullyCreated,
 			Status:             core.ConditionTrue,
 			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
 			Reason:             supervisorv1alpha1.RecommendationSuccessfullyCreated,
@@ -95,14 +100,18 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, err
 		}
 		maintainParallelism := false
+		deadlineKnocking := false
 		if isMaintenanceTime {
 			runner := parallelism.NewParallelRunner(ctx, r.Client, rcmd)
 			maintainParallelism, err = runner.MaintainParallelism()
 			if err != nil {
 				return ctrl.Result{}, err
 			}
+
+			deadlineMgr := deadline_manager.NewManager(rcmd)
+			deadlineKnocking = deadlineMgr.IsDeadlineLessThanADay()
 		}
-		if isMaintenanceTime && maintainParallelism {
+		if isMaintenanceTime && (maintainParallelism || deadlineKnocking) {
 			exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
 			if err != nil {
 				return ctrl.Result{}, err
@@ -113,7 +122,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			}
 
 			rcmd, err = r.addCondition(ctx, rcmd, kmapi.Condition{
-				Type:               "Create",
+				Type:               supervisorv1alpha1.SuccessfullyCreatedOperation,
 				Status:             core.ConditionTrue,
 				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
 				Reason:             supervisorv1alpha1.SuccessfullyCreatedOperation,
@@ -125,7 +134,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 			if err := r.waitForOperationToBeCompleted(ctx, exeObj); err != nil {
 				_, cErr := r.addCondition(ctx, rcmd, kmapi.Condition{
-					Type:               "Failure",
+					Type:               supervisorv1alpha1.RecommendationSuccessfullyCreated,
 					Status:             core.ConditionFalse,
 					LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
 					Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
@@ -139,7 +148,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			}
 
 			rcmd, err = r.addCondition(ctx, rcmd, kmapi.Condition{
-				Type:               "Successful",
+				Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
 				Status:             core.ConditionTrue,
 				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
 				Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
@@ -157,7 +166,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, err
 		}
 
-		return ctrl.Result{RequeueAfter: RequeueAfterDuration}, nil
+		return ctrl.Result{RequeueAfter: requeueAfterDuration}, nil
 	} else if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalRejected {
 		_, err := r.updateObservedGeneration(ctx, rcmd)
 		return ctrl.Result{}, err
@@ -231,5 +240,6 @@ func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return !meta_util.MustAlreadyReconciled(e.ObjectNew)
 			},
 		}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: maxConcurrentReconciles}).
 		Complete(r)
 }
