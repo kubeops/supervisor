@@ -2,7 +2,6 @@ package parallelism
 
 import (
 	"context"
-	"errors"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -25,14 +24,13 @@ func NewParallelRunner(ctx context.Context, kc client.Client, rcmd *supervisorv1
 }
 
 func (r *ParallelRunner) MaintainParallelism() (bool, error) {
-	if r.rcmd.Status.Parallelism == supervisorv1alpha1.QueuePerNamespace {
-		return r.isMaintainingQueuePerNamespace()
-	} else if r.rcmd.Status.Parallelism == supervisorv1alpha1.QueuePerTarget {
+	if r.rcmd.Status.Parallelism == supervisorv1alpha1.QueuePerTarget {
 		return r.isMaintainingQueuePerTarget()
 	} else if r.rcmd.Status.Parallelism == supervisorv1alpha1.QueuePerTargetAndNamespace {
 		return r.isMaintainingQueuePerTargetAndNamespace()
+	} else {
+		return r.isMaintainingQueuePerNamespace()
 	}
-	return false, errors.New("invalid parallelism type")
 }
 
 func (r *ParallelRunner) isMaintainingQueuePerNamespace() (bool, error) {

@@ -18,7 +18,6 @@ package supervisor
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	core "k8s.io/api/core/v1"
@@ -45,6 +44,7 @@ import (
 
 const (
 	requeueAfterDuration    = time.Minute
+	retryAfterDuration      = time.Minute
 	maxConcurrentReconciles = 5
 )
 
@@ -76,13 +76,11 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 	rcmd := obj.DeepCopy()
 
-	if len(rcmd.Status.Conditions) == 0 {
-		_, err := r.addCondition(ctx, rcmd, kmapi.Condition{
-			Type:               supervisorv1alpha1.RecommendationSuccessfullyCreated,
-			Status:             core.ConditionTrue,
-			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-			Reason:             supervisorv1alpha1.RecommendationSuccessfullyCreated,
-			Message:            "Recommendation has created successfully",
+	if rcmd.Status.Phase == "" {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.Phase = supervisorv1alpha1.Pending
+			return in
 		})
 		return ctrl.Result{}, err
 	}
@@ -95,8 +93,19 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, rcmd)
 		isMaintenanceTime, err := rcmdMaintenance.IsMaintenanceTime()
 		if err != nil {
+			return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Pending)
+		}
+
+		if rcmd.Status.Phase == supervisorv1alpha1.Pending {
+			_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+				in := obj.(*supervisorv1alpha1.Recommendation)
+				in.Status.Phase = supervisorv1alpha1.Waiting
+				in.Status.Reason = supervisorv1alpha1.WaitingForMaintenanceWindow
+				return in
+			})
 			return ctrl.Result{}, err
 		}
+
 		maintainParallelism := false
 		deadlineKnocking := false
 		if isMaintenanceTime {
@@ -110,13 +119,19 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			deadlineKnocking = deadlineMgr.IsDeadlineLessThanADay()
 		}
 		if isMaintenanceTime && (maintainParallelism || deadlineKnocking) {
-			err := r.executeRecommendation(ctx, rcmd)
-			return ctrl.Result{}, err
+			return r.executeRecommendation(ctx, rcmd)
 		}
 
 		return ctrl.Result{RequeueAfter: requeueAfterDuration}, nil
 	} else if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalRejected {
-		_, err := r.updateObservedGeneration(ctx, rcmd)
+		_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.Phase = supervisorv1alpha1.Skipped
+			in.Status.Reason = supervisorv1alpha1.RecommendationRejected
+			in.Status.ObservedGeneration = in.Generation
+
+			return in
+		})
 		return ctrl.Result{}, err
 	}
 
@@ -142,26 +157,33 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	return ctrl.Result{}, nil
 }
 
-func (r *RecommendationReconciler) executeRecommendation(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) error {
+func (r *RecommendationReconciler) executeRecommendation(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
 	exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
 	if err != nil {
-		return err
+		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
 
 	if err := r.executeOpsRequest(ctx, exeObj); err != nil {
-		return err
+		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
 
-	rcmd, err = r.addCondition(ctx, rcmd, kmapi.Condition{
-		Type:               supervisorv1alpha1.SuccessfullyCreatedOperation,
-		Status:             core.ConditionTrue,
-		LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-		Reason:             supervisorv1alpha1.SuccessfullyCreatedOperation,
-		Message:            "OpsRequest is successfully created",
+	upObj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+		in := obj.(*supervisorv1alpha1.Recommendation)
+		in.Status.Phase = supervisorv1alpha1.InProgress
+		in.Status.Reason = supervisorv1alpha1.StartedExecutingOperation
+		in.Status.Conditions = kmapi.SetCondition(in.Status.Conditions, kmapi.Condition{
+			Type:               supervisorv1alpha1.SuccessfullyCreatedOperation,
+			Status:             core.ConditionTrue,
+			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+			Reason:             supervisorv1alpha1.SuccessfullyCreatedOperation,
+			Message:            "OpsRequest is successfully created",
+		})
+		return in
 	})
 	if err != nil {
-		return err
+		return ctrl.Result{}, err
 	}
+	rcmd = upObj.(*supervisorv1alpha1.Recommendation)
 
 	if err := r.waitForOperationToBeCompleted(ctx, exeObj); err != nil {
 		_, cErr := r.addCondition(ctx, rcmd, kmapi.Condition{
@@ -172,24 +194,26 @@ func (r *RecommendationReconciler) executeRecommendation(ctx context.Context, rc
 			Message:            err.Error(),
 		})
 		if cErr != nil {
-			return fmt.Errorf("failed to update conditions for failed operation. operation error: %v, condition update error: %v", err, cErr)
+			return ctrl.Result{}, cErr
 		}
-		return err
+		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
 
-	rcmd, err = r.addCondition(ctx, rcmd, kmapi.Condition{
-		Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
-		Status:             core.ConditionTrue,
-		LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-		Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
-		Message:            "OpsRequest is successfully executed",
+	_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+		in := obj.(*supervisorv1alpha1.Recommendation)
+		in.Status.Phase = supervisorv1alpha1.Succeeded
+		in.Status.Reason = supervisorv1alpha1.SuccessfullyExecutedOperation
+		in.Status.Conditions = kmapi.SetCondition(in.Status.Conditions, kmapi.Condition{
+			Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
+			Status:             core.ConditionTrue,
+			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+			Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
+			Message:            "OpsRequest is successfully executed",
+		})
+		in.Status.ObservedGeneration = in.Generation
+		return in
 	})
-	if err != nil {
-		return err
-	}
-
-	_, err = r.updateObservedGeneration(ctx, rcmd)
-	return err
+	return ctrl.Result{}, err
 }
 
 func (r *RecommendationReconciler) executeOpsRequest(ctx context.Context, e apis.OpsRequest) error {
@@ -200,23 +224,10 @@ func (r *RecommendationReconciler) waitForOperationToBeCompleted(ctx context.Con
 	return e.WaitForOpsRequestToBeCompleted(ctx, r.Client)
 }
 
-func (r *RecommendationReconciler) updateObservedGeneration(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (*supervisorv1alpha1.Recommendation, error) {
-	obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-		in := obj.(*supervisorv1alpha1.Recommendation)
-		in.Status.ObservedGeneration = in.Generation
-		return in
-	})
-	if err != nil {
-		return nil, err
-	}
-	rcmd = obj.(*supervisorv1alpha1.Recommendation).DeepCopy()
-	return rcmd, nil
-}
-
 func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, condition kmapi.Condition) (*supervisorv1alpha1.Recommendation, error) {
 	obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 		in := obj.(*supervisorv1alpha1.Recommendation)
-		in.Status.Conditions = append(in.Status.Conditions, condition)
+		in.Status.Conditions = kmapi.SetCondition(rcmd.Status.Conditions, condition)
 		return in
 	})
 	if err != nil {
@@ -224,6 +235,17 @@ func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *super
 	}
 
 	return obj.(*supervisorv1alpha1.Recommendation).DeepCopy(), nil
+}
+
+func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, err error, phase supervisorv1alpha1.RecommendationPhase) (ctrl.Result, error) {
+	_, _, pErr := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+		in := obj.(*supervisorv1alpha1.Recommendation)
+		in.Status.Phase = phase
+		in.Status.Reason = err.Error()
+		return in
+	})
+
+	return ctrl.Result{RequeueAfter: retryAfterDuration}, pErr
 }
 
 // SetupWithManager sets up the controller with the Manager.

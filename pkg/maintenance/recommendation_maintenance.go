@@ -5,11 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"kubeops.dev/supervisor/pkg/shared"
-
 	"github.com/jonboulle/clockwork"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	"kubeops.dev/supervisor/pkg/shared"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -77,7 +76,7 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 	}
 
 	if mwPassedFlag {
-		return false, errors.New("given MaintenanceWindow dates have been already passed")
+		return false, errors.New("invalid Maintenance Window: given date windows have been already passed")
 	}
 
 	return false, nil

@@ -5,9 +5,13 @@ const (
 	DefaultClusterMaintenanceWindowKey = "supervisor.appscode.com/is-default-cluster-maintenance-window"
 )
 
-// List of Condition reasons
+// List of Condition and Phase reasons
 const (
 	RecommendationSuccessfullyCreated = "RecommendationSuccessfullyCreated"
 	SuccessfullyCreatedOperation      = "SuccessfullyCreatedOperation"
 	SuccessfullyExecutedOperation     = "SuccessfullyExecutedOperation"
+	WaitingForApproval                = "WaitingForApproval"
+	WaitingForMaintenanceWindow       = "WaitingForMaintenanceWindow"
+	StartedExecutingOperation         = "StartedExecutingOperation"
+	RecommendationRejected            = "RecommendationRejected"
 )

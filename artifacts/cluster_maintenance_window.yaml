@@ -5,9 +5,9 @@ metadata:
 spec:
   isDefault: true
   days:
-    Wednesday:
+    Friday:
       - start: 1:00AM
         end: 11:00PM
-#  dates:
-#    - start: 2022-01-25T00:00:18Z
-#      end: 2022-01-25T23:41:18Z
+  dates:
+    - start: 2022-01-25T00:00:18Z
+      end: 2022-01-25T23:41:18Z

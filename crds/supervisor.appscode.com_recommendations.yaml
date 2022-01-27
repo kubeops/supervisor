@@ -15,7 +15,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.approvalStatus
+    - jsonPath: .status.phase
       name: Status
       type: string
     - jsonPath: .metadata.creationTimestamp
@@ -200,6 +200,20 @@ spec:
                 - Namespace
                 - Target
                 - TargetAndNamespace
+                type: string
+              phase:
+                enum:
+                - Pending
+                - Skipped
+                - Waiting
+                - InProgress
+                - Succeeded
+                - Failed
+                type: string
+              reason:
+                default: WaitingForApproval
+                description: A message indicating details about why the Recommendation
+                  is in this phase.
                 type: string
               reviewTimestamp:
                 format: date-time

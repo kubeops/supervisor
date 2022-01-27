@@ -78,6 +78,12 @@ type RecommendationStatus struct {
 	// +kubebuilder:default=Pending
 	ApprovalStatus ApprovalStatus `json:"approvalStatus"`
 	// +optional
+	Phase RecommendationPhase `json:"phase,omitempty"`
+	// A message indicating details about why the Recommendation is in this phase.
+	// +optional
+	// +kubebuilder:default=WaitingForApproval
+	Reason string `json:"reason"`
+	// +optional
 	Reviewer *Subject `json:"reviewer,omitempty"`
 	// +optional
 	Comments string `json:"comments,omitempty"`
@@ -96,6 +102,27 @@ type RecommendationStatus struct {
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
 }
+
+type OperationExecutionStatus struct {
+}
+
+// +kubebuilder:validation:Enum=Pending;Skipped;Waiting;InProgress;Succeeded;Failed
+type RecommendationPhase string
+
+const (
+	// Pending : Recommendation misses at least one pre-requisite for executing the operation
+	Pending RecommendationPhase = "Pending"
+	// Skipped : Operation is skipped because of Rejection ApprovalStatus
+	Skipped RecommendationPhase = "Skipped"
+	// Waiting : Recommendation is waiting for the MaintenanceWindow to execute the operation
+	Waiting RecommendationPhase = "Waiting"
+	// InProgress : The operation execution is successfully started and yet to be completed
+	InProgress RecommendationPhase = "InProgress"
+	// Succeeded : Operation has been successfully executed
+	Succeeded RecommendationPhase = "Succeeded"
+	// Failed : Operation execution has not completed successfully i.e. encountered an error
+	Failed RecommendationPhase = "Failed"
+)
 
 // +kubebuilder:validation:Enum=Immediate;NextAvailable;SpecificDates
 type WindowType string
@@ -145,7 +172,7 @@ const (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.approvalStatus"
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Recommendation is the Schema for the recommendations API
