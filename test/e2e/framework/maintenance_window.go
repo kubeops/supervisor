@@ -3,6 +3,10 @@ package framework
 import (
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 )
@@ -23,7 +27,21 @@ func (f *Framework) CreateDefaultMaintenanceWindow() error {
 			},
 		},
 	}
-	return f.kc.Create(f.ctx, mw)
+	err := f.kc.Create(f.ctx, mw)
+	if err != nil {
+		return err
+	}
+
+	return wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+		mwObj := &api.MaintenanceWindow{}
+		key := client.ObjectKey{Namespace: mw.Namespace, Name: mw.Name}
+
+		if err := f.kc.Get(f.ctx, key, mwObj); err != nil {
+			return false, client.IgnoreNotFound(err)
+		}
+
+		return true, nil
+	})
 }
 
 func (f *Framework) defaultMaintenanceWindowName() string {

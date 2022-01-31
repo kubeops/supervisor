@@ -21,6 +21,8 @@ import (
 	"flag"
 	"os"
 
+	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+
 	"k8s.io/klog/v2"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
@@ -51,6 +53,7 @@ func init() {
 
 	utilruntime.Must(supervisorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(opsapi.AddToScheme(scheme))
+	utilruntime.Must(kubedbapi.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
