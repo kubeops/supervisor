@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,6 +52,7 @@ func init() {
 
 	utilruntime.Must(supervisorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(opsapi.AddToScheme(scheme))
+	utilruntime.Must(kubedbapi.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

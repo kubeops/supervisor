@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	"github.com/jonboulle/clockwork"
+
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	"gomodules.xyz/x/crypto/rand"
@@ -18,6 +20,7 @@ type Framework struct {
 	namespace     string
 	name          string
 	clusterMWName string
+	clock         clockwork.Clock
 }
 
 type Invocation struct {
@@ -33,6 +36,7 @@ func New(ctx context.Context, restConfig *rest.Config, kc client.Client) *Framew
 		namespace:     rand.WithUniqSuffix("supervisor-test-ns"),
 		name:          rand.WithUniqSuffix("supervisor"),
 		clusterMWName: rand.WithUniqSuffix("cluster-mw"),
+		clock:         api.GetClock(),
 	}
 }
 
