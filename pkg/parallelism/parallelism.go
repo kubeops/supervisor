@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	kmapi "kmodules.xyz/client-go/api/v1"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -41,8 +40,7 @@ func (r *ParallelRunner) isMaintainingQueuePerNamespace() (bool, error) {
 	}
 
 	for _, rc := range rcmdList.Items {
-		if kmapi.IsConditionTrue(rc.Status.Conditions, supervisorv1alpha1.SuccessfullyCreatedOperation) &&
-			!kmapi.HasCondition(rc.Status.Conditions, supervisorv1alpha1.SuccessfullyExecutedOperation) {
+		if rc.Status.Phase == supervisorv1alpha1.InProgress {
 			return false, nil
 		}
 	}
@@ -98,8 +96,7 @@ func isMaintainingQueuePerGK(reqGK schema.GroupKind, rcList *supervisorv1alpha1.
 			continue
 		}
 
-		if kmapi.IsConditionTrue(rc.Status.Conditions, supervisorv1alpha1.SuccessfullyCreatedOperation) &&
-			!kmapi.HasCondition(rc.Status.Conditions, supervisorv1alpha1.SuccessfullyExecutedOperation) {
+		if rc.Status.Phase == supervisorv1alpha1.InProgress {
 			return false, nil
 		}
 	}
