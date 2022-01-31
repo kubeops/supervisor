@@ -5,7 +5,7 @@ metadata:
 spec:
   isDefault: true
   days:
-    Friday:
+    Monday:
       - start: 1:00AM
         end: 11:00PM
   dates:

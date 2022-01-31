@@ -115,6 +115,7 @@ const (
 	// Skipped : Operation is skipped because of Rejection ApprovalStatus
 	Skipped RecommendationPhase = "Skipped"
 	// Waiting : Recommendation is waiting for the MaintenanceWindow to execute the operation
+	// or waiting for others Recommendation to complete far maintaining Parallelism
 	Waiting RecommendationPhase = "Waiting"
 	// InProgress : The operation execution is successfully started and yet to be completed
 	InProgress RecommendationPhase = "InProgress"
