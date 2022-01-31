@@ -1,0 +1,14 @@
+{
+  "apiVersion": "ops.kubedb.com/v1alpha1",
+  "kind": "MongoDBOpsRequest",
+  "metadata": {
+    "name": "mongo-restart",
+    "namespace": "demo"
+  },
+  "spec": {
+    "type": "Restart",
+    "databaseRef": {
+      "name": "mg-rs"
+    }
+  }
+}
