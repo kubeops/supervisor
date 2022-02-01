@@ -164,3 +164,17 @@ func (f *Framework) DeleteRecommendation(key client.ObjectKey) error {
 
 	return f.kc.Delete(f.ctx, rcmd)
 }
+
+func (f *Framework) UpdateRecommendationApprovedWindow(key client.ObjectKey, aw *api.ApprovedWindow) error {
+	rcmd := &api.Recommendation{}
+	if err := f.kc.Get(f.ctx, key, rcmd); err != nil {
+		return err
+	}
+
+	_, _, err := kmc.PatchStatus(f.ctx, f.kc, rcmd, func(obj client.Object, createOp bool) client.Object {
+		in := obj.(*api.Recommendation)
+		in.Status.ApprovedWindow = aw
+		return in
+	})
+	return err
+}

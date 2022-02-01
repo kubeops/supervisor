@@ -3,9 +3,9 @@ package e2e_test
 import (
 	"time"
 
-	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 
-	"k8s.io/klog/v2"
+	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -37,6 +37,12 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			By("Creating Default MaintenanceWindow")
 			Expect(f.CreateDefaultMaintenanceWindow()).Should(Succeed())
 		}
+		createMaintenanceWindow = func(days map[api.DayOfWeek][]api.TimeWindow, dates []api.DateWindow) *api.MaintenanceWindow {
+			By("Creating MaintenanceWindow")
+			mw, err := f.CreateMaintenanceWindow(days, dates)
+			Expect(err).NotTo(HaveOccurred())
+			return mw
+		}
 		createDefaultClusterMaintenanceWindow = func() {
 			By("Creating Default Cluster MaintenanceWindow")
 			Expect(f.CreateDefaultClusterMaintenanceWindow()).Should(Succeed())
@@ -50,6 +56,10 @@ var _ = Describe("Supervisor E2E Testing", func() {
 		approveRecommendation = func(key client.ObjectKey) {
 			By("Approving Recommendation")
 			Expect(f.ApproveRecommendation(key)).Should(Succeed())
+		}
+		updateRecommendationApprovedWindow = func(key client.ObjectKey, aw *api.ApprovedWindow) {
+			By("Updating Recommendation " + key.String() + "with given ApprovedWindow")
+			Expect(f.UpdateRecommendationApprovedWindow(key, aw)).Should(Succeed())
 		}
 		waitingForRecommendationExecution = func(key client.ObjectKey) {
 			By("Waiting for Recommendation execution")
@@ -70,6 +80,10 @@ var _ = Describe("Supervisor E2E Testing", func() {
 		cleanupMongoDB = func(key client.ObjectKey) {
 			By("Deleting MongoDB" + key.String())
 			Expect(f.DeleteMongoDB(key)).Should(Succeed())
+		}
+		cleanupMaintenanceWindow = func(key client.ObjectKey) {
+			By("Deleting MaintenanceWindow " + key.String())
+			Expect(f.DeleteMaintenanceWindow(key)).Should(Succeed())
 		}
 	)
 
@@ -95,13 +109,32 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
 				createDefaultClusterMaintenanceWindow()
-				rcmdCls := createRecommendation(mgKey)
-				key := client.ObjectKey{Name: rcmdCls.Name, Namespace: rcmdCls.Namespace}
-				klog.Info(key.String())
+				rcmd := createRecommendation(mgKey)
+				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
 				approveRecommendation(key)
 				waitingForRecommendationExecution(key)
 				cleanupRecommendation(key)
 				cleanupDefaultClusterMaintenanceWindow()
+				cleanupMongoDB(mgKey)
+			})
+			It("Should execute the operation successfully with given maintenance window", func() {
+				mg := createNewStandaloneMongoDB()
+				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				days := f.GetAllDayOfWeekTimeWindow()
+				mw := createMaintenanceWindow(days, nil)
+				rcmd := createRecommendation(mgKey)
+				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				aw := &api.ApprovedWindow{
+					MaintenanceWindow: &kmapi.TypedObjectReference{
+						Name:      mw.Name,
+						Namespace: mw.Namespace,
+					},
+				}
+				updateRecommendationApprovedWindow(key, aw)
+				approveRecommendation(key)
+				waitingForRecommendationExecution(key)
+				cleanupRecommendation(key)
+				cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
 				cleanupMongoDB(mgKey)
 			})
 		})
