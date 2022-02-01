@@ -146,6 +146,15 @@ func (f *Framework) GetAllDayOfWeekTimeWindow() map[api.DayOfWeek][]api.TimeWind
 	}
 }
 
+func (f *Framework) GetCurrentDateWindow() []api.DateWindow {
+	return []api.DateWindow{
+		{
+			Start: metav1.Time{Time: f.clock.Now().Add(time.Minute * 5)},
+			End:   metav1.Time{Time: f.clock.Now().Add(time.Hour)},
+		},
+	}
+}
+
 func (f *Framework) DeleteMaintenanceWindow(key client.ObjectKey) error {
 	mw := &api.MaintenanceWindow{
 		ObjectMeta: metav1.ObjectMeta{

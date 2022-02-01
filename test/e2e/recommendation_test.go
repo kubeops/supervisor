@@ -105,6 +105,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				cleanupDefaultMaintenanceWindow()
 				cleanupMongoDB(mgKey)
 			})
+
 			It("Should execute the operation successfully with default cluster maintenance window", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
@@ -117,6 +118,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				cleanupDefaultClusterMaintenanceWindow()
 				cleanupMongoDB(mgKey)
 			})
+
 			It("Should execute the operation successfully with given maintenance window", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
@@ -135,6 +137,55 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				waitingForRecommendationExecution(key)
 				cleanupRecommendation(key)
 				cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
+				cleanupMongoDB(mgKey)
+			})
+
+			It("Should execute the operation successfully with ApproveWindow type Immediate", func() {
+				mg := createNewStandaloneMongoDB()
+				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				rcmd := createRecommendation(mgKey)
+				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				aw := &api.ApprovedWindow{
+					Window: api.Immediately,
+				}
+				updateRecommendationApprovedWindow(key, aw)
+				approveRecommendation(key)
+				waitingForRecommendationExecution(key)
+				cleanupRecommendation(key)
+				cleanupMongoDB(mgKey)
+			})
+
+			It("Should execute the operation successfully with ApproveWindow type NextAvailable", func() {
+				mg := createNewStandaloneMongoDB()
+				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				rcmd := createRecommendation(mgKey)
+				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				aw := &api.ApprovedWindow{
+					Window: api.NextAvailable,
+				}
+				updateRecommendationApprovedWindow(key, aw)
+				dates := f.GetCurrentDateWindow()
+				mw := createMaintenanceWindow(nil, dates)
+				approveRecommendation(key)
+				waitingForRecommendationExecution(key)
+				cleanupRecommendation(key)
+				cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
+				cleanupMongoDB(mgKey)
+			})
+
+			It("Should execute the operation successfully with ApproveWindow type SpecificDates", func() {
+				mg := createNewStandaloneMongoDB()
+				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				rcmd := createRecommendation(mgKey)
+				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				aw := &api.ApprovedWindow{
+					Window: api.SpecificDates,
+					Dates:  f.GetCurrentDateWindow(),
+				}
+				updateRecommendationApprovedWindow(key, aw)
+				approveRecommendation(key)
+				waitingForRecommendationExecution(key)
+				cleanupRecommendation(key)
 				cleanupMongoDB(mgKey)
 			})
 		})
