@@ -103,9 +103,6 @@ type RecommendationStatus struct {
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
 }
 
-type OperationExecutionStatus struct {
-}
-
 // +kubebuilder:validation:Enum=Pending;Skipped;Waiting;InProgress;Succeeded;Failed
 type RecommendationPhase string
 
