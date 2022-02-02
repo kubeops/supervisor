@@ -1,6 +1,10 @@
 package e2e_test
 
 import (
+	"errors"
+	"fmt"
+	"time"
+
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,6 +71,15 @@ var _ = Describe("Supervisor E2E Testing", func() {
 		waitingForRecommendationExecution = func(key client.ObjectKey) {
 			By("Waiting for Recommendation execution")
 			Expect(f.WaitForRecommendationToBeSucceeded(key)).Should(Succeed())
+		}
+		ensureQueuePerNamespaceParallelism = func(stopCh chan bool, errCh chan bool) {
+			By("Ensuring Parallelism")
+			go func() {
+				err := f.EnsureQueuePerNamespaceParallelism(stopCh)
+				if err != nil {
+					errCh <- true
+				}
+			}()
 		}
 		cleanupRecommendation = func(key client.ObjectKey) {
 			By("Deleting Recommendation")
@@ -216,7 +229,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				waitingForRecommendationExecution(key)
 			})
 
-			It("Should execute the operation successfully with ApprovalPolicy and without manual Approval", func() {
+			It("Should execute the operation successfully with auto approval by ApprovalPolicy", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
 				defer cleanupMongoDB(mgKey)
@@ -250,6 +263,55 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				defer cleanupRecommendation(key)
 
 				waitingForRecommendationExecution(key)
+			})
+
+			FIt("Should execute two operations successfully maintaining default QueuePerNamespace Parallelism", func() {
+				mg1 := createNewStandaloneMongoDB()
+				mg1Key := client.ObjectKey{Name: mg1.Name, Namespace: mg1.Namespace}
+				defer cleanupMongoDB(mg1Key)
+
+				mg2 := createNewStandaloneMongoDB()
+				mg2Key := client.ObjectKey{Name: mg2.Name, Namespace: mg2.Namespace}
+				defer cleanupMongoDB(mg2Key)
+
+				rcmd1 := createRecommendation(mg1Key)
+				rcmd1Key := client.ObjectKey{Name: rcmd1.Name, Namespace: rcmd1.Namespace}
+				defer cleanupRecommendation(rcmd1Key)
+
+				rcmd2 := createRecommendation(mg2Key)
+				rcmd2Key := client.ObjectKey{Name: rcmd2.Name, Namespace: rcmd2.Namespace}
+				defer cleanupRecommendation(rcmd2Key)
+
+				aw := &api.ApprovedWindow{
+					Window: api.Immediately,
+				}
+				updateRecommendationApprovedWindow(rcmd1Key, aw)
+				updateRecommendationApprovedWindow(rcmd2Key, aw)
+
+				approveRecommendation(rcmd1Key)
+				time.Sleep(time.Second * 5)
+				approveRecommendation(rcmd2Key)
+
+				stopCh := make(chan bool)
+				errCh := make(chan bool, 2)
+				ensureQueuePerNamespaceParallelism(stopCh, errCh)
+
+				waitingForRecommendationExecution(rcmd1Key)
+				waitingForRecommendationExecution(rcmd2Key)
+
+				if len(errCh) == 0 {
+					stopCh <- true
+				}
+
+				errFunc := func() error {
+					fmt.Println(len(errCh))
+					if len(errCh) > 0 {
+						return errors.New("parallelism is not maintained")
+					}
+					return nil
+				}
+				err := errFunc()
+				Expect(err).ShouldNot(HaveOccurred())
 			})
 		})
 	})
