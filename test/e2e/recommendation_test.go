@@ -1,7 +1,9 @@
 package e2e_test
 
 import (
-	"time"
+	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	kmapi "kmodules.xyz/client-go/api/v1"
 
@@ -14,11 +16,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"kubeops.dev/supervisor/test/e2e/framework"
-)
-
-const (
-	timeout  = 5 * time.Minute
-	interval = 250 * time.Millisecond
 )
 
 var _ = Describe("Supervisor E2E Testing", func() {
@@ -53,6 +50,12 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			Expect(err).NotTo(HaveOccurred())
 			return rcmd
 		}
+		createApprovalPolicy = func(target []api.TargetRef, mwRef client.ObjectKey) *api.ApprovalPolicy {
+			By("Creating an ApprovalPolicy")
+			ap, err := f.CreateNewApprovalPolicy(target, mwRef)
+			Expect(err).NotTo(HaveOccurred())
+			return ap
+		}
 		approveRecommendation = func(key client.ObjectKey) {
 			By("Approving Recommendation")
 			Expect(f.ApproveRecommendation(key)).Should(Succeed())
@@ -85,6 +88,10 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			By("Deleting MaintenanceWindow " + key.String())
 			Expect(f.DeleteMaintenanceWindow(key)).Should(Succeed())
 		}
+		cleanupApprovalPolicy = func(key client.ObjectKey) {
+			By("Deleting Approval Policy " + key.String())
+			Expect(f.DeleteApprovalPolicy(key)).Should(Succeed())
+		}
 	)
 
 	BeforeEach(func() {
@@ -96,36 +103,48 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			It("Should execute the operation successfully with default maintenance window", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				defer cleanupMongoDB(mgKey)
+
 				createDefaultMaintenanceWindow()
+				defer cleanupDefaultMaintenanceWindow()
+
 				rcmd := createRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				defer cleanupRecommendation(key)
+
 				approveRecommendation(key)
 				waitingForRecommendationExecution(key)
-				cleanupRecommendation(key)
-				cleanupDefaultMaintenanceWindow()
-				cleanupMongoDB(mgKey)
 			})
 
 			It("Should execute the operation successfully with default cluster maintenance window", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				defer cleanupMongoDB(mgKey)
+
 				createDefaultClusterMaintenanceWindow()
+				defer cleanupDefaultClusterMaintenanceWindow()
+
 				rcmd := createRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				defer cleanupRecommendation(key)
+
 				approveRecommendation(key)
 				waitingForRecommendationExecution(key)
-				cleanupRecommendation(key)
-				cleanupDefaultClusterMaintenanceWindow()
-				cleanupMongoDB(mgKey)
 			})
 
 			It("Should execute the operation successfully with given maintenance window", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				defer cleanupMongoDB(mgKey)
+
 				days := f.GetAllDayOfWeekTimeWindow()
 				mw := createMaintenanceWindow(days, nil)
+				defer cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
+
 				rcmd := createRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				defer cleanupRecommendation(key)
+
 				aw := &api.ApprovedWindow{
 					MaintenanceWindow: &kmapi.TypedObjectReference{
 						Name:      mw.Name,
@@ -133,60 +152,104 @@ var _ = Describe("Supervisor E2E Testing", func() {
 					},
 				}
 				updateRecommendationApprovedWindow(key, aw)
+
 				approveRecommendation(key)
 				waitingForRecommendationExecution(key)
-				cleanupRecommendation(key)
-				cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
-				cleanupMongoDB(mgKey)
 			})
 
 			It("Should execute the operation successfully with ApproveWindow type Immediate", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				defer cleanupMongoDB(mgKey)
+
 				rcmd := createRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				defer cleanupRecommendation(key)
+
 				aw := &api.ApprovedWindow{
 					Window: api.Immediately,
 				}
 				updateRecommendationApprovedWindow(key, aw)
+
 				approveRecommendation(key)
 				waitingForRecommendationExecution(key)
-				cleanupRecommendation(key)
-				cleanupMongoDB(mgKey)
 			})
 
 			It("Should execute the operation successfully with ApproveWindow type NextAvailable", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				defer cleanupMongoDB(mgKey)
+
 				rcmd := createRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				defer cleanupRecommendation(key)
+
 				aw := &api.ApprovedWindow{
 					Window: api.NextAvailable,
 				}
 				updateRecommendationApprovedWindow(key, aw)
+
 				dates := f.GetCurrentDateWindow()
 				mw := createMaintenanceWindow(nil, dates)
+				defer cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
+
 				approveRecommendation(key)
 				waitingForRecommendationExecution(key)
-				cleanupRecommendation(key)
-				cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
-				cleanupMongoDB(mgKey)
 			})
 
 			It("Should execute the operation successfully with ApproveWindow type SpecificDates", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				defer cleanupMongoDB(mgKey)
+
 				rcmd := createRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				defer cleanupRecommendation(key)
+
 				aw := &api.ApprovedWindow{
 					Window: api.SpecificDates,
 					Dates:  f.GetCurrentDateWindow(),
 				}
 				updateRecommendationApprovedWindow(key, aw)
+
 				approveRecommendation(key)
 				waitingForRecommendationExecution(key)
-				cleanupRecommendation(key)
-				cleanupMongoDB(mgKey)
+			})
+
+			It("Should execute the operation successfully with ApprovalPolicy and without manual Approval", func() {
+				mg := createNewStandaloneMongoDB()
+				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
+				defer cleanupMongoDB(mgKey)
+
+				dates := f.GetCurrentDateWindow()
+				mw := createMaintenanceWindow(nil, dates)
+				defer cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
+
+				target := []api.TargetRef{
+					{
+						GroupKind: metav1.GroupKind{
+							Group: kubedbapi.SchemeGroupVersion.Group,
+							Kind:  kubedbapi.ResourceKindMongoDB,
+						},
+						Operations: []api.Operation{
+							{
+								GroupKind: metav1.GroupKind{
+									Group: opsapi.SchemeGroupVersion.Group,
+									Kind:  opsapi.ResourceKindMongoDBOpsRequest,
+								},
+								Type: opsapi.Restart,
+							},
+						},
+					},
+				}
+				ap := createApprovalPolicy(target, client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
+				defer cleanupApprovalPolicy(client.ObjectKey{Name: ap.Name, Namespace: ap.Namespace})
+
+				rcmd := createRecommendation(mgKey)
+				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+				defer cleanupRecommendation(key)
+
+				waitingForRecommendationExecution(key)
 			})
 		})
 	})
