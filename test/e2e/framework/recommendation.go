@@ -53,7 +53,25 @@ func (f *Framework) getMongoDBRestartOpsRequest(dbKey client.ObjectKey) *opsapi.
 	}
 }
 
-func (f *Framework) newRecommendation(dbKey client.ObjectKey, deadline *metav1.Time) (*api.Recommendation, error) {
+func (f *Framework) getPostgresRestartOpsRequest(dbKey client.ObjectKey) *opsapi.PostgresOpsRequest {
+	return &opsapi.PostgresOpsRequest{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       opsapi.ResourceKindPostgresOpsRequest,
+			APIVersion: opsapi.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: dbKey.Namespace,
+		},
+		Spec: opsapi.PostgresOpsRequestSpec{
+			DatabaseRef: core.LocalObjectReference{
+				Name: dbKey.Name,
+			},
+			Type: opsapi.Restart,
+		},
+	}
+}
+
+func (f *Framework) newMongoDBRecommendation(dbKey client.ObjectKey, deadline *metav1.Time) (*api.Recommendation, error) {
 	opsData := f.getMongoDBRestartOpsRequest(dbKey)
 	byteData, err := json.Marshal(opsData)
 	if err != nil {
@@ -82,16 +100,41 @@ func (f *Framework) newRecommendation(dbKey client.ObjectKey, deadline *metav1.T
 	}, nil
 }
 
-func (f *Framework) createNewRecommendation(dbKey client.ObjectKey, deadline *metav1.Time) (*api.Recommendation, error) {
-	rcmd, err := f.newRecommendation(dbKey, deadline)
+func (f *Framework) newPostgresRecommendation(dbKey client.ObjectKey, deadline *metav1.Time) (*api.Recommendation, error) {
+	opsData := f.getPostgresRestartOpsRequest(dbKey)
+	byteData, err := json.Marshal(opsData)
 	if err != nil {
 		return nil, err
 	}
+	return &api.Recommendation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix("supervisor"),
+			Namespace: f.getRecommendationNamespace(),
+		},
+		Spec: api.RecommendationSpec{
+			Description: "MongoDB Database Restart",
+			Target: core.TypedLocalObjectReference{
+				APIGroup: pointer.StringP("kubedb.com/v1alpha2"),
+				Kind:     kubedbapi.ResourceKindPostgres,
+				Name:     dbKey.Name,
+			},
+			Operation: runtime.RawExtension{
+				Raw: byteData,
+			},
+			Recommender: kmapi.ObjectReference{
+				Name: "kubedb-ops-manager",
+			},
+			Deadline: deadline,
+		},
+	}, nil
+}
+
+func (f *Framework) createRecommendation(rcmd *api.Recommendation) (*api.Recommendation, error) {
 	if err := f.kc.Create(f.ctx, rcmd); err != nil {
 		return nil, err
 	}
 
-	err = wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+	err := wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
 		obj := &api.Recommendation{}
 		key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
 		if err := f.kc.Get(f.ctx, key, obj); err != nil {
@@ -106,12 +149,34 @@ func (f *Framework) createNewRecommendation(dbKey client.ObjectKey, deadline *me
 	return rcmd, nil
 }
 
-func (f *Framework) CreateNewRecommendation(dbKey client.ObjectKey) (*api.Recommendation, error) {
-	return f.createNewRecommendation(dbKey, nil)
+func (f *Framework) createNewPostgresRecommendation(dbKey client.ObjectKey, deadline *metav1.Time) (*api.Recommendation, error) {
+	rcmd, err := f.newPostgresRecommendation(dbKey, deadline)
+	if err != nil {
+		return nil, err
+	}
+
+	return f.createRecommendation(rcmd)
+}
+
+func (f *Framework) createNewMongoDBRecommendation(dbKey client.ObjectKey, deadline *metav1.Time) (*api.Recommendation, error) {
+	rcmd, err := f.newMongoDBRecommendation(dbKey, deadline)
+	if err != nil {
+		return nil, err
+	}
+
+	return f.createRecommendation(rcmd)
+}
+
+func (f *Framework) CreateNewMongoDBRecommendation(dbKey client.ObjectKey) (*api.Recommendation, error) {
+	return f.createNewMongoDBRecommendation(dbKey, nil)
+}
+
+func (f *Framework) CreateNewPostgresRecommendation(dbKey client.ObjectKey) (*api.Recommendation, error) {
+	return f.createNewPostgresRecommendation(dbKey, nil)
 }
 
 func (f *Framework) CreateNewRecommendationWithDeadline(dbKey client.ObjectKey, deadline *metav1.Time) (*api.Recommendation, error) {
-	return f.createNewRecommendation(dbKey, deadline)
+	return f.createNewMongoDBRecommendation(dbKey, deadline)
 }
 
 func (f *Framework) getRecommendationNamespace() string {
@@ -199,4 +264,18 @@ func (f *Framework) CheckRecommendationExecution(key client.ObjectKey, timeout t
 		}
 		return false, nil
 	})
+}
+
+func (f *Framework) UpdateRecommendationParallelism(key client.ObjectKey, par api.Parallelism) error {
+	rcmd := &api.Recommendation{}
+	if err := f.kc.Get(f.ctx, key, rcmd); err != nil {
+		return err
+	}
+
+	_, _, err := kmc.PatchStatus(f.ctx, f.kc, rcmd, func(obj client.Object, createOp bool) client.Object {
+		in := obj.(*api.Recommendation)
+		in.Status.Parallelism = par
+		return in
+	})
+	return err
 }

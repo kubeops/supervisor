@@ -79,7 +79,7 @@ var _ = BeforeSuite(func() {
 	clientConfig.Burst = 100
 	clientConfig.QPS = 100
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgr, err := ctrl.NewManager(clientConfig, ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     "0",
 		Port:                   0,
