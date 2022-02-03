@@ -41,6 +41,29 @@ func (f *Framework) newMongoDBStandaloneDatabase() *kubedbapi.MongoDB {
 	}
 }
 
+func (f *Framework) newPostgresStandaloneDatabase() *kubedbapi.Postgres {
+	return &kubedbapi.Postgres{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix("supervisor"),
+			Namespace: f.getDatabaseNamespace(),
+		},
+		Spec: kubedbapi.PostgresSpec{
+			Version:     "13.2",
+			StorageType: kubedbapi.StorageTypeDurable,
+			Storage: &core.PersistentVolumeClaimSpec{
+				AccessModes: []core.PersistentVolumeAccessMode{core.ReadWriteOnce},
+				Resources: core.ResourceRequirements{
+					Requests: core.ResourceList{
+						core.ResourceStorage: resource.MustParse("1Gi"),
+					},
+				},
+				StorageClassName: pointer.StringP("standard"),
+			},
+			TerminationPolicy: "WipeOut",
+		},
+	}
+}
+
 func (f *Framework) CreateNewStandaloneMongoDB() (*kubedbapi.MongoDB, error) {
 	mongoDB := f.newMongoDBStandaloneDatabase()
 	if err := f.kc.Create(f.ctx, mongoDB); err != nil {
@@ -65,8 +88,43 @@ func (f *Framework) CreateNewStandaloneMongoDB() (*kubedbapi.MongoDB, error) {
 	return mongoDB, nil
 }
 
+func (f *Framework) CreateNewStandalonePostgres() (*kubedbapi.Postgres, error) {
+	pg := f.newPostgresStandaloneDatabase()
+	if err := f.kc.Create(f.ctx, pg); err != nil {
+		return nil, err
+	}
+
+	err := wait.PollImmediate(time.Second, time.Minute*10, func() (bool, error) {
+		mg := &kubedbapi.Postgres{}
+		key := client.ObjectKey{Namespace: pg.Namespace, Name: pg.Name}
+		if err := f.kc.Get(f.ctx, key, mg); err != nil {
+			return false, client.IgnoreNotFound(err)
+		}
+
+		if mg.Status.Phase == kubedbapi.DatabaseReady {
+			return true, nil
+		}
+		return false, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pg, nil
+}
+
 func (f *Framework) DeleteMongoDB(key client.ObjectKey) error {
 	mg := &kubedbapi.MongoDB{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+	}
+
+	return f.kc.Delete(f.ctx, mg)
+}
+
+func (f *Framework) DeletePostgres(key client.ObjectKey) error {
+	mg := &kubedbapi.Postgres{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key.Name,
 			Namespace: key.Namespace,

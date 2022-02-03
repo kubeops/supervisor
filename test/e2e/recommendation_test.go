@@ -33,6 +33,12 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			Expect(err).NotTo(HaveOccurred())
 			return mg
 		}
+		createNewStandalonePostgres = func() *kubedbapi.Postgres {
+			By("Creating Standalone Postgres")
+			pg, err := f.CreateNewStandalonePostgres()
+			Expect(err).NotTo(HaveOccurred())
+			return pg
+		}
 		createDefaultMaintenanceWindow = func() {
 			By("Creating Default MaintenanceWindow")
 			Expect(f.CreateDefaultMaintenanceWindow()).Should(Succeed())
@@ -47,9 +53,15 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			By("Creating Default Cluster MaintenanceWindow")
 			Expect(f.CreateDefaultClusterMaintenanceWindow(days, dates)).Should(Succeed())
 		}
-		createRecommendation = func(dbKey client.ObjectKey) *api.Recommendation {
+		createMongoDBRecommendation = func(dbKey client.ObjectKey) *api.Recommendation {
 			By("Creating a Recommendation for MongoDB restart OpsRequest")
-			rcmd, err := f.CreateNewRecommendation(dbKey)
+			rcmd, err := f.CreateNewMongoDBRecommendation(dbKey)
+			Expect(err).NotTo(HaveOccurred())
+			return rcmd
+		}
+		createPostgresRecommendation = func(dbKey client.ObjectKey) *api.Recommendation {
+			By("Creating a Recommendation for Postgres restart OpsRequest")
+			rcmd, err := f.CreateNewPostgresRecommendation(dbKey)
 			Expect(err).NotTo(HaveOccurred())
 			return rcmd
 		}
@@ -83,13 +95,26 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			Expect(f.CheckRecommendationExecution(key, timeout, interval)).Should(Succeed())
 		}
 		ensureQueuePerNamespaceParallelism = func(stopCh chan bool, errCh chan bool) {
-			By("Ensuring Parallelism")
+			By("Ensuring QueuePerNamespace Parallelism")
 			go func() {
 				err := f.EnsureQueuePerNamespaceParallelism(stopCh)
 				if err != nil {
 					errCh <- true
 				}
 			}()
+		}
+		ensureQueuePerTargetParallelism = func(stopCh chan bool, errCh chan bool, target metav1.GroupKind) {
+			By("Ensuring QueuePerTarget Parallelism")
+			go func() {
+				err := f.EnsureQueuePerTargetParallelism(stopCh, target)
+				if err != nil {
+					errCh <- true
+				}
+			}()
+		}
+		updateRecommendationParallelism = func(key client.ObjectKey, par api.Parallelism) {
+			By("Updating Recommendation Parallelism to " + string(par))
+			Expect(f.UpdateRecommendationParallelism(key, par)).Should(Succeed())
 		}
 		cleanupRecommendation = func(key client.ObjectKey) {
 			By("Deleting Recommendation")
@@ -104,6 +129,10 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			Expect(f.DeleteDefaultClusterMaintenanceWindow()).Should(Succeed())
 		}
 		cleanupMongoDB = func(key client.ObjectKey) {
+			By("Deleting MongoDB" + key.String())
+			Expect(f.DeleteMongoDB(key)).Should(Succeed())
+		}
+		cleanupPostgres = func(key client.ObjectKey) {
 			By("Deleting MongoDB" + key.String())
 			Expect(f.DeleteMongoDB(key)).Should(Succeed())
 		}
@@ -131,7 +160,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				createDefaultMaintenanceWindow()
 				defer cleanupDefaultMaintenanceWindow()
 
-				rcmd := createRecommendation(mgKey)
+				rcmd := createMongoDBRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
 				defer cleanupRecommendation(key)
 
@@ -139,7 +168,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				waitingForRecommendationToBeSucceeded(key)
 			})
 
-			FIt("Should execute the operation successfully with default cluster maintenance window", func() {
+			It("Should execute the operation successfully with default cluster maintenance window", func() {
 				mg := createNewStandaloneMongoDB()
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
 				defer cleanupMongoDB(mgKey)
@@ -148,7 +177,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				createDefaultClusterMaintenanceWindow(days, nil)
 				defer cleanupDefaultClusterMaintenanceWindow()
 
-				rcmd := createRecommendation(mgKey)
+				rcmd := createMongoDBRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
 				defer cleanupRecommendation(key)
 
@@ -165,7 +194,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				mw := createMaintenanceWindow(days, nil)
 				defer cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
 
-				rcmd := createRecommendation(mgKey)
+				rcmd := createMongoDBRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
 				defer cleanupRecommendation(key)
 
@@ -186,7 +215,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
 				defer cleanupMongoDB(mgKey)
 
-				rcmd := createRecommendation(mgKey)
+				rcmd := createMongoDBRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
 				defer cleanupRecommendation(key)
 
@@ -204,7 +233,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
 				defer cleanupMongoDB(mgKey)
 
-				rcmd := createRecommendation(mgKey)
+				rcmd := createMongoDBRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
 				defer cleanupRecommendation(key)
 
@@ -226,7 +255,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				mgKey := client.ObjectKey{Name: mg.Name, Namespace: mg.Namespace}
 				defer cleanupMongoDB(mgKey)
 
-				rcmd := createRecommendation(mgKey)
+				rcmd := createMongoDBRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
 				defer cleanupRecommendation(key)
 
@@ -269,7 +298,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				ap := createApprovalPolicy(target, client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
 				defer cleanupApprovalPolicy(client.ObjectKey{Name: ap.Name, Namespace: ap.Namespace})
 
-				rcmd := createRecommendation(mgKey)
+				rcmd := createMongoDBRecommendation(mgKey)
 				key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
 				defer cleanupRecommendation(key)
 
@@ -285,22 +314,28 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				mg2Key := client.ObjectKey{Name: mg2.Name, Namespace: mg2.Namespace}
 				defer cleanupMongoDB(mg2Key)
 
-				rcmd1 := createRecommendation(mg1Key)
+				rcmd1 := createMongoDBRecommendation(mg1Key)
 				rcmd1Key := client.ObjectKey{Name: rcmd1.Name, Namespace: rcmd1.Namespace}
 				defer cleanupRecommendation(rcmd1Key)
 
-				rcmd2 := createRecommendation(mg2Key)
+				rcmd2 := createMongoDBRecommendation(mg2Key)
 				rcmd2Key := client.ObjectKey{Name: rcmd2.Name, Namespace: rcmd2.Namespace}
 				defer cleanupRecommendation(rcmd2Key)
 
+				dates := f.GetDateWindowsAfter(time.Minute, time.Hour)
+				mw := createMaintenanceWindow(nil, dates)
+				defer cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
+
 				aw := &api.ApprovedWindow{
-					Window: api.Immediately,
+					MaintenanceWindow: &kmapi.TypedObjectReference{
+						Name:      mw.Name,
+						Namespace: mw.Namespace,
+					},
 				}
 				updateRecommendationApprovedWindow(rcmd1Key, aw)
 				updateRecommendationApprovedWindow(rcmd2Key, aw)
 
 				approveRecommendation(rcmd1Key)
-				time.Sleep(time.Second * 5)
 				approveRecommendation(rcmd2Key)
 
 				stopCh := make(chan bool)
@@ -316,7 +351,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 
 				errFunc := func() error {
 					if len(errCh) > 0 {
-						return errors.New("parallelism is not maintained")
+						return errors.New("QueuePerNamespace parallelism is not maintained")
 					}
 					return nil
 				}
@@ -363,6 +398,64 @@ var _ = Describe("Supervisor E2E Testing", func() {
 
 				waitingForRecommendationToBeSucceeded(rcmd1Key)
 				waitingForRecommendationToBeSucceeded(rcmd2Key)
+			})
+
+			FIt("Should execute two operations successfully maintaining QueuePerTarget Parallelism", func() {
+				pg1 := createNewStandalonePostgres()
+				pg1Key := client.ObjectKey{Name: pg1.Name, Namespace: pg1.Namespace}
+				defer cleanupPostgres(pg1Key)
+
+				pg2 := createNewStandalonePostgres()
+				pg2Key := client.ObjectKey{Name: pg2.Name, Namespace: pg2.Namespace}
+				defer cleanupPostgres(pg2Key)
+
+				rcmd1 := createPostgresRecommendation(pg1Key)
+				rcmd1Key := client.ObjectKey{Name: rcmd1.Name, Namespace: rcmd1.Namespace}
+				defer cleanupRecommendation(rcmd1Key)
+
+				rcmd2 := createPostgresRecommendation(pg2Key)
+				rcmd2Key := client.ObjectKey{Name: rcmd2.Name, Namespace: rcmd2.Namespace}
+				defer cleanupRecommendation(rcmd2Key)
+
+				dates := f.GetDateWindowsAfter(time.Minute, time.Hour)
+				mw := createMaintenanceWindow(nil, dates)
+				defer cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
+
+				aw := &api.ApprovedWindow{
+					MaintenanceWindow: &kmapi.TypedObjectReference{
+						Name:      mw.Name,
+						Namespace: mw.Namespace,
+					},
+				}
+				updateRecommendationApprovedWindow(rcmd1Key, aw)
+				updateRecommendationApprovedWindow(rcmd2Key, aw)
+
+				updateRecommendationParallelism(rcmd1Key, api.QueuePerTarget)
+				updateRecommendationParallelism(rcmd2Key, api.QueuePerTarget)
+
+				approveRecommendation(rcmd1Key)
+				approveRecommendation(rcmd2Key)
+
+				stopCh := make(chan bool)
+				errCh := make(chan bool, 2)
+				target := metav1.GroupKind{Group: kubedbapi.SchemeGroupVersion.Group, Kind: kubedbapi.ResourceKindPostgres}
+				ensureQueuePerTargetParallelism(stopCh, errCh, target)
+
+				waitingForRecommendationToBeSucceeded(rcmd1Key)
+				waitingForRecommendationToBeSucceeded(rcmd2Key)
+
+				if len(errCh) == 0 {
+					stopCh <- true
+				}
+
+				errFunc := func() error {
+					if len(errCh) > 0 {
+						return errors.New("QueuePerTarget parallelism is not maintained")
+					}
+					return nil
+				}
+				err := errFunc()
+				Expect(err).ShouldNot(HaveOccurred())
 			})
 		})
 	})
