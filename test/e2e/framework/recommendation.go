@@ -53,7 +53,7 @@ func (f *Framework) getMongoDBRestartOpsRequest(dbKey client.ObjectKey) *opsapi.
 	}
 }
 
-func (f *Framework) newRecommendation(dbKey client.ObjectKey) (*api.Recommendation, error) {
+func (f *Framework) newRecommendation(dbKey client.ObjectKey, deadline *metav1.Time) (*api.Recommendation, error) {
 	opsData := f.getMongoDBRestartOpsRequest(dbKey)
 	byteData, err := json.Marshal(opsData)
 	if err != nil {
@@ -77,12 +77,13 @@ func (f *Framework) newRecommendation(dbKey client.ObjectKey) (*api.Recommendati
 			Recommender: kmapi.ObjectReference{
 				Name: "kubedb-ops-manager",
 			},
+			Deadline: deadline,
 		},
 	}, nil
 }
 
-func (f *Framework) CreateNewRecommendation(dbKey client.ObjectKey) (*api.Recommendation, error) {
-	rcmd, err := f.newRecommendation(dbKey)
+func (f *Framework) createNewRecommendation(dbKey client.ObjectKey, deadline *metav1.Time) (*api.Recommendation, error) {
+	rcmd, err := f.newRecommendation(dbKey, deadline)
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +104,14 @@ func (f *Framework) CreateNewRecommendation(dbKey client.ObjectKey) (*api.Recomm
 		return nil, err
 	}
 	return rcmd, nil
+}
+
+func (f *Framework) CreateNewRecommendation(dbKey client.ObjectKey) (*api.Recommendation, error) {
+	return f.createNewRecommendation(dbKey, nil)
+}
+
+func (f *Framework) CreateNewRecommendationWithDeadline(dbKey client.ObjectKey, deadline *metav1.Time) (*api.Recommendation, error) {
+	return f.createNewRecommendation(dbKey, deadline)
 }
 
 func (f *Framework) getRecommendationNamespace() string {
@@ -177,4 +186,17 @@ func (f *Framework) UpdateRecommendationApprovedWindow(key client.ObjectKey, aw 
 		return in
 	})
 	return err
+}
+
+func (f *Framework) CheckRecommendationExecution(key client.ObjectKey, timeout time.Duration, interval time.Duration) error {
+	return wait.PollImmediate(interval, timeout, func() (bool, error) {
+		rcmd := &api.Recommendation{}
+		if err := f.kc.Get(f.ctx, key, rcmd); err != nil {
+			return false, err
+		}
+		if rcmd.Status.Phase == api.InProgress || rcmd.Status.Phase == api.Succeeded {
+			return true, nil
+		}
+		return false, nil
+	})
 }

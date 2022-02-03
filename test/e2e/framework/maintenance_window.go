@@ -155,6 +155,15 @@ func (f *Framework) GetCurrentDateWindow() []api.DateWindow {
 	}
 }
 
+func (f *Framework) GetDateWindowsAfter(after time.Duration, duration time.Duration) []api.DateWindow {
+	return []api.DateWindow{
+		{
+			Start: metav1.Time{Time: f.clock.Now().Add(after)},
+			End:   metav1.Time{Time: f.clock.Now().Add(after + duration)},
+		},
+	}
+}
+
 func (f *Framework) DeleteMaintenanceWindow(key client.ObjectKey) error {
 	mw := &api.MaintenanceWindow{
 		ObjectMeta: metav1.ObjectMeta{
