@@ -18,6 +18,8 @@ package supervisor
 
 import (
 	"context"
+	"reflect"
+	"sync"
 	"time"
 
 	core "k8s.io/api/core/v1"
@@ -52,6 +54,7 @@ const (
 type RecommendationReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Mutex  sync.Mutex
 }
 
 //+kubebuilder:rbac:groups=supervisor.appscode.com,resources=recommendations,verbs=get;list;watch;create;update;patch;delete
@@ -108,20 +111,25 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 		maintainParallelism := false
 		deadlineKnocking := false
+		r.Mutex.Lock()
 		if isMaintenanceTime {
 			runner := parallelism.NewParallelRunner(ctx, r.Client, rcmd)
 			maintainParallelism, err = runner.MaintainParallelism()
 			if err != nil {
+				r.unlockMutex()
 				return ctrl.Result{}, err
 			}
 
 			deadlineMgr := deadline_manager.NewManager(rcmd)
 			deadlineKnocking = deadlineMgr.IsDeadlineLessThanADay()
+			if deadlineKnocking {
+				r.unlockMutex()
+			}
 		}
 		if isMaintenanceTime && (maintainParallelism || deadlineKnocking) {
 			return r.executeRecommendation(ctx, rcmd)
 		}
-
+		r.unlockMutex()
 		return ctrl.Result{RequeueAfter: requeueAfterDuration}, nil
 	} else if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalRejected {
 		_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
@@ -180,6 +188,7 @@ func (r *RecommendationReconciler) executeRecommendation(ctx context.Context, rc
 		})
 		return in
 	})
+	r.unlockMutex()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -238,6 +247,7 @@ func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *super
 }
 
 func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, err error, phase supervisorv1alpha1.RecommendationPhase) (ctrl.Result, error) {
+	r.unlockMutex()
 	_, _, pErr := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 		in := obj.(*supervisorv1alpha1.Recommendation)
 		in.Status.Phase = phase
@@ -262,4 +272,16 @@ func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		}).
 		WithOptions(controller.Options{MaxConcurrentReconciles: maxConcurrentReconciles}).
 		Complete(r)
+}
+
+func (r *RecommendationReconciler) isMutexLocked() bool {
+	mutexLocked := int64(1)
+	state := reflect.ValueOf(&r.Mutex).Elem().FieldByName("state")
+	return state.Int()&mutexLocked == mutexLocked
+}
+
+func (r *RecommendationReconciler) unlockMutex() {
+	if r.isMutexLocked() {
+		r.Mutex.Unlock()
+	}
 }
