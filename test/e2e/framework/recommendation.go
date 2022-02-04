@@ -85,7 +85,7 @@ func (f *Framework) newMongoDBRecommendation(dbKey client.ObjectKey, deadline *m
 		Spec: api.RecommendationSpec{
 			Description: "MongoDB Database Restart",
 			Target: core.TypedLocalObjectReference{
-				APIGroup: pointer.StringP("kubedb.com/v1alpha2"),
+				APIGroup: pointer.StringP(kubedbapi.SchemeGroupVersion.String()),
 				Kind:     kubedbapi.ResourceKindMongoDB,
 				Name:     dbKey.Name,
 			},
@@ -112,9 +112,9 @@ func (f *Framework) newPostgresRecommendation(dbKey client.ObjectKey, deadline *
 			Namespace: f.getRecommendationNamespace(),
 		},
 		Spec: api.RecommendationSpec{
-			Description: "MongoDB Database Restart",
+			Description: "Postgres Database Restart",
 			Target: core.TypedLocalObjectReference{
-				APIGroup: pointer.StringP("kubedb.com/v1alpha2"),
+				APIGroup: pointer.StringP(kubedbapi.SchemeGroupVersion.String()),
 				Kind:     kubedbapi.ResourceKindPostgres,
 				Name:     dbKey.Name,
 			},
