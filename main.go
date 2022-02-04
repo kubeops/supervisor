@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"os"
+	"sync"
 
 	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 
@@ -112,6 +113,7 @@ func main() {
 	if err = (&supervisorcontrollers.RecommendationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Mutex:  sync.Mutex{},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Recommendation")
 		os.Exit(1)
