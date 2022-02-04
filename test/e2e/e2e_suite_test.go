@@ -31,7 +31,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"k8s.io/klog/v2"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/test/e2e/framework"
@@ -89,7 +88,7 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-			klog.Errorf("error from manager: %v", err)
+			Expect(err).NotTo(HaveOccurred())
 		}
 	}()
 
