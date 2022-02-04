@@ -23,6 +23,10 @@ resources:
   kind: MaintenanceWindow
   path: kubeops.dev/supervisor/apis/supervisor/v1alpha1
   version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
   controller: true
@@ -31,6 +35,10 @@ resources:
   kind: ClusterMaintenanceWindow
   path: kubeops.dev/supervisor/apis/supervisor/v1alpha1
   version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true

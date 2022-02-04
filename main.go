@@ -26,8 +26,9 @@ import (
 
 	"k8s.io/klog/v2"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
-	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -137,6 +138,14 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ApprovalPolicy")
+		os.Exit(1)
+	}
+	if err = (&supervisorv1alpha1.MaintenanceWindow{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "MaintenanceWindow")
+		os.Exit(1)
+	}
+	if err = (&supervisorv1alpha1.ClusterMaintenanceWindow{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "ClusterMaintenanceWindow")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
