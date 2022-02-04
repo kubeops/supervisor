@@ -34,14 +34,14 @@ func (f *Framework) EnsureQueuePerNamespaceParallelism(stopCh chan bool) error {
 	}
 }
 
-func (f *Framework) EnsureQueuePerTargetParallelism(stopCh chan bool, target metav1.GroupKind) error {
+func (f *Framework) EnsureQueuePerTargetParallelism(stopCh chan bool, target metav1.GroupKind, ns string) error {
 	for {
 		select {
 		case <-stopCh:
 			return nil
 		default:
 			rcmdList := &api.RecommendationList{}
-			if err := f.kc.List(f.ctx, rcmdList); err != nil {
+			if err := f.kc.List(f.ctx, rcmdList, client.InNamespace(ns)); err != nil {
 				return err
 			}
 
@@ -63,7 +63,7 @@ func (f *Framework) EnsureQueuePerTargetParallelism(stopCh chan bool, target met
 				}
 			}
 			if inProgressCnt > 1 {
-				return errors.New("QueuePerTarget is not maintained")
+				return errors.New("parallelism is not maintained")
 			}
 		}
 	}

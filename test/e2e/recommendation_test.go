@@ -103,10 +103,10 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				}
 			}()
 		}
-		ensureQueuePerTargetParallelism = func(stopCh chan bool, errCh chan bool, target metav1.GroupKind) {
+		ensureQueuePerTargetParallelism = func(stopCh chan bool, errCh chan bool, target metav1.GroupKind, ns string) {
 			By("Ensuring QueuePerTarget Parallelism")
 			go func() {
-				err := f.EnsureQueuePerTargetParallelism(stopCh, target)
+				err := f.EnsureQueuePerTargetParallelism(stopCh, target, ns)
 				if err != nil {
 					errCh <- true
 				}
@@ -133,8 +133,8 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			Expect(f.DeleteMongoDB(key)).Should(Succeed())
 		}
 		cleanupPostgres = func(key client.ObjectKey) {
-			By("Deleting MongoDB" + key.String())
-			Expect(f.DeleteMongoDB(key)).Should(Succeed())
+			By("Deleting Postgres " + key.String())
+			Expect(f.DeletePostgres(key)).Should(Succeed())
 		}
 		cleanupMaintenanceWindow = func(key client.ObjectKey) {
 			By("Deleting MaintenanceWindow " + key.String())
@@ -400,7 +400,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				waitingForRecommendationToBeSucceeded(rcmd2Key)
 			})
 
-			FIt("Should execute two operations successfully maintaining QueuePerTarget Parallelism", func() {
+			It("Should execute two operations successfully maintaining QueuePerTarget Parallelism", func() {
 				pg1 := createNewStandalonePostgres()
 				pg1Key := client.ObjectKey{Name: pg1.Name, Namespace: pg1.Namespace}
 				defer cleanupPostgres(pg1Key)
@@ -439,7 +439,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				stopCh := make(chan bool)
 				errCh := make(chan bool, 2)
 				target := metav1.GroupKind{Group: kubedbapi.SchemeGroupVersion.Group, Kind: kubedbapi.ResourceKindPostgres}
-				ensureQueuePerTargetParallelism(stopCh, errCh, target)
+				ensureQueuePerTargetParallelism(stopCh, errCh, target, "")
 
 				waitingForRecommendationToBeSucceeded(rcmd1Key)
 				waitingForRecommendationToBeSucceeded(rcmd2Key)
@@ -451,6 +451,64 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				errFunc := func() error {
 					if len(errCh) > 0 {
 						return errors.New("QueuePerTarget parallelism is not maintained")
+					}
+					return nil
+				}
+				err := errFunc()
+				Expect(err).ShouldNot(HaveOccurred())
+			})
+
+			It("Should execute two operations successfully maintaining QueuePerTargetAndNamespace Parallelism", func() {
+				mg1 := createNewStandaloneMongoDB()
+				mg1Key := client.ObjectKey{Name: mg1.Name, Namespace: mg1.Namespace}
+				defer cleanupMongoDB(mg1Key)
+
+				mg2 := createNewStandaloneMongoDB()
+				mg2Key := client.ObjectKey{Name: mg2.Name, Namespace: mg2.Namespace}
+				defer cleanupMongoDB(mg2Key)
+
+				rcmd1 := createMongoDBRecommendation(mg1Key)
+				rcmd1Key := client.ObjectKey{Name: rcmd1.Name, Namespace: rcmd1.Namespace}
+				defer cleanupRecommendation(rcmd1Key)
+
+				rcmd2 := createMongoDBRecommendation(mg2Key)
+				rcmd2Key := client.ObjectKey{Name: rcmd2.Name, Namespace: rcmd2.Namespace}
+				defer cleanupRecommendation(rcmd2Key)
+
+				dates := f.GetDateWindowsAfter(time.Minute, time.Hour)
+				mw := createMaintenanceWindow(nil, dates)
+				defer cleanupMaintenanceWindow(client.ObjectKey{Name: mw.Name, Namespace: mw.Namespace})
+
+				aw := &api.ApprovedWindow{
+					MaintenanceWindow: &kmapi.TypedObjectReference{
+						Name:      mw.Name,
+						Namespace: mw.Namespace,
+					},
+				}
+				updateRecommendationApprovedWindow(rcmd1Key, aw)
+				updateRecommendationApprovedWindow(rcmd2Key, aw)
+
+				updateRecommendationParallelism(rcmd1Key, api.QueuePerTargetAndNamespace)
+				updateRecommendationParallelism(rcmd2Key, api.QueuePerTargetAndNamespace)
+
+				approveRecommendation(rcmd1Key)
+				approveRecommendation(rcmd2Key)
+
+				stopCh := make(chan bool)
+				errCh := make(chan bool, 2)
+				target := metav1.GroupKind{Group: kubedbapi.SchemeGroupVersion.Group, Kind: kubedbapi.ResourceKindMongoDB}
+				ensureQueuePerTargetParallelism(stopCh, errCh, target, f.Namespace())
+
+				waitingForRecommendationToBeSucceeded(rcmd1Key)
+				waitingForRecommendationToBeSucceeded(rcmd2Key)
+
+				if len(errCh) == 0 {
+					stopCh <- true
+				}
+
+				errFunc := func() error {
+					if len(errCh) > 0 {
+						return errors.New("QueuePerTargetAndNamespace parallelism is not maintained")
 					}
 					return nil
 				}
