@@ -41,7 +41,7 @@ func (f *Framework) newMongoDBStandaloneDatabase() *kubedbapi.MongoDB {
 	}
 }
 
-func (f *Framework) newPostgresStandaloneDatabase() *kubedbapi.Postgres {
+func (f *Framework) newPostgresStandaloneDatabase(customAuthName string) *kubedbapi.Postgres {
 	return &kubedbapi.Postgres{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("supervisor"),
@@ -50,6 +50,7 @@ func (f *Framework) newPostgresStandaloneDatabase() *kubedbapi.Postgres {
 		Spec: kubedbapi.PostgresSpec{
 			Version:     "13.2",
 			StorageType: kubedbapi.StorageTypeDurable,
+			AuthSecret:  &core.LocalObjectReference{Name: customAuthName},
 			Storage: &core.PersistentVolumeClaimSpec{
 				AccessModes: []core.PersistentVolumeAccessMode{core.ReadWriteOnce},
 				Resources: core.ResourceRequirements{
@@ -89,12 +90,16 @@ func (f *Framework) CreateNewStandaloneMongoDB() (*kubedbapi.MongoDB, error) {
 }
 
 func (f *Framework) CreateNewStandalonePostgres() (*kubedbapi.Postgres, error) {
-	pg := f.newPostgresStandaloneDatabase()
+	pgAuth, err := f.createPostgresCustomAuthSecret()
+	if err != nil {
+		return nil, err
+	}
+	pg := f.newPostgresStandaloneDatabase(pgAuth.Name)
 	if err := f.kc.Create(f.ctx, pg); err != nil {
 		return nil, err
 	}
 
-	err := wait.PollImmediate(time.Second, time.Minute*10, func() (bool, error) {
+	err = wait.PollImmediate(time.Second, time.Minute*10, func() (bool, error) {
 		mg := &kubedbapi.Postgres{}
 		key := client.ObjectKey{Namespace: pg.Namespace, Name: pg.Name}
 		if err := f.kc.Get(f.ctx, key, mg); err != nil {
@@ -132,4 +137,41 @@ func (f *Framework) DeletePostgres(key client.ObjectKey) error {
 	}
 
 	return f.kc.Delete(f.ctx, mg)
+}
+
+func (f *Framework) createPostgresCustomAuthSecret() (*core.Secret, error) {
+	auth := &core.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix("supervisor-pg-auth-"),
+			Namespace: f.postgresAuthNamespace(),
+		},
+		StringData: map[string]string{
+			"username": "postgres",
+			"password": "admin@1234",
+		},
+		Type: core.SecretTypeBasicAuth,
+	}
+	if err := f.kc.Create(f.ctx, auth); err != nil {
+		return nil, err
+	}
+
+	err := wait.PollImmediate(time.Second, time.Minute*5, func() (bool, error) {
+		createdAuth := &core.Secret{}
+		key := client.ObjectKey{Name: auth.Name, Namespace: auth.Namespace}
+		if err := f.kc.Get(f.ctx, key, createdAuth); err != nil {
+			if client.IgnoreNotFound(err) != nil {
+				return false, err
+			}
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return auth, nil
+}
+
+func (f *Framework) postgresAuthNamespace() string {
+	return f.namespace
 }
