@@ -60,11 +60,17 @@ spec:
                   items:
                     properties:
                       end:
-                        format: time
-                        type: string
+                        description: TimeOfDay is a wrapper around time.Time which
+                          supports correct marshaling to YAML and JSON.  Wrappers
+                          are provided for many of the factory methods that the time
+                          package offers.
+                        type: object
                       start:
-                        format: time
-                        type: string
+                        description: TimeOfDay is a wrapper around time.Time which
+                          supports correct marshaling to YAML and JSON.  Wrappers
+                          are provided for many of the factory methods that the time
+                          package offers.
+                        type: object
                     required:
                     - end
                     - start
