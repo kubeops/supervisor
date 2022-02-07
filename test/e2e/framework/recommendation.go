@@ -1,16 +1,28 @@
+/*
+Copyright AppsCode Inc. and Contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package framework
 
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"os"
 	"time"
 
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"gomodules.xyz/pointer"
 	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
@@ -23,17 +35,6 @@ import (
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func (f *Framework) getOperationModel(filename string) []byte {
-	By("Get Operation Model")
-	file, err := os.Open(filename)
-	Expect(err).NotTo(HaveOccurred())
-
-	modelData, err := ioutil.ReadAll(file)
-	Expect(err).NotTo(HaveOccurred())
-
-	return modelData
-}
 
 func (f *Framework) getMongoDBRestartOpsRequest(dbKey client.ObjectKey) *opsapi.MongoDBOpsRequest {
 	return &opsapi.MongoDBOpsRequest{

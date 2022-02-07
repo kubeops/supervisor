@@ -17,9 +17,10 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"kubeops.dev/supervisor/crds"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/apiextensions"
-	"kubeops.dev/supervisor/crds"
 )
 
 const (
