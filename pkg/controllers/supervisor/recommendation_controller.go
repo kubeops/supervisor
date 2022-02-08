@@ -30,6 +30,7 @@ import (
 	"kubeops.dev/supervisor/pkg/policy"
 	"kubeops.dev/supervisor/pkg/shared"
 
+	"gomodules.xyz/wait"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -110,28 +111,11 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, err
 		}
 
-		maintainParallelism := false
-		deadlineKnocking := false
-		r.Mutex.Lock()
-		if isMaintenanceTime {
-			runner := parallelism.NewParallelRunner(ctx, r.Client, rcmd)
-			maintainParallelism, err = runner.MaintainParallelism()
-			if err != nil {
-				r.unlockMutex()
-				return ctrl.Result{}, err
-			}
+		if !isMaintenanceTime {
+			return ctrl.Result{RequeueAfter: requeueAfterDuration}, nil
+		}
 
-			deadlineMgr := deadline_manager.NewManager(rcmd)
-			deadlineKnocking = deadlineMgr.IsDeadlineLessThanADay()
-			if deadlineKnocking {
-				r.unlockMutex()
-			}
-		}
-		if isMaintenanceTime && (maintainParallelism || deadlineKnocking) {
-			return r.executeRecommendation(ctx, rcmd)
-		}
-		r.unlockMutex()
-		return ctrl.Result{RequeueAfter: requeueAfterDuration}, nil
+		return r.runMaintenanceWork(ctx, rcmd)
 	} else if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalRejected {
 		_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 			in := obj.(*supervisorv1alpha1.Recommendation)
@@ -166,7 +150,24 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	return ctrl.Result{}, nil
 }
 
-func (r *RecommendationReconciler) executeRecommendation(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
+func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
+	r.Mutex.Lock()
+	defer func() {
+		r.unlockMutex()
+	}()
+	runner := parallelism.NewParallelRunner(ctx, r.Client, rcmd)
+	maintainParallelism, err := runner.MaintainParallelism()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	deadlineMgr := deadline_manager.NewManager(rcmd)
+	deadlineKnocking := deadlineMgr.IsDeadlineLessThanADay()
+
+	if !(maintainParallelism || deadlineKnocking) {
+		return ctrl.Result{RequeueAfter: requeueAfterDuration}, nil
+	}
+
 	exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
 	if err != nil {
 		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
@@ -189,12 +190,32 @@ func (r *RecommendationReconciler) executeRecommendation(ctx context.Context, rc
 		})
 		return in
 	})
-	r.unlockMutex()
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	rcmd = upObj.(*supervisorv1alpha1.Recommendation)
+	err = wait.PollImmediate(time.Millisecond*250, 5*time.Minute, func() (bool, error) {
+		key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
+		obj := &supervisorv1alpha1.Recommendation{}
 
+		getErr := r.Client.Get(ctx, key, obj)
+		if getErr != nil {
+			return false, getErr
+		}
+		if obj.Status.Phase == supervisorv1alpha1.InProgress {
+			return true, nil
+		}
+		return false, nil
+	})
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	r.Mutex.Unlock()
+
+	return r.waitForOpsRequestExecution(ctx, rcmd, exeObj)
+}
+
+func (r *RecommendationReconciler) waitForOpsRequestExecution(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, exeObj apis.OpsRequest) (ctrl.Result, error) {
 	if err := r.waitForOperationToBeCompleted(ctx, exeObj); err != nil {
 		_, cErr := r.addCondition(ctx, rcmd, kmapi.Condition{
 			Type:               supervisorv1alpha1.RecommendationSuccessfullyCreated,
@@ -209,7 +230,7 @@ func (r *RecommendationReconciler) executeRecommendation(ctx context.Context, rc
 		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
 
-	_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+	_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 		in := obj.(*supervisorv1alpha1.Recommendation)
 		in.Status.Phase = supervisorv1alpha1.Succeeded
 		in.Status.Reason = supervisorv1alpha1.SuccessfullyExecutedOperation
@@ -248,7 +269,6 @@ func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *super
 }
 
 func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, err error, phase supervisorv1alpha1.RecommendationPhase) (ctrl.Result, error) {
-	r.unlockMutex()
 	_, _, pErr := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 		in := obj.(*supervisorv1alpha1.Recommendation)
 		in.Status.Phase = phase
@@ -275,14 +295,14 @@ func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *RecommendationReconciler) isMutexLocked() bool {
-	mutexLocked := int64(1)
-	state := reflect.ValueOf(&r.Mutex).Elem().FieldByName("state")
-	return state.Int()&mutexLocked == mutexLocked
-}
-
 func (r *RecommendationReconciler) unlockMutex() {
-	if r.isMutexLocked() {
+	if isMutexLocked(&r.Mutex) {
 		r.Mutex.Unlock()
 	}
+}
+
+func isMutexLocked(mutex *sync.Mutex) bool {
+	mutexLocked := int64(1)
+	state := reflect.ValueOf(mutex).Elem().FieldByName("state")
+	return state.Int()&mutexLocked == mutexLocked
 }
