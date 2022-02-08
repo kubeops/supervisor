@@ -46,17 +46,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-const (
-	requeueAfterDuration    = time.Minute
-	retryAfterDuration      = time.Minute
-	maxConcurrentReconciles = 5
-)
-
 // RecommendationReconciler reconciles a Recommendation object
 type RecommendationReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Mutex  sync.Mutex
+	Scheme                 *runtime.Scheme
+	Mutex                  sync.Mutex
+	RequeueAfterDuration   time.Duration
+	RetryAfterDuration     time.Duration
+	BeforeDeadlineDuration time.Duration
 }
 
 //+kubebuilder:rbac:groups=supervisor.appscode.com,resources=recommendations,verbs=get;list;watch;create;update;patch;delete
@@ -112,7 +109,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 
 		if !isMaintenanceTime {
-			return ctrl.Result{RequeueAfter: requeueAfterDuration}, nil
+			return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 		}
 
 		return r.runMaintenanceWork(ctx, rcmd)
@@ -162,10 +159,10 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 	}
 
 	deadlineMgr := deadline_manager.NewManager(rcmd)
-	deadlineKnocking := deadlineMgr.IsDeadlineLessThanADay()
+	deadlineKnocking := deadlineMgr.IsDeadlineLessThan(r.BeforeDeadlineDuration)
 
 	if !(maintainParallelism || deadlineKnocking) {
-		return ctrl.Result{RequeueAfter: requeueAfterDuration}, nil
+		return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 	}
 
 	exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
@@ -210,7 +207,7 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	r.Mutex.Unlock()
+	r.unlockMutex()
 
 	return r.waitForOpsRequestExecution(ctx, rcmd, exeObj)
 }
@@ -276,11 +273,11 @@ func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *supervis
 		return in
 	})
 
-	return ctrl.Result{RequeueAfter: retryAfterDuration}, pErr
+	return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, pErr
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&supervisorv1alpha1.Recommendation{}).
 		WithEventFilter(predicate.Funcs{
@@ -291,7 +288,7 @@ func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return !meta_util.MustAlreadyReconciled(e.ObjectNew)
 			},
 		}).
-		WithOptions(controller.Options{MaxConcurrentReconciles: maxConcurrentReconciles}).
+		WithOptions(opts).
 		Complete(r)
 }
 

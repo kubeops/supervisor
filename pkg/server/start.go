@@ -23,9 +23,11 @@ import (
 	"net"
 
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	"kubeops.dev/supervisor/pkg/controllers/supervisor"
 
 	"github.com/spf13/pflag"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apiserver/pkg/endpoints/openapi"
 	"k8s.io/apiserver/pkg/features"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -35,11 +37,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const defaultEtcdPathPrefix = "/registry/openviz.dev"
+const defaultEtcdPathPrefix = "/registry/kubeops.dev"
 
 type SupervisorOperatorOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
 	ExtraOptions       *ExtraOptions
+	ReconcileOptions   *supervisor.RecommendationReconcileConfig
 
 	StdOut io.Writer
 	StdErr io.Writer
@@ -53,9 +56,10 @@ func NewSupervisorOperatorOptions(out, errOut io.Writer) *SupervisorOperatorOpti
 			defaultEtcdPathPrefix,
 			Codecs.LegacyCodec(admissionv1beta1.SchemeGroupVersion),
 		),
-		ExtraOptions: NewExtraOptions(),
-		StdOut:       out,
-		StdErr:       errOut,
+		ExtraOptions:     NewExtraOptions(),
+		ReconcileOptions: supervisor.NewRecommendationReconcileConfig(),
+		StdOut:           out,
+		StdErr:           errOut,
 	}
 	o.RecommendedOptions.Etcd = nil
 	o.RecommendedOptions.Admission = nil
@@ -66,10 +70,14 @@ func NewSupervisorOperatorOptions(out, errOut io.Writer) *SupervisorOperatorOpti
 func (o SupervisorOperatorOptions) AddFlags(fs *pflag.FlagSet) {
 	o.RecommendedOptions.AddFlags(fs)
 	o.ExtraOptions.AddFlags(fs)
+	o.ReconcileOptions.AddFlags(fs)
 }
 
 func (o SupervisorOperatorOptions) Validate(args []string) error {
-	return nil
+	var errors []error
+	errors = append(errors, o.RecommendedOptions.Validate()...)
+	errors = append(errors, o.ReconcileOptions.Validate()...)
+	return utilerrors.NewAggregate(errors)
 }
 
 func (o *SupervisorOperatorOptions) Complete() error {
@@ -103,7 +111,8 @@ func (o SupervisorOperatorOptions) Config() (*SupervisorOperatorConfig, error) {
 	cfg := &SupervisorOperatorConfig{
 		GenericConfig: serverConfig,
 		ExtraConfig: ExtraConfig{
-			ClientConfig: serverConfig.ClientConfig,
+			ClientConfig:    serverConfig.ClientConfig,
+			ReconcileConfig: *o.ReconcileOptions,
 		},
 	}
 	return cfg, nil

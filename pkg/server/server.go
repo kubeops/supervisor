@@ -39,6 +39,7 @@ import (
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -75,7 +76,8 @@ func init() {
 
 // ExtraConfig holds custom apiserver config
 type ExtraConfig struct {
-	ClientConfig *restclient.Config
+	ClientConfig    *restclient.Config
+	ReconcileConfig supervisorcontrollers.RecommendationReconcileConfig
 }
 
 // SupervisorOperatorConfig defines the config for the apiserver
@@ -160,11 +162,17 @@ func (c completedConfig) New(ctx context.Context) (*SupervisorOperator, error) {
 		os.Exit(1)
 	}
 
+	recommendationControllerOpts := controller.Options{
+		MaxConcurrentReconciles: c.ExtraConfig.ReconcileConfig.MaxConcurrentReconcile,
+	}
 	if err = (&supervisorcontrollers.RecommendationReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Mutex:  sync.Mutex{},
-	}).SetupWithManager(mgr); err != nil {
+		Client:                 mgr.GetClient(),
+		Scheme:                 mgr.GetScheme(),
+		Mutex:                  sync.Mutex{},
+		RequeueAfterDuration:   c.ExtraConfig.ReconcileConfig.RequeueAfterDuration,
+		RetryAfterDuration:     c.ExtraConfig.ReconcileConfig.RetryAfterDuration,
+		BeforeDeadlineDuration: c.ExtraConfig.ReconcileConfig.BeforeDeadlineDuration,
+	}).SetupWithManager(mgr, recommendationControllerOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Recommendation")
 		os.Exit(1)
 	}
