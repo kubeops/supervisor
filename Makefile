@@ -534,7 +534,11 @@ run:
 		--kubeconfig=$(KUBECONFIG) \
 		--authorization-kubeconfig=$(KUBECONFIG) \
 		--authentication-kubeconfig=$(KUBECONFIG) \
-		--authentication-skip-lookup
+		--authentication-skip-lookup \
+		--max-concurrent-reconcile=5 \
+		--requeue-after-duration=1m \
+		--retry-after-duration=1m \
+		--before-deadline-duration=24h
 
 .PHONY: push-to-kind
 push-to-kind: container
