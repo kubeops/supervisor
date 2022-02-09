@@ -30,6 +30,7 @@ type RecommendationReconcileConfig struct {
 	MaxRetryOnFailure      int
 	RetryAfterDuration     time.Duration
 	BeforeDeadlineDuration time.Duration
+	WebhookCertDir         string
 }
 
 func NewRecommendationReconcileConfig() *RecommendationReconcileConfig {
@@ -42,7 +43,7 @@ func (c *RecommendationReconcileConfig) AddGoFlags(fs *flag.FlagSet) {
 	fs.IntVar(&c.MaxRetryOnFailure, "max-retry-on-failure", c.MaxRetryOnFailure, "Maximum number of retry on any kind of failure in Recommendation execution")
 	fs.DurationVar(&c.RetryAfterDuration, "retry-after-duration", c.RetryAfterDuration, "Duration after the failure events will be requeue again. The flag accepts a value acceptable to time.ParseDuration. Ref: https://pkg.go.dev/time#ParseDuration")
 	fs.DurationVar(&c.BeforeDeadlineDuration, "before-deadline-duration", c.BeforeDeadlineDuration, "When there is less time than `BeforeDeadlineDuration` before deadline, Recommendations are free to execute regardless of Parallelism")
-
+	fs.StringVar(&c.WebhookCertDir, "webhook-cert-dir", c.WebhookCertDir, "Cert files directory location for admission webhook server")
 }
 
 func (c *RecommendationReconcileConfig) AddFlags(fs *pflag.FlagSet) {

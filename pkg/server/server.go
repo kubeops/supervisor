@@ -198,14 +198,15 @@ func (c completedConfig) New(ctx context.Context) (*SupervisorOperator, error) {
 		os.Exit(1)
 	}
 	// Todo(Pulak): Uncomment below code when webhook is fully deployable
-	//if err = (&supervisorv1alpha1.MaintenanceWindow{}).SetupWebhookWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create webhook", "webhook", "MaintenanceWindow")
-	//	os.Exit(1)
-	//}
-	//if err = (&supervisorv1alpha1.ClusterMaintenanceWindow{}).SetupWebhookWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create webhook", "webhook", "ClusterMaintenanceWindow")
-	//	os.Exit(1)
-	//}
+	mgr.GetWebhookServer().CertDir = c.ExtraConfig.ReconcileConfig.WebhookCertDir
+	if err = (&supervisorv1alpha1.MaintenanceWindow{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "MaintenanceWindow")
+		os.Exit(1)
+	}
+	if err = (&supervisorv1alpha1.ClusterMaintenanceWindow{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "ClusterMaintenanceWindow")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
