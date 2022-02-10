@@ -59,6 +59,15 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			By("Creating Default MaintenanceWindow")
 			Expect(f.CreateDefaultMaintenanceWindow()).Should(Succeed())
 		}
+		createTwoDefaultMaintenanceWindow = func() error {
+			By("Creating First Default MaintenanceWindow")
+			err := f.CreateDefaultMaintenanceWindow()
+			Expect(err).ShouldNot(HaveOccurred())
+
+			By("Creating Second Default MaintenanceWindow")
+			err = f.CreateDefaultMaintenanceWindow()
+			return err
+		}
 		createMaintenanceWindow = func(days map[api.DayOfWeek][]api.TimeWindow, dates []api.DateWindow) *api.MaintenanceWindow {
 			By("Creating MaintenanceWindow")
 			mw, err := f.CreateMaintenanceWindow(days, dates)
@@ -530,6 +539,13 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				}
 				err := errFunc()
 				Expect(err).ShouldNot(HaveOccurred())
+			})
+		})
+
+		Context("Failure events", func() {
+			It("Should face error while creating multiple default MaintenanceWindow in same namespace", func() {
+				err := createTwoDefaultMaintenanceWindow()
+				Expect(err).Should(HaveOccurred())
 			})
 		})
 	})
