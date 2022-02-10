@@ -20,24 +20,35 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
+	"path"
 
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/pkg/controllers/supervisor"
 
 	"github.com/spf13/pflag"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	v1 "k8s.io/api/admissionregistration/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apiserver/pkg/endpoints/openapi"
 	"k8s.io/apiserver/pkg/features"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/apiserver/pkg/util/feature"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	kutil "kmodules.xyz/client-go"
+	reg_util "kmodules.xyz/client-go/admissionregistration/v1"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const defaultEtcdPathPrefix = "/registry/kubeops.dev"
+const (
+	defaultEtcdPathPrefix = "/registry/kubeops.dev"
+	validatingWebhook     = "validators.supervisor.appscode.com"
+)
 
 type SupervisorOperatorOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
@@ -108,6 +119,12 @@ func (o SupervisorOperatorOptions) Config() (*SupervisorOperatorConfig, error) {
 	serverConfig.OpenAPIConfig.Info.Title = "Supervisor-operator"
 	serverConfig.OpenAPIConfig.Info.Version = "v0.0.1"
 
+	if o.ExtraOptions.EnableValidatingWebhook {
+		if err := updateValidatingWebhookCABundle(serverConfig.ClientConfig, validatingWebhook, o.ReconcileOptions.WebhookCertDir); err != nil {
+			return nil, err
+		}
+	}
+
 	cfg := &SupervisorOperatorConfig{
 		GenericConfig: serverConfig,
 		ExtraConfig: ExtraConfig{
@@ -135,4 +152,32 @@ func (o SupervisorOperatorOptions) Run(ctx context.Context) error {
 
 	setupLog.Info("starting manager")
 	return s.Manager.Start(ctx)
+}
+
+func updateValidatingWebhookCABundle(config *rest.Config, webhookConfigName string, certDir string) error {
+	crtByte, err := ioutil.ReadFile(path.Join(certDir, "tls.crt"))
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, kutil.ReadinessTimeout)
+	defer cancel()
+
+	kc, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
+	vhook, err := kc.AdmissionregistrationV1().ValidatingWebhookConfigurations().Get(context.TODO(), webhookConfigName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	_, _, err = reg_util.PatchValidatingWebhookConfiguration(ctx, kc, vhook.DeepCopy(), func(in *v1.ValidatingWebhookConfiguration) *v1.ValidatingWebhookConfiguration {
+		for i := range in.Webhooks {
+			in.Webhooks[i].ClientConfig.CABundle = crtByte
+		}
+		return in
+	}, metav1.PatchOptions{})
+
+	return err
 }

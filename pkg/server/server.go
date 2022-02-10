@@ -130,7 +130,7 @@ func (c completedConfig) New(ctx context.Context) (*SupervisorOperator, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 Scheme,
 		MetricsBindAddress:     "",
-		Port:                   0,
+		Port:                   9443,
 		HealthProbeBindAddress: "",
 		LeaderElection:         false,
 		LeaderElectionID:       "3a57c480.supervisor.appscode.com",
@@ -197,7 +197,6 @@ func (c completedConfig) New(ctx context.Context) (*SupervisorOperator, error) {
 		setupLog.Error(err, "unable to create controller", "controller", "ApprovalPolicy")
 		os.Exit(1)
 	}
-	// Todo(Pulak): Uncomment below code when webhook is fully deployable
 	mgr.GetWebhookServer().CertDir = c.ExtraConfig.ReconcileConfig.WebhookCertDir
 	if err = (&supervisorv1alpha1.MaintenanceWindow{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "MaintenanceWindow")
