@@ -18,6 +18,7 @@ package policy
 
 import (
 	"context"
+	"errors"
 
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/pkg/shared"
@@ -45,6 +46,9 @@ func (c *ApprovalPolicyFinder) FindApprovalPolicy() (*supervisorv1alpha1.Approva
 	policyList := &supervisorv1alpha1.ApprovalPolicyList{}
 	if err := c.kc.List(c.ctx, policyList, client.InNamespace(c.rcmd.Namespace)); err != nil {
 		return nil, err
+	}
+	if c.rcmd.Spec.Target.APIGroup == nil {
+		return nil, errors.New("target APIGroup is not provided")
 	}
 	gv, err := schema.ParseGroupVersion(*c.rcmd.Spec.Target.APIGroup)
 	if err != nil {
