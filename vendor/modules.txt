@@ -631,6 +631,7 @@ k8s.io/apimachinery/pkg/util/errors
 k8s.io/apimachinery/pkg/util/framer
 k8s.io/apimachinery/pkg/util/intstr
 k8s.io/apimachinery/pkg/util/json
+k8s.io/apimachinery/pkg/util/jsonmergepatch
 k8s.io/apimachinery/pkg/util/managedfields
 k8s.io/apimachinery/pkg/util/mergepatch
 k8s.io/apimachinery/pkg/util/naming
@@ -998,6 +999,7 @@ k8s.io/client-go/tools/pager
 k8s.io/client-go/tools/record
 k8s.io/client-go/tools/record/util
 k8s.io/client-go/tools/reference
+k8s.io/client-go/tools/watch
 k8s.io/client-go/transport
 k8s.io/client-go/util/cert
 k8s.io/client-go/util/connrotation
@@ -1021,6 +1023,15 @@ k8s.io/component-base/version
 ## explicit; go 1.13
 k8s.io/klog/v2
 k8s.io/klog/v2/klogr
+# k8s.io/kube-aggregator v0.21.1
+## explicit; go 1.16
+k8s.io/kube-aggregator/pkg/apis/apiregistration
+k8s.io/kube-aggregator/pkg/apis/apiregistration/v1
+k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1
+k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset
+k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/scheme
+k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1
+k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 # k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 => k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7
 ## explicit; go 1.12
 k8s.io/kube-openapi/pkg/builder
@@ -1041,13 +1052,18 @@ k8s.io/utils/trace
 # kmodules.xyz/client-go v0.0.0-20220404224906-af7b092cfac5
 ## explicit; go 1.17
 kmodules.xyz/client-go
+kmodules.xyz/client-go/admissionregistration
+kmodules.xyz/client-go/admissionregistration/v1
 kmodules.xyz/client-go/api/v1
 kmodules.xyz/client-go/apiextensions
 kmodules.xyz/client-go/apiextensions/v1
+kmodules.xyz/client-go/apiregistration/v1
 kmodules.xyz/client-go/apps/v1
 kmodules.xyz/client-go/client
 kmodules.xyz/client-go/client/apiutil
 kmodules.xyz/client-go/core/v1
+kmodules.xyz/client-go/discovery
+kmodules.xyz/client-go/dynamic
 kmodules.xyz/client-go/meta
 kmodules.xyz/client-go/tools/clientcmd
 kmodules.xyz/client-go/tools/clusterid

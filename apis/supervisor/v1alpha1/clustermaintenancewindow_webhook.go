@@ -83,7 +83,7 @@ func (r *ClusterMaintenanceWindow) validateClusterMaintenanceWindow(ctx context.
 	if !r.Spec.IsDefault {
 		return nil
 	}
-	cmwList := &MaintenanceWindowList{}
+	cmwList := &ClusterMaintenanceWindowList{}
 	if err := cmwClient.List(ctx, cmwList, client.MatchingFields{
 		DefaultClusterMaintenanceWindowKey: "true",
 	}); err != nil {
