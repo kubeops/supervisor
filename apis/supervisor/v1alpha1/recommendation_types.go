@@ -42,6 +42,10 @@ type RecommendationSpec struct {
 	Recommender kmapi.ObjectReference `json:"recommender"`
 	// +optional
 	Deadline *metav1.Time `json:"deadline,omitempty"`
+	// If RequireExplicitApproval is set to `true` then the Recommendation must be Approved manually.
+	// Recommendation won't be executed without manual approval and any kind of ApprovalPolicy will be ignored.
+	// +optional
+	RequireExplicitApproval bool `json:"requireExplicitApproval,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Pending;Approved;Rejected
@@ -102,6 +106,13 @@ type RecommendationStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+	// Outdated is indicating details whether the Recommendation is outdated or not.
+	// If the value is `true`, then Recommendation will not be executed. This indicates that after generating the Recommendation,
+	// the targeted resource is changed in such a way that the generated Recommendation has become outdated & can't be executed anymore.
+	//
+	// +optional
+	// +kubebuilder:default=false
+	Outdated bool `json:"outdated"`
 }
 
 // +kubebuilder:validation:Enum=Pending;Skipped;Waiting;InProgress;Succeeded;Failed

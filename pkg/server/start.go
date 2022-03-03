@@ -135,9 +135,7 @@ func (o SupervisorOperatorOptions) Config() (*SupervisorOperatorConfig, error) {
 	return cfg, nil
 }
 
-var (
-	setupLog = ctrl.Log.WithName("setup")
-)
+var setupLog = ctrl.Log.WithName("setup")
 
 func (o SupervisorOperatorOptions) Run(ctx context.Context) error {
 	config, err := o.Config()

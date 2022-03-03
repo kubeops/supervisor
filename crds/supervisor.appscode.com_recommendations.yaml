@@ -63,6 +63,12 @@ spec:
                 required:
                 - name
                 type: object
+              requireExplicitApproval:
+                description: If RequireExplicitApproval is set to `true` then the
+                  Recommendation must be Approved manually. Recommendation won't be
+                  executed without manual approval and any kind of ApprovalPolicy
+                  will be ignored.
+                type: boolean
               target:
                 description: TypedLocalObjectReference contains enough information
                   to let you locate the typed referenced object inside the same namespace.
@@ -194,6 +200,14 @@ spec:
                   which is updated on mutation by the API Server.
                 format: int64
                 type: integer
+              outdated:
+                default: false
+                description: Outdated is indicating details whether the Recommendation
+                  is outdated or not. If the value is `true`, then Recommendation
+                  will not be executed. This indicates that after generating the Recommendation,
+                  the targeted resource is changed in such a way that the generated
+                  Recommendation has become outdated & can't be executed anymore.
+                type: boolean
               parallelism:
                 default: Namespace
                 enum:

@@ -34,9 +34,11 @@ type OpsRequest interface {
 	WaitForOpsRequestToBeCompleted(context.Context, client.Client) error
 }
 
-var _ OpsRequest = &mongodb_ops.MongoDBOpsRequest{}
-var _ OpsRequest = &elaticsearch_ops.ESOpsRequest{}
-var _ OpsRequest = &postgres_ops.PostgresOpsRequest{}
-var _ OpsRequest = &mysql_ops.MySQLOpsRequest{}
-var _ OpsRequest = &mariadb_ops.MariaDBOpsRequest{}
-var _ OpsRequest = &redis_ops.RedisOpsRequest{}
+var (
+	_ OpsRequest = &mongodb_ops.MongoDBOpsRequest{}
+	_ OpsRequest = &elaticsearch_ops.ESOpsRequest{}
+	_ OpsRequest = &postgres_ops.PostgresOpsRequest{}
+	_ OpsRequest = &mysql_ops.MySQLOpsRequest{}
+	_ OpsRequest = &mariadb_ops.MariaDBOpsRequest{}
+	_ OpsRequest = &redis_ops.RedisOpsRequest{}
+)
