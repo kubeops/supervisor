@@ -88,6 +88,10 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
+		if rcmd.Status.Outdated {
+			return ctrl.Result{}, nil
+		}
+
 		if kmapi.IsConditionTrue(rcmd.Status.Conditions, supervisorv1alpha1.SuccessfullyCreatedOperation) {
 			return ctrl.Result{}, nil
 		}
@@ -125,22 +129,24 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, err
 	}
 
-	policyFinder := policy.NewApprovalPolicyFinder(ctx, r.Client, rcmd)
-	approvalPolicy, err := policyFinder.FindApprovalPolicy()
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if approvalPolicy != nil {
-		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
-			in.Status.ApprovalStatus = supervisorv1alpha1.ApprovalApproved
-			in.Status.ApprovedWindow = &supervisorv1alpha1.ApprovedWindow{
-				MaintenanceWindow: &approvalPolicy.MaintenanceWindowRef,
-			}
-			return in
-		})
+	if !rcmd.Spec.RequireExplicitApproval {
+		policyFinder := policy.NewApprovalPolicyFinder(ctx, r.Client, rcmd)
+		approvalPolicy, err := policyFinder.FindApprovalPolicy()
 		if err != nil {
 			return ctrl.Result{}, err
+		}
+		if approvalPolicy != nil {
+			_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+				in := obj.(*supervisorv1alpha1.Recommendation)
+				in.Status.ApprovalStatus = supervisorv1alpha1.ApprovalApproved
+				in.Status.ApprovedWindow = &supervisorv1alpha1.ApprovedWindow{
+					MaintenanceWindow: &approvalPolicy.MaintenanceWindowRef,
+				}
+				return in
+			})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
