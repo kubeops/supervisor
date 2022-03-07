@@ -18,6 +18,9 @@ spec:
     - jsonPath: .status.phase
       name: Status
       type: string
+    - jsonPath: .status.outdated
+      name: Outdated
+      type: boolean
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
