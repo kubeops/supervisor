@@ -19,12 +19,14 @@ package elaticsearch_ops
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"time"
 
+	"kubeops.dev/supervisor/apis"
+
 	"gomodules.xyz/x/crypto/rand"
+	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -34,6 +36,8 @@ type ESOpsRequest struct {
 	timeout  time.Duration
 	interval time.Duration
 }
+
+var _ apis.OpsRequest = &ESOpsRequest{}
 
 func NewESOpsRequest(obj runtime.RawExtension) (*ESOpsRequest, error) {
 	esOpsReq := &opsapi.ElasticsearchOpsRequest{}
@@ -53,18 +57,25 @@ func (o *ESOpsRequest) Execute(ctx context.Context, kc client.Client) error {
 	return kc.Create(ctx, req)
 }
 
-func (o *ESOpsRequest) WaitForOpsRequestToBeCompleted(ctx context.Context, kc client.Client) error {
+func (o *ESOpsRequest) IsSucceeded(ctx context.Context, kc client.Client) (bool, error) {
 	key := client.ObjectKey{Name: o.req.Name, Namespace: o.req.Namespace}
 	opsReq := &opsapi.ElasticsearchOpsRequest{}
-	return wait.PollImmediate(o.interval, o.timeout, func() (bool, error) {
-		if err := kc.Get(ctx, key, opsReq); err != nil {
-			return false, err
+	if err := kc.Get(ctx, key, opsReq); err != nil {
+		return false, err
+	}
+	if opsReq.Status.Phase == opsapi.OpsRequestPhaseSuccessful {
+		return true, nil
+	} else if opsReq.Status.Phase == opsapi.OpsRequestPhaseFailed {
+		return false, fmt.Errorf("opsrequest failed to execute,reason: %s", o.getOpsRequestFailureReason())
+	}
+	return false, nil
+}
+
+func (o *ESOpsRequest) getOpsRequestFailureReason() string {
+	for _, con := range o.req.Status.Conditions {
+		if con.Status == core.ConditionFalse {
+			return con.Reason
 		}
-		if opsReq.Status.Phase == opsapi.OpsRequestPhaseSuccessful {
-			return true, nil
-		} else if opsReq.Status.Phase == opsapi.OpsRequestPhaseFailed {
-			return false, errors.New("ops request is failed")
-		}
-		return false, nil
-	})
+	}
+	return string(core.ConditionUnknown)
 }
