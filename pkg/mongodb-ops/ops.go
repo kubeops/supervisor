@@ -19,12 +19,13 @@ package mongodb_ops
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"time"
 
-	"gomodules.xyz/x/crypto/rand"
+	"kubeops.dev/supervisor/apis"
+
+	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -35,12 +36,14 @@ type MongoDBOpsRequest struct {
 	interval time.Duration
 }
 
-func NewMongoDBOpsRequest(obj runtime.RawExtension) (*MongoDBOpsRequest, error) {
+var _ apis.OpsRequest = &MongoDBOpsRequest{}
+
+func NewMongoDBOpsRequest(obj runtime.RawExtension, name string) (*MongoDBOpsRequest, error) {
 	mgOpsReq := &opsapi.MongoDBOpsRequest{}
 	if err := json.Unmarshal(obj.Raw, mgOpsReq); err != nil {
 		return nil, err
 	}
-	mgOpsReq.Name = rand.WithUniqSuffix("supervisor")
+	mgOpsReq.Name = name
 	return &MongoDBOpsRequest{
 		req:      mgOpsReq,
 		timeout:  30 * time.Minute,
@@ -53,18 +56,25 @@ func (o *MongoDBOpsRequest) Execute(ctx context.Context, kc client.Client) error
 	return kc.Create(ctx, req)
 }
 
-func (o *MongoDBOpsRequest) WaitForOpsRequestToBeCompleted(ctx context.Context, kc client.Client) error {
+func (o *MongoDBOpsRequest) IsSucceeded(ctx context.Context, kc client.Client) (bool, error) {
 	key := client.ObjectKey{Name: o.req.Name, Namespace: o.req.Namespace}
 	opsReq := &opsapi.MongoDBOpsRequest{}
-	return wait.PollImmediate(o.interval, o.timeout, func() (bool, error) {
-		if err := kc.Get(ctx, key, opsReq); err != nil {
-			return false, err
+	if err := kc.Get(ctx, key, opsReq); err != nil {
+		return false, err
+	}
+	if opsReq.Status.Phase == opsapi.OpsRequestPhaseSuccessful {
+		return true, nil
+	} else if opsReq.Status.Phase == opsapi.OpsRequestPhaseFailed {
+		return false, fmt.Errorf("opsrequest failed to execute,reason: %s", o.getOpsRequestFailureReason())
+	}
+	return false, nil
+}
+
+func (o *MongoDBOpsRequest) getOpsRequestFailureReason() string {
+	for _, con := range o.req.Status.Conditions {
+		if con.Status == core.ConditionFalse {
+			return con.Reason
 		}
-		if opsReq.Status.Phase == opsapi.OpsRequestPhaseSuccessful {
-			return true, nil
-		} else if opsReq.Status.Phase == opsapi.OpsRequestPhaseFailed {
-			return false, errors.New("ops request is failed")
-		}
-		return false, nil
-	})
+	}
+	return string(core.ConditionUnknown)
 }

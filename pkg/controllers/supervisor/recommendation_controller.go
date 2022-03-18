@@ -18,7 +18,6 @@ package supervisor
 
 import (
 	"context"
-	"reflect"
 	"sync"
 	"time"
 
@@ -30,7 +29,7 @@ import (
 	"kubeops.dev/supervisor/pkg/policy"
 	"kubeops.dev/supervisor/pkg/shared"
 
-	"gomodules.xyz/wait"
+	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -92,8 +91,8 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, nil
 		}
 
-		if kmapi.IsConditionTrue(rcmd.Status.Conditions, supervisorv1alpha1.SuccessfullyCreatedOperation) {
-			return ctrl.Result{}, nil
+		if rcmd.Status.CreatedOperationRef != nil {
+			return r.checkOpsRequestStatus(ctx, rcmd)
 		}
 
 		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, rcmd)
@@ -153,11 +152,41 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	return ctrl.Result{}, nil
 }
 
+func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
+	opsReq, err := shared.GetOpsRequestObject(rcmd.Spec.Operation, rcmd.Status.CreatedOperationRef.Name)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	succeeded, err := opsReq.IsSucceeded(ctx, r.Client)
+	if err != nil {
+		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
+	}
+	if succeeded {
+		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.Phase = supervisorv1alpha1.Succeeded
+			in.Status.Reason = supervisorv1alpha1.SuccessfullyExecutedOperation
+			in.Status.Conditions = kmapi.SetCondition(in.Status.Conditions, kmapi.Condition{
+				Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
+				Status:             core.ConditionTrue,
+				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+				Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
+				Message:            "OpsRequest is successfully executed",
+			})
+			in.Status.ObservedGeneration = in.Generation
+			return in
+		})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+	return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
+}
+
 func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
 	r.Mutex.Lock()
-	defer func() {
-		r.unlockMutex()
-	}()
+	defer r.Mutex.Unlock()
+
 	runner := parallelism.NewParallelRunner(ctx, r.Client, rcmd)
 	maintainParallelism, err := runner.MaintainParallelism()
 	if err != nil {
@@ -171,7 +200,8 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 		return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 	}
 
-	exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation)
+	opsReqName := rand.WithUniqSuffix("supervisor")
+	exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation, opsReqName)
 	if err != nil {
 		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
@@ -180,7 +210,7 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
 
-	upObj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+	_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 		in := obj.(*supervisorv1alpha1.Recommendation)
 		in.Status.Phase = supervisorv1alpha1.InProgress
 		in.Status.Reason = supervisorv1alpha1.StartedExecutingOperation
@@ -191,60 +221,7 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 			Reason:             supervisorv1alpha1.SuccessfullyCreatedOperation,
 			Message:            "OpsRequest is successfully created",
 		})
-		return in
-	})
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	rcmd = upObj.(*supervisorv1alpha1.Recommendation)
-	err = wait.PollImmediate(time.Millisecond*250, 5*time.Minute, func() (bool, error) {
-		key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
-		obj := &supervisorv1alpha1.Recommendation{}
-
-		getErr := r.Client.Get(ctx, key, obj)
-		if getErr != nil {
-			return false, getErr
-		}
-		if obj.Status.Phase == supervisorv1alpha1.InProgress {
-			return true, nil
-		}
-		return false, nil
-	})
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	r.unlockMutex()
-
-	return r.waitForOpsRequestExecution(ctx, rcmd, exeObj)
-}
-
-func (r *RecommendationReconciler) waitForOpsRequestExecution(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, exeObj apis.OpsRequest) (ctrl.Result, error) {
-	if err := r.waitForOperationToBeCompleted(ctx, exeObj); err != nil {
-		_, cErr := r.addCondition(ctx, rcmd, kmapi.Condition{
-			Type:               supervisorv1alpha1.RecommendationSuccessfullyCreated,
-			Status:             core.ConditionFalse,
-			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-			Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
-			Message:            err.Error(),
-		})
-		if cErr != nil {
-			return ctrl.Result{}, cErr
-		}
-		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
-	}
-
-	_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-		in := obj.(*supervisorv1alpha1.Recommendation)
-		in.Status.Phase = supervisorv1alpha1.Succeeded
-		in.Status.Reason = supervisorv1alpha1.SuccessfullyExecutedOperation
-		in.Status.Conditions = kmapi.SetCondition(in.Status.Conditions, kmapi.Condition{
-			Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
-			Status:             core.ConditionTrue,
-			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-			Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
-			Message:            "OpsRequest is successfully executed",
-		})
-		in.Status.ObservedGeneration = in.Generation
+		in.Status.CreatedOperationRef = &core.LocalObjectReference{Name: opsReqName}
 		return in
 	})
 	return ctrl.Result{}, err
@@ -254,22 +231,18 @@ func (r *RecommendationReconciler) executeOpsRequest(ctx context.Context, e apis
 	return e.Execute(ctx, r.Client)
 }
 
-func (r *RecommendationReconciler) waitForOperationToBeCompleted(ctx context.Context, e apis.OpsRequest) error {
-	return e.WaitForOpsRequestToBeCompleted(ctx, r.Client)
-}
-
-func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, condition kmapi.Condition) (*supervisorv1alpha1.Recommendation, error) {
-	obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-		in := obj.(*supervisorv1alpha1.Recommendation)
-		in.Status.Conditions = kmapi.SetCondition(rcmd.Status.Conditions, condition)
-		return in
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return obj.(*supervisorv1alpha1.Recommendation).DeepCopy(), nil
-}
+//func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, condition kmapi.Condition) (*supervisorv1alpha1.Recommendation, error) {
+//	obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+//		in := obj.(*supervisorv1alpha1.Recommendation)
+//		in.Status.Conditions = kmapi.SetCondition(rcmd.Status.Conditions, condition)
+//		return in
+//	})
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return obj.(*supervisorv1alpha1.Recommendation).DeepCopy(), nil
+//}
 
 func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, err error, phase supervisorv1alpha1.RecommendationPhase) (ctrl.Result, error) {
 	_, _, pErr := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
@@ -296,16 +269,4 @@ func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager, opts contr
 		}).
 		WithOptions(opts).
 		Complete(r)
-}
-
-func (r *RecommendationReconciler) unlockMutex() {
-	if isMutexLocked(&r.Mutex) {
-		r.Mutex.Unlock()
-	}
-}
-
-func isMutexLocked(mutex *sync.Mutex) bool {
-	mutexLocked := int64(1)
-	state := reflect.ValueOf(mutex).Elem().FieldByName("state")
-	return state.Int()&mutexLocked == mutexLocked
 }

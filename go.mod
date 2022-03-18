@@ -12,7 +12,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/pointer v0.1.0
-	gomodules.xyz/wait v0.2.0
 	gomodules.xyz/x v0.0.10
 	k8s.io/api v0.21.1
 	k8s.io/apimachinery v0.21.1
@@ -112,6 +111,7 @@ require (
 	gomodules.xyz/mergo v0.3.13-0.20210702100041-9d62ff8ece4d // indirect
 	gomodules.xyz/password-generator v0.2.7 // indirect
 	gomodules.xyz/sets v0.2.1 // indirect
+	gomodules.xyz/wait v0.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	google.golang.org/grpc v1.38.0 // indirect

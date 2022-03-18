@@ -37,14 +37,14 @@ import (
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 )
 
-func GetOpsRequestObject(obj runtime.RawExtension) (apis.OpsRequest, error) {
+func GetOpsRequestObject(obj runtime.RawExtension, name string) (apis.OpsRequest, error) {
 	gvk, err := GetGVK(obj)
 	if err != nil {
 		return nil, err
 	}
 
 	if gvk.Group == opsapi.SchemeGroupVersion.Group && gvk.Kind == opsapi.ResourceKindMongoDBOpsRequest {
-		return mongodb_ops.NewMongoDBOpsRequest(obj)
+		return mongodb_ops.NewMongoDBOpsRequest(obj, name)
 	}
 
 	if gvk.Group == opsapi.SchemeGroupVersion.Group && gvk.Kind == opsapi.ResourceKindElasticsearchOpsRequest {

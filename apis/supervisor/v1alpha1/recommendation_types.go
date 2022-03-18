@@ -113,6 +113,8 @@ type RecommendationStatus struct {
 	// +optional
 	// +kubebuilder:default=false
 	Outdated bool `json:"outdated"`
+
+	CreatedOperationRef *core.LocalObjectReference `json:"createdOperationRef,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Pending;Skipped;Waiting;InProgress;Succeeded;Failed
