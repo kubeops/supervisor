@@ -24,7 +24,6 @@ import (
 
 	"kubeops.dev/supervisor/apis"
 
-	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
@@ -39,12 +38,12 @@ type RedisOpsRequest struct {
 
 var _ apis.OpsRequest = &RedisOpsRequest{}
 
-func NewRedisOpsRequest(obj runtime.RawExtension) (*RedisOpsRequest, error) {
+func NewRedisOpsRequest(obj runtime.RawExtension, name string) (*RedisOpsRequest, error) {
 	rdOpsReq := &opsapi.RedisOpsRequest{}
 	if err := json.Unmarshal(obj.Raw, rdOpsReq); err != nil {
 		return nil, err
 	}
-	rdOpsReq.Name = rand.WithUniqSuffix("supervisor")
+	rdOpsReq.Name = name
 	return &RedisOpsRequest{
 		req:      rdOpsReq,
 		timeout:  30 * time.Minute,

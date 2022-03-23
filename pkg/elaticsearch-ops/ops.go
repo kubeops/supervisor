@@ -24,7 +24,6 @@ import (
 
 	"kubeops.dev/supervisor/apis"
 
-	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
@@ -39,12 +38,12 @@ type ESOpsRequest struct {
 
 var _ apis.OpsRequest = &ESOpsRequest{}
 
-func NewESOpsRequest(obj runtime.RawExtension) (*ESOpsRequest, error) {
+func NewESOpsRequest(obj runtime.RawExtension, name string) (*ESOpsRequest, error) {
 	esOpsReq := &opsapi.ElasticsearchOpsRequest{}
 	if err := json.Unmarshal(obj.Raw, esOpsReq); err != nil {
 		return nil, err
 	}
-	esOpsReq.Name = rand.WithUniqSuffix("supervisor")
+	esOpsReq.Name = name
 	return &ESOpsRequest{
 		req:      esOpsReq,
 		timeout:  30 * time.Minute,

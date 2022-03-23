@@ -48,23 +48,23 @@ func GetOpsRequestObject(obj runtime.RawExtension, name string) (apis.OpsRequest
 	}
 
 	if gvk.Group == opsapi.SchemeGroupVersion.Group && gvk.Kind == opsapi.ResourceKindElasticsearchOpsRequest {
-		return elaticsearch_ops.NewESOpsRequest(obj)
+		return elaticsearch_ops.NewESOpsRequest(obj, name)
 	}
 
 	if gvk.Group == opsapi.SchemeGroupVersion.Group && gvk.Kind == opsapi.ResourceKindPostgresOpsRequest {
-		return postgres_ops.NewPostgresOpsRequest(obj)
+		return postgres_ops.NewPostgresOpsRequest(obj, name)
 	}
 
 	if gvk.Group == opsapi.SchemeGroupVersion.Group && gvk.Kind == opsapi.ResourceKindMySQLOpsRequest {
-		return mysql_ops.NewMySQLOpsRequest(obj)
+		return mysql_ops.NewMySQLOpsRequest(obj, name)
 	}
 
 	if gvk.Group == opsapi.SchemeGroupVersion.Group && gvk.Kind == opsapi.ResourceKindMariaDBOpsRequest {
-		return mariadb_ops.NewMariaDBOpsRequest(obj)
+		return mariadb_ops.NewMariaDBOpsRequest(obj, name)
 	}
 
 	if gvk.Group == opsapi.SchemeGroupVersion.Group && gvk.Kind == opsapi.ResourceKindRedisOpsRequest {
-		return redis_ops.NewRedisOpsRequest(obj)
+		return redis_ops.NewRedisOpsRequest(obj, name)
 	}
 
 	return nil, fmt.Errorf("invalid operation, Group: %v Kind: %v is not supported", gvk.Group, gvk.Kind)
