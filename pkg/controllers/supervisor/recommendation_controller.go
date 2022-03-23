@@ -99,7 +99,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, err
 		}
 
-		if obj.Status.CreatedOperationRef != nil {
+		if obj.Status.Phase == supervisorv1alpha1.InProgress && obj.Status.CreatedOperationRef != nil {
 			return r.checkOpsRequestStatus(ctx, obj)
 		}
 
@@ -109,17 +109,18 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return r.handleErr(ctx, obj, err, supervisorv1alpha1.Pending)
 		}
 
-		if obj.Status.Phase == supervisorv1alpha1.Pending {
-			_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-				in := obj.(*supervisorv1alpha1.Recommendation)
-				in.Status.Phase = supervisorv1alpha1.Waiting
-				in.Status.Reason = supervisorv1alpha1.WaitingForMaintenanceWindow
-				return in
-			})
-			return ctrl.Result{}, err
-		}
-
 		if !isMaintenanceTime {
+			if obj.Status.Phase == supervisorv1alpha1.Pending {
+				_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+					in := obj.(*supervisorv1alpha1.Recommendation)
+					in.Status.Phase = supervisorv1alpha1.Waiting
+					in.Status.Reason = supervisorv1alpha1.WaitingForMaintenanceWindow
+					return in
+				})
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			}
 			return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 		}
 
@@ -157,7 +158,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 }
 
 func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
@@ -184,9 +185,7 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 			in.Status.ObservedGeneration = in.Generation
 			return in
 		})
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+		return ctrl.Result{}, err
 	}
 	return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 }

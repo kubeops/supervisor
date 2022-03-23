@@ -86,7 +86,7 @@ func (f *Framework) newMongoDBRecommendation(dbKey client.ObjectKey, deadline *m
 		Spec: api.RecommendationSpec{
 			Description: "MongoDB Database Restart",
 			Target: core.TypedLocalObjectReference{
-				APIGroup: pointer.StringP(kubedbapi.SchemeGroupVersion.String()),
+				APIGroup: pointer.StringP(kubedbapi.SchemeGroupVersion.Group),
 				Kind:     kubedbapi.ResourceKindMongoDB,
 				Name:     dbKey.Name,
 			},

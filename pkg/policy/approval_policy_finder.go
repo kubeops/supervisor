@@ -23,8 +23,8 @@ import (
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/pkg/shared"
 
+	"gomodules.xyz/pointer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,10 +50,6 @@ func (c *ApprovalPolicyFinder) FindApprovalPolicy() (*supervisorv1alpha1.Approva
 	if c.rcmd.Spec.Target.APIGroup == nil {
 		return nil, errors.New("target APIGroup is not provided")
 	}
-	gv, err := schema.ParseGroupVersion(*c.rcmd.Spec.Target.APIGroup)
-	if err != nil {
-		return nil, err
-	}
 	opsGVK, err := shared.GetGVK(c.rcmd.Spec.Operation)
 	if err != nil {
 		return nil, err
@@ -68,7 +64,7 @@ func (c *ApprovalPolicyFinder) FindApprovalPolicy() (*supervisorv1alpha1.Approva
 		return nil, err
 	}
 	targetObjGk := metav1.GroupKind{
-		Group: gv.Group,
+		Group: pointer.String(c.rcmd.Spec.Target.APIGroup),
 		Kind:  c.rcmd.Spec.Target.Kind,
 	}
 

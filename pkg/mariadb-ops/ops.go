@@ -24,7 +24,6 @@ import (
 
 	"kubeops.dev/supervisor/apis"
 
-	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
@@ -39,12 +38,12 @@ type MariaDBOpsRequest struct {
 
 var _ apis.OpsRequest = &MariaDBOpsRequest{}
 
-func NewMariaDBOpsRequest(obj runtime.RawExtension) (*MariaDBOpsRequest, error) {
+func NewMariaDBOpsRequest(obj runtime.RawExtension, name string) (*MariaDBOpsRequest, error) {
 	mdOpsReq := &opsapi.MariaDBOpsRequest{}
 	if err := json.Unmarshal(obj.Raw, mdOpsReq); err != nil {
 		return nil, err
 	}
-	mdOpsReq.Name = rand.WithUniqSuffix("supervisor")
+	mdOpsReq.Name = name
 	return &MariaDBOpsRequest{
 		req:      mdOpsReq,
 		timeout:  30 * time.Minute,

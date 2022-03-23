@@ -24,7 +24,6 @@ import (
 
 	"kubeops.dev/supervisor/apis"
 
-	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
@@ -39,12 +38,12 @@ type PostgresOpsRequest struct {
 
 var _ apis.OpsRequest = &PostgresOpsRequest{}
 
-func NewPostgresOpsRequest(obj runtime.RawExtension) (*PostgresOpsRequest, error) {
+func NewPostgresOpsRequest(obj runtime.RawExtension, name string) (*PostgresOpsRequest, error) {
 	pgOpsReq := &opsapi.PostgresOpsRequest{}
 	if err := json.Unmarshal(obj.Raw, pgOpsReq); err != nil {
 		return nil, err
 	}
-	pgOpsReq.Name = rand.WithUniqSuffix("supervisor")
+	pgOpsReq.Name = name
 	return &PostgresOpsRequest{
 		req:      pgOpsReq,
 		timeout:  30 * time.Minute,

@@ -24,7 +24,6 @@ import (
 
 	"kubeops.dev/supervisor/apis"
 
-	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
@@ -39,12 +38,12 @@ type MySQLOpsRequest struct {
 
 var _ apis.OpsRequest = &MySQLOpsRequest{}
 
-func NewMySQLOpsRequest(obj runtime.RawExtension) (*MySQLOpsRequest, error) {
+func NewMySQLOpsRequest(obj runtime.RawExtension, name string) (*MySQLOpsRequest, error) {
 	myOpsReq := &opsapi.MySQLOpsRequest{}
 	if err := json.Unmarshal(obj.Raw, myOpsReq); err != nil {
 		return nil, err
 	}
-	myOpsReq.Name = rand.WithUniqSuffix("supervisor")
+	myOpsReq.Name = name
 	return &MySQLOpsRequest{
 		req:      myOpsReq,
 		timeout:  30 * time.Minute,
