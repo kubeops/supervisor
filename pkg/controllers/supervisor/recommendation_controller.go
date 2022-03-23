@@ -75,34 +75,42 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		klog.Infof("Recommendation %q doesn't exist anymore", key.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	rcmd := obj.DeepCopy()
+	obj = obj.DeepCopy()
 
-	if rcmd.Status.Phase == "" {
-		_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+	if obj.Status.Phase == "" {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
 			in := obj.(*supervisorv1alpha1.Recommendation)
 			in.Status.Phase = supervisorv1alpha1.Pending
 			return in
 		})
-		return ctrl.Result{}, err
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
-	if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
-		if rcmd.Status.Outdated {
-			return ctrl.Result{}, nil
+	if obj.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
+		if obj.Status.Outdated {
+			_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+				in := obj.(*supervisorv1alpha1.Recommendation)
+				in.Status.ObservedGeneration = in.Generation
+
+				return in
+			})
+			return ctrl.Result{}, err
 		}
 
-		if rcmd.Status.CreatedOperationRef != nil {
-			return r.checkOpsRequestStatus(ctx, rcmd)
+		if obj.Status.CreatedOperationRef != nil {
+			return r.checkOpsRequestStatus(ctx, obj)
 		}
 
-		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, rcmd)
+		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, obj)
 		isMaintenanceTime, err := rcmdMaintenance.IsMaintenanceTime()
 		if err != nil {
-			return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Pending)
+			return r.handleErr(ctx, obj, err, supervisorv1alpha1.Pending)
 		}
 
-		if rcmd.Status.Phase == supervisorv1alpha1.Pending {
-			_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+		if obj.Status.Phase == supervisorv1alpha1.Pending {
+			_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
 				in := obj.(*supervisorv1alpha1.Recommendation)
 				in.Status.Phase = supervisorv1alpha1.Waiting
 				in.Status.Reason = supervisorv1alpha1.WaitingForMaintenanceWindow
@@ -115,9 +123,9 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 		}
 
-		return r.runMaintenanceWork(ctx, rcmd)
-	} else if rcmd.Status.ApprovalStatus == supervisorv1alpha1.ApprovalRejected {
-		_, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+		return r.runMaintenanceWork(ctx, obj)
+	} else if obj.Status.ApprovalStatus == supervisorv1alpha1.ApprovalRejected {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
 			in := obj.(*supervisorv1alpha1.Recommendation)
 			in.Status.Phase = supervisorv1alpha1.Skipped
 			in.Status.Reason = supervisorv1alpha1.RecommendationRejected
@@ -128,14 +136,14 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, err
 	}
 
-	if !rcmd.Spec.RequireExplicitApproval {
-		policyFinder := policy.NewApprovalPolicyFinder(ctx, r.Client, rcmd)
+	if !obj.Spec.RequireExplicitApproval {
+		policyFinder := policy.NewApprovalPolicyFinder(ctx, r.Client, obj)
 		approvalPolicy, err := policyFinder.FindApprovalPolicy()
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 		if approvalPolicy != nil {
-			_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+			_, _, err = kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
 				in := obj.(*supervisorv1alpha1.Recommendation)
 				in.Status.ApprovalStatus = supervisorv1alpha1.ApprovalApproved
 				in.Status.ApprovedWindow = &supervisorv1alpha1.ApprovedWindow{
