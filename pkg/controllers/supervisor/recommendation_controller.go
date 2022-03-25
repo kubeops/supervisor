@@ -204,6 +204,15 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 	deadlineKnocking := deadlineMgr.IsDeadlineLessThan(r.BeforeDeadlineDuration)
 
 	if !(maintainParallelism || deadlineKnocking) {
+		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.Phase = supervisorv1alpha1.Waiting
+			in.Status.Reason = supervisorv1alpha1.WaitingForExecution
+			return in
+		})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 	}
 
