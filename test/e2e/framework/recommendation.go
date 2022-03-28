@@ -97,6 +97,11 @@ func (f *Framework) newMongoDBRecommendation(dbKey client.ObjectKey, deadline *m
 				Name: "kubedb-ops-manager",
 			},
 			Deadline: deadline,
+			Rules: api.OperationPhaseRules{
+				Success:    `self.status.phase == 'Successful'`,
+				InProgress: `self.status.phase == 'Progressing'`,
+				Failed:     `self.status.phase == 'Failed'`,
+			},
 		},
 	}, nil
 }
@@ -126,6 +131,11 @@ func (f *Framework) newPostgresRecommendation(dbKey client.ObjectKey, deadline *
 				Name: "kubedb-ops-manager",
 			},
 			Deadline: deadline,
+			Rules: api.OperationPhaseRules{
+				Success:    `self.status.phase == 'Successful'`,
+				InProgress: `self.status.phase == 'Progressing'`,
+				Failed:     `self.status.phase == 'Failed'`,
+			},
 		},
 	}, nil
 }

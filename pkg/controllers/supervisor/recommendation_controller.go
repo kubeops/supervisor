@@ -21,9 +21,9 @@ import (
 	"sync"
 	"time"
 
-	"kubeops.dev/supervisor/apis"
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	deadline_manager "kubeops.dev/supervisor/pkg/deadline-manager"
+	"kubeops.dev/supervisor/pkg/evaluator"
 	"kubeops.dev/supervisor/pkg/maintenance"
 	"kubeops.dev/supervisor/pkg/parallelism"
 	"kubeops.dev/supervisor/pkg/policy"
@@ -49,7 +49,7 @@ import (
 type RecommendationReconciler struct {
 	client.Client
 	Scheme                 *runtime.Scheme
-	Mutex                  sync.Mutex
+	Mutex                  *sync.Mutex
 	RequeueAfterDuration   time.Duration
 	RetryAfterDuration     time.Duration
 	BeforeDeadlineDuration time.Duration
@@ -162,15 +162,13 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 }
 
 func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
-	opsReq, err := shared.GetOpsRequestObject(rcmd.Spec.Operation, rcmd.Status.CreatedOperationRef.Name)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	succeeded, err := opsReq.IsSucceeded(ctx, r.Client)
+	eval := evaluator.New(rcmd, r.Client)
+	success, err := eval.EvaluateSuccessfulOperation(ctx)
 	if err != nil {
 		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
-	if succeeded {
+
+	if success {
 		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 			in := obj.(*supervisorv1alpha1.Recommendation)
 			in.Status.Phase = supervisorv1alpha1.Succeeded
@@ -187,6 +185,7 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 		})
 		return ctrl.Result{}, err
 	}
+
 	return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 }
 
@@ -216,13 +215,16 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 		return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 	}
 
+	// Creating OpsRequest from given raw object
 	opsReqName := rand.WithUniqSuffix("supervisor")
-	exeObj, err := shared.GetOpsRequestObject(rcmd.Spec.Operation, opsReqName)
+	unObj, err := shared.GetUnstructuredObj(rcmd.Spec.Operation)
 	if err != nil {
 		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
+	unObj.SetName(opsReqName)
 
-	if err := r.executeOpsRequest(ctx, exeObj); err != nil {
+	err = r.Client.Create(ctx, unObj)
+	if err != nil {
 		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
 
@@ -242,23 +244,6 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 	})
 	return ctrl.Result{}, err
 }
-
-func (r *RecommendationReconciler) executeOpsRequest(ctx context.Context, e apis.OpsRequest) error {
-	return e.Execute(ctx, r.Client)
-}
-
-//func (r *RecommendationReconciler) addCondition(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, condition kmapi.Condition) (*supervisorv1alpha1.Recommendation, error) {
-//	obj, _, err := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-//		in := obj.(*supervisorv1alpha1.Recommendation)
-//		in.Status.Conditions = kmapi.SetCondition(rcmd.Status.Conditions, condition)
-//		return in
-//	})
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return obj.(*supervisorv1alpha1.Recommendation).DeepCopy(), nil
-//}
 
 func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, err error, phase supervisorv1alpha1.RecommendationPhase) (ctrl.Result, error) {
 	_, _, pErr := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
