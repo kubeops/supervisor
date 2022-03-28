@@ -78,6 +78,14 @@ func GetGVK(obj runtime.RawExtension) (schema.GroupVersionKind, error) {
 	return unObj.GetObjectKind().GroupVersionKind(), nil
 }
 
+func GetUnstructuredObj(obj runtime.RawExtension) (*unstructured.Unstructured, error) {
+	unObj := &unstructured.Unstructured{}
+	if err := json.Unmarshal(obj.Raw, unObj); err != nil {
+		return nil, err
+	}
+	return unObj, nil
+}
+
 func GetType(obj runtime.RawExtension) (string, error) {
 	unObj := &unstructured.Unstructured{}
 	if err := json.Unmarshal(obj.Raw, unObj); err != nil {

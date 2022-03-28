@@ -72,6 +72,25 @@ spec:
                   executed without manual approval and any kind of ApprovalPolicy
                   will be ignored.
                 type: boolean
+              rules:
+                description: 'Rules defines OperationPhaseRules. It contains three
+                  identification rules of successful execution of the operation, progressing
+                  execution of the operation & failed execution of the operation.
+                  Example: rules:   success:    `self.status.phase == ''Successful''`   inProgress:
+                  `self.status.phase == ''Progressing''`   failed:     `self.status.phase
+                  == ''Failed''`'
+                properties:
+                  failed:
+                    type: string
+                  inProgress:
+                    type: string
+                  success:
+                    type: string
+                required:
+                - failed
+                - inProgress
+                - success
+                type: object
               target:
                 description: TypedLocalObjectReference contains enough information
                   to let you locate the typed referenced object inside the same namespace.
@@ -95,6 +114,7 @@ spec:
             required:
             - operation
             - recommender
+            - rules
             - target
             type: object
           status:

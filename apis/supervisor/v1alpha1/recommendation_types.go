@@ -46,6 +46,20 @@ type RecommendationSpec struct {
 	// Recommendation won't be executed without manual approval and any kind of ApprovalPolicy will be ignored.
 	// +optional
 	RequireExplicitApproval bool `json:"requireExplicitApproval,omitempty"`
+	// Rules defines OperationPhaseRules. It contains three identification rules of successful execution of the operation,
+	// progressing execution of the operation & failed execution of the operation.
+	// Example:
+	// rules:
+	//   success:    `self.status.phase == 'Successful'`
+	//   inProgress: `self.status.phase == 'Progressing'`
+	//   failed:     `self.status.phase == 'Failed'`
+	Rules OperationPhaseRules `json:"rules"`
+}
+
+type OperationPhaseRules struct {
+	Success    string `json:"success"`
+	InProgress string `json:"inProgress"`
+	Failed     string `json:"failed"`
 }
 
 // +kubebuilder:validation:Enum=Pending;Approved;Rejected

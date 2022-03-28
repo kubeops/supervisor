@@ -168,7 +168,7 @@ func (c completedConfig) New(ctx context.Context) (*SupervisorOperator, error) {
 	if err = (&supervisorcontrollers.RecommendationReconciler{
 		Client:                 mgr.GetClient(),
 		Scheme:                 mgr.GetScheme(),
-		Mutex:                  sync.Mutex{},
+		Mutex:                  &sync.Mutex{},
 		RequeueAfterDuration:   c.ExtraConfig.ReconcileConfig.RequeueAfterDuration,
 		RetryAfterDuration:     c.ExtraConfig.ReconcileConfig.RetryAfterDuration,
 		BeforeDeadlineDuration: c.ExtraConfig.ReconcileConfig.BeforeDeadlineDuration,
