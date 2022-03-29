@@ -29,6 +29,8 @@ import (
 	"kubeops.dev/supervisor/pkg/policy"
 	"kubeops.dev/supervisor/pkg/shared"
 
+	"github.com/jonboulle/clockwork"
+	"gomodules.xyz/pointer"
 	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,6 +55,7 @@ type RecommendationReconciler struct {
 	RequeueAfterDuration   time.Duration
 	RetryAfterDuration     time.Duration
 	BeforeDeadlineDuration time.Duration
+	Clock                  clockwork.Clock
 }
 
 //+kubebuilder:rbac:groups=supervisor.appscode.com,resources=recommendations,verbs=get;list;watch;create;update;patch;delete
@@ -88,6 +91,17 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
+	if obj.Status.FailedAttempt > pointer.Int32(obj.Spec.MaxRetry) {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.ObservedGeneration = in.Generation
+			in.Status.Phase = supervisorv1alpha1.Failed
+			in.Status.Reason = supervisorv1alpha1.OperationFailed
+			return in
+		})
+		return ctrl.Result{}, err
+	}
+
 	if obj.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
 		if obj.Status.Outdated {
 			_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
@@ -103,7 +117,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return r.checkOpsRequestStatus(ctx, obj)
 		}
 
-		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, obj)
+		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, obj, r.Clock)
 		isMaintenanceTime, err := rcmdMaintenance.IsMaintenanceTime()
 		if err != nil {
 			return r.handleErr(ctx, obj, err, supervisorv1alpha1.Pending)
@@ -168,7 +182,11 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
 
-	if success {
+	if success == nil {
+		return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
+	}
+
+	if pointer.Bool(success) {
 		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
 			in := obj.(*supervisorv1alpha1.Recommendation)
 			in.Status.Phase = supervisorv1alpha1.Succeeded
@@ -184,9 +202,23 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 			return in
 		})
 		return ctrl.Result{}, err
+	} else {
+		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.Phase = supervisorv1alpha1.Failed
+			in.Status.Reason = supervisorv1alpha1.OperationFailed
+			in.Status.Conditions = kmapi.SetCondition(in.Status.Conditions, kmapi.Condition{
+				Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
+				Status:             core.ConditionFalse,
+				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+				Reason:             supervisorv1alpha1.OperationFailed,
+				Message:            "Operation is failed",
+			})
+			in.Status.FailedAttempt += 1
+			return in
+		})
+		return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, err
 	}
-
-	return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 }
 
 func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
@@ -199,7 +231,7 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 		return ctrl.Result{}, err
 	}
 
-	deadlineMgr := deadline_manager.NewManager(rcmd)
+	deadlineMgr := deadline_manager.NewManager(rcmd, r.Clock)
 	deadlineKnocking := deadlineMgr.IsDeadlineLessThan(r.BeforeDeadlineDuration)
 
 	if !(maintainParallelism || deadlineKnocking) {

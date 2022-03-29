@@ -36,7 +36,6 @@ type ApprovalPolicy struct {
 
 type Operation struct {
 	metav1.GroupKind `json:",inline"`
-	Type             string `json:"type"`
 }
 
 type TargetRef struct {

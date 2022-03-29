@@ -59,10 +59,6 @@ func (c *ApprovalPolicyFinder) FindApprovalPolicy() (*supervisorv1alpha1.Approva
 		Kind:  opsGVK.Kind,
 	}
 
-	opsType, err := shared.GetType(c.rcmd.Spec.Operation)
-	if err != nil {
-		return nil, err
-	}
 	targetObjGk := metav1.GroupKind{
 		Group: pointer.String(c.rcmd.Spec.Target.APIGroup),
 		Kind:  c.rcmd.Spec.Target.Kind,
@@ -70,7 +66,7 @@ func (c *ApprovalPolicyFinder) FindApprovalPolicy() (*supervisorv1alpha1.Approva
 
 	for _, p := range policyList.Items {
 		for _, t := range p.Targets {
-			if isMatched(t, targetObjGk, targetOpsGK, opsType) {
+			if isMatched(t, targetObjGk, targetOpsGK) {
 				return &p, nil
 			}
 		}
@@ -78,10 +74,10 @@ func (c *ApprovalPolicyFinder) FindApprovalPolicy() (*supervisorv1alpha1.Approva
 	return nil, nil
 }
 
-func isMatched(ref supervisorv1alpha1.TargetRef, targetObjGK, targetOpsGK metav1.GroupKind, opsType string) bool {
+func isMatched(ref supervisorv1alpha1.TargetRef, targetObjGK, targetOpsGK metav1.GroupKind) bool {
 	if ref.Group == targetObjGK.Group && ref.Kind == targetObjGK.Kind {
 		for _, op := range ref.Operations {
-			if op.GroupKind == targetOpsGK && op.Type == opsType {
+			if op.GroupKind == targetOpsGK {
 				return true
 			}
 		}

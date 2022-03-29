@@ -26,6 +26,7 @@ import (
 
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/checker/decls"
+	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -56,31 +57,31 @@ func New(obj *supervisorapi.Recommendation, kc client.Client) *Evaluator {
 	}
 }
 
-func (e *Evaluator) EvaluateSuccessfulOperation(ctx context.Context) (bool, error) {
+func (e *Evaluator) EvaluateSuccessfulOperation(ctx context.Context) (*bool, error) {
 	success, err := e.evaluateRule(ctx, e.obj.Spec.Rules.Success)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	if success {
-		return true, nil
+		return pointer.BoolP(true), nil
 	}
 
 	inProgress, err := e.evaluateRule(ctx, e.obj.Spec.Rules.InProgress)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	if inProgress {
-		return false, nil
+		return nil, nil
 	}
 
 	failed, err := e.evaluateRule(ctx, e.obj.Spec.Rules.Failed)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	if failed {
-		return false, errors.New("operation failed")
+		return pointer.BoolP(false), nil
 	}
-	return false, nil
+	return nil, nil
 }
 
 func (e *Evaluator) evaluateRule(ctx context.Context, rule string) (bool, error) {

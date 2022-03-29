@@ -172,6 +172,7 @@ func (c completedConfig) New(ctx context.Context) (*SupervisorOperator, error) {
 		RequeueAfterDuration:   c.ExtraConfig.ReconcileConfig.RequeueAfterDuration,
 		RetryAfterDuration:     c.ExtraConfig.ReconcileConfig.RetryAfterDuration,
 		BeforeDeadlineDuration: c.ExtraConfig.ReconcileConfig.BeforeDeadlineDuration,
+		Clock:                  supervisorv1alpha1.GetClock(),
 	}).SetupWithManager(mgr, recommendationControllerOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Recommendation")
 		os.Exit(1)

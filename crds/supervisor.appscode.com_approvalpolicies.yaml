@@ -61,12 +61,9 @@ spec:
                         type: string
                       kind:
                         type: string
-                      type:
-                        type: string
                     required:
                     - group
                     - kind
-                    - type
                     type: object
                   type: array
               required:

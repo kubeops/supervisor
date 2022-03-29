@@ -49,6 +49,17 @@ spec:
                 type: string
               description:
                 type: string
+              maxRetry:
+                description: 'MaxRetry holds the maximum number of times the operation
+                  will be tried to executed in failure scenario. MaxRetry is optional.
+                  If not set, the value is set as zero(0) by default. If MaxRetry
+                  is zero(0), the operation will be tried to executed only once. Note:
+                  MaxRetry is an immutable field. i.e. The field can''t be updated
+                  once set.'
+                format: int32
+                maximum: 10
+                minimum: 0
+                type: integer
               operation:
                 type: object
                 x-kubernetes-embedded-resource: true
@@ -218,14 +229,19 @@ spec:
                   type: object
                 type: array
               createdOperationRef:
-                description: LocalObjectReference contains enough information to let
-                  you locate the referenced object inside the same namespace.
+                description: CreatedOperationRef holds the created operation name.
                 properties:
                   name:
                     description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+              failedAttempt:
+                default: 0
+                description: FailedAttempt holds the number of times the operation
+                  is failed.
+                format: int32
+                type: integer
               observedGeneration:
                 description: observedGeneration is the most recent generation observed
                   for this resource. It corresponds to the resource's generation,

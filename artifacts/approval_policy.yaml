@@ -11,4 +11,3 @@ targets:
     operations:
       - group: ops.kubedb.com
         kind: MongoDBOpsRequest
-        type: Restart
