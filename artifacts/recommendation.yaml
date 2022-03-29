@@ -19,6 +19,10 @@ spec:
       type: Restart
       databaseRef:
         name: mg-rs
+  rules:
+    inProgress: self.status.phase == 'Progressing'
+    success: self.status.phase == 'Successful'
+    failed: self.status.phase == 'Failed'
   recommender:
     name: kubedb-ops-manager
 

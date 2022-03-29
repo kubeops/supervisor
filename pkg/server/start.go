@@ -48,6 +48,7 @@ import (
 const (
 	defaultEtcdPathPrefix = "/registry/kubeops.dev"
 	validatingWebhook     = "validators.supervisor.appscode.com"
+	mutatingWebhook       = "mutators.supervisor.appscode.com"
 )
 
 type SupervisorOperatorOptions struct {
@@ -125,6 +126,12 @@ func (o SupervisorOperatorOptions) Config() (*SupervisorOperatorConfig, error) {
 		}
 	}
 
+	if o.ExtraOptions.EnableMutatingWebhook {
+		if err := updateMutatingWebhookCABundle(serverConfig.ClientConfig, mutatingWebhook, o.ReconcileOptions.WebhookCertDir); err != nil {
+			return nil, err
+		}
+	}
+
 	cfg := &SupervisorOperatorConfig{
 		GenericConfig: serverConfig,
 		ExtraConfig: ExtraConfig{
@@ -171,6 +178,34 @@ func updateValidatingWebhookCABundle(config *rest.Config, webhookConfigName stri
 		return err
 	}
 	_, _, err = reg_util.PatchValidatingWebhookConfiguration(ctx, kc, vhook.DeepCopy(), func(in *v1.ValidatingWebhookConfiguration) *v1.ValidatingWebhookConfiguration {
+		for i := range in.Webhooks {
+			in.Webhooks[i].ClientConfig.CABundle = crtByte
+		}
+		return in
+	}, metav1.PatchOptions{})
+
+	return err
+}
+
+func updateMutatingWebhookCABundle(config *rest.Config, webhookConfigName string, certDir string) error {
+	crtByte, err := ioutil.ReadFile(path.Join(certDir, "tls.crt"))
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, kutil.ReadinessTimeout)
+	defer cancel()
+
+	kc, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
+	vhook, err := kc.AdmissionregistrationV1().MutatingWebhookConfigurations().Get(context.TODO(), webhookConfigName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	_, _, err = reg_util.PatchMutatingWebhookConfiguration(ctx, kc, vhook.DeepCopy(), func(in *v1.MutatingWebhookConfiguration) *v1.MutatingWebhookConfiguration {
 		for i := range in.Webhooks {
 			in.Webhooks[i].ClientConfig.CABundle = crtByte
 		}
