@@ -207,6 +207,10 @@ func (c completedConfig) New(ctx context.Context) (*SupervisorOperator, error) {
 		setupLog.Error(err, "unable to create webhook", "webhook", "ClusterMaintenanceWindow")
 		os.Exit(1)
 	}
+	if err = (&supervisorv1alpha1.Recommendation{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Recommendation")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
