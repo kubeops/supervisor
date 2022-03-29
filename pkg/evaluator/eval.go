@@ -17,18 +17,14 @@ limitations under the License.
 package evaluator
 
 import (
-	"context"
-	"errors"
 	"sync"
 
 	supervisorapi "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
-	"kubeops.dev/supervisor/pkg/shared"
 
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/checker/decls"
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -46,19 +42,19 @@ func init() {
 }
 
 type Evaluator struct {
-	obj *supervisorapi.Recommendation
-	kc  client.Client
+	obj   *unstructured.Unstructured
+	rules supervisorapi.OperationPhaseRules
 }
 
-func New(obj *supervisorapi.Recommendation, kc client.Client) *Evaluator {
+func New(obj *unstructured.Unstructured, rules supervisorapi.OperationPhaseRules) *Evaluator {
 	return &Evaluator{
-		obj: obj,
-		kc:  kc,
+		obj:   obj,
+		rules: rules,
 	}
 }
 
-func (e *Evaluator) EvaluateSuccessfulOperation(ctx context.Context) (*bool, error) {
-	success, err := e.evaluateRule(ctx, e.obj.Spec.Rules.Success)
+func (e *Evaluator) EvaluateSuccessfulOperation() (*bool, error) {
+	success, err := e.evaluateRule(e.rules.Success)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +62,7 @@ func (e *Evaluator) EvaluateSuccessfulOperation(ctx context.Context) (*bool, err
 		return pointer.BoolP(true), nil
 	}
 
-	inProgress, err := e.evaluateRule(ctx, e.obj.Spec.Rules.InProgress)
+	inProgress, err := e.evaluateRule(e.rules.InProgress)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +70,7 @@ func (e *Evaluator) EvaluateSuccessfulOperation(ctx context.Context) (*bool, err
 		return nil, nil
 	}
 
-	failed, err := e.evaluateRule(ctx, e.obj.Spec.Rules.Failed)
+	failed, err := e.evaluateRule(e.rules.Failed)
 	if err != nil {
 		return nil, err
 	}
@@ -84,13 +80,13 @@ func (e *Evaluator) EvaluateSuccessfulOperation(ctx context.Context) (*bool, err
 	return nil, nil
 }
 
-func (e *Evaluator) evaluateRule(ctx context.Context, rule string) (bool, error) {
+func (e *Evaluator) evaluateRule(rule string) (bool, error) {
 	program, err := getProgramForRule(rule)
 	if err != nil {
 		return false, err
 	}
 
-	res, err := e.evalProgram(ctx, program)
+	res, err := e.evalProgram(program)
 	if err != nil {
 		return false, err
 	}
@@ -100,26 +96,11 @@ func (e *Evaluator) evaluateRule(ctx context.Context, rule string) (bool, error)
 	return false, nil
 }
 
-func (e *Evaluator) evalProgram(ctx context.Context, program cel.Program) (bool, error) {
-	gvk, err := shared.GetGVK(e.obj.Spec.Operation)
-	if err != nil {
-		return false, err
-	}
-	unObj := &unstructured.Unstructured{}
-	unObj.SetGroupVersionKind(gvk)
-	if e.obj.Status.CreatedOperationRef == nil {
-		return false, errors.New("created operation is missing in status")
-	}
+func (e *Evaluator) evalProgram(program cel.Program) (bool, error) {
+	res := make(map[string]interface{})
+	res[defaultCELVar] = e.obj.UnstructuredContent()
 
-	key := client.ObjectKey{Name: e.obj.Status.CreatedOperationRef.Name, Namespace: e.obj.Namespace}
-	err = e.kc.Get(ctx, key, unObj)
-	if err != nil {
-		return false, err
-	}
-	obj := make(map[string]interface{})
-	obj[defaultCELVar] = unObj.UnstructuredContent()
-
-	val, _, err := program.Eval(obj)
+	val, _, err := program.Eval(res)
 	if err != nil {
 		return false, err
 	}
