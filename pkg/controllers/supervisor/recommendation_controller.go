@@ -18,6 +18,7 @@ package supervisor
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -34,6 +35,7 @@ import (
 	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -176,8 +178,21 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 }
 
 func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
-	eval := evaluator.New(rcmd, r.Client)
-	success, err := eval.EvaluateSuccessfulOperation(ctx)
+	gvk, err := shared.GetGVK(rcmd.Spec.Operation)
+	if err != nil {
+		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
+	}
+	obj := &unstructured.Unstructured{}
+	obj.SetGroupVersionKind(gvk)
+
+	key := client.ObjectKey{Name: rcmd.Status.CreatedOperationRef.Name, Namespace: rcmd.Namespace}
+	err = r.Client.Get(ctx, key, obj)
+	if err != nil {
+		return r.recordFailedAttempt(ctx, rcmd, err)
+	}
+
+	eval := evaluator.New(obj, rcmd.Spec.Rules)
+	success, err := eval.EvaluateSuccessfulOperation()
 	if err != nil {
 		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
 	}
@@ -203,21 +218,7 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 		})
 		return ctrl.Result{}, err
 	} else {
-		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
-			in.Status.Phase = supervisorv1alpha1.Failed
-			in.Status.Reason = supervisorv1alpha1.OperationFailed
-			in.Status.Conditions = kmapi.SetCondition(in.Status.Conditions, kmapi.Condition{
-				Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
-				Status:             core.ConditionFalse,
-				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-				Reason:             supervisorv1alpha1.OperationFailed,
-				Message:            "Operation is failed",
-			})
-			in.Status.FailedAttempt += 1
-			return in
-		})
-		return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, err
+		return r.recordFailedAttempt(ctx, rcmd, errors.New("operation has been failed"))
 	}
 }
 
@@ -285,6 +286,24 @@ func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *supervis
 		return in
 	})
 
+	return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, pErr
+}
+
+func (r *RecommendationReconciler) recordFailedAttempt(ctx context.Context, obj *supervisorv1alpha1.Recommendation, err error) (ctrl.Result, error) {
+	_, _, pErr := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+		in := obj.(*supervisorv1alpha1.Recommendation)
+		in.Status.Phase = supervisorv1alpha1.Failed
+		in.Status.Reason = supervisorv1alpha1.OperationFailed
+		in.Status.Conditions = kmapi.SetCondition(in.Status.Conditions, kmapi.Condition{
+			Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
+			Status:             core.ConditionFalse,
+			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
+			Reason:             supervisorv1alpha1.OperationFailed,
+			Message:            err.Error(),
+		})
+		in.Status.FailedAttempt += 1
+		return in
+	})
 	return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, pErr
 }
 
