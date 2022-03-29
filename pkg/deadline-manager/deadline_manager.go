@@ -20,7 +20,6 @@ import (
 	"time"
 
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
-	"kubeops.dev/supervisor/pkg/shared"
 
 	"github.com/jonboulle/clockwork"
 )
@@ -30,10 +29,10 @@ type manager struct {
 	clock clockwork.Clock
 }
 
-func NewManager(rcmd *supervisorv1alpha1.Recommendation) *manager {
+func NewManager(rcmd *supervisorv1alpha1.Recommendation, clock clockwork.Clock) *manager {
 	return &manager{
 		rcmd:  rcmd,
-		clock: shared.GetClock(),
+		clock: clock,
 	}
 }
 

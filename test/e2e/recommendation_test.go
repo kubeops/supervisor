@@ -315,7 +315,6 @@ var _ = Describe("Supervisor E2E Testing", func() {
 									Group: opsapi.SchemeGroupVersion.Group,
 									Kind:  opsapi.ResourceKindMongoDBOpsRequest,
 								},
-								Type: opsapi.Restart,
 							},
 						},
 					},

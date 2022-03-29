@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
-	"kubeops.dev/supervisor/pkg/shared"
 
 	"github.com/jonboulle/clockwork"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -36,12 +35,12 @@ type RecommendationMaintenance struct {
 	clock clockwork.Clock
 }
 
-func NewRecommendationMaintenance(ctx context.Context, kc client.Client, rcmd *supervisorv1alpha1.Recommendation) *RecommendationMaintenance {
+func NewRecommendationMaintenance(ctx context.Context, kc client.Client, rcmd *supervisorv1alpha1.Recommendation, clock clockwork.Clock) *RecommendationMaintenance {
 	return &RecommendationMaintenance{
 		ctx:   ctx,
 		kc:    kc,
 		rcmd:  rcmd,
-		clock: shared.GetClock(),
+		clock: clock,
 	}
 }
 

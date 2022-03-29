@@ -54,6 +54,15 @@ type RecommendationSpec struct {
 	//   inProgress: `self.status.phase == 'Progressing'`
 	//   failed:     `self.status.phase == 'Failed'`
 	Rules OperationPhaseRules `json:"rules"`
+
+	// MaxRetry holds the maximum number of times the operation will be tried to executed in failure scenario.
+	// MaxRetry is optional. If not set, the value is set as zero(0) by default.
+	// If MaxRetry is zero(0), the operation will be tried to executed only once.
+	// Note: MaxRetry is an immutable field. i.e. The field can't be updated once set.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=10
+	MaxRetry *int32 `json:"maxRetry,omitempty"`
 }
 
 type OperationPhaseRules struct {
@@ -128,7 +137,14 @@ type RecommendationStatus struct {
 	// +kubebuilder:default=false
 	Outdated bool `json:"outdated"`
 
+	// CreatedOperationRef holds the created operation name.
+	// +optional
 	CreatedOperationRef *core.LocalObjectReference `json:"createdOperationRef,omitempty"`
+
+	// FailedAttempt holds the number of times the operation is failed.
+	// +optional
+	// +kubebuilder:default=0
+	FailedAttempt int32 `json:"failedAttempt"`
 }
 
 // +kubebuilder:validation:Enum=Pending;Skipped;Waiting;InProgress;Succeeded;Failed

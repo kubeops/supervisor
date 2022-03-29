@@ -26,6 +26,7 @@ const (
 	RecommendationSuccessfullyCreated = "RecommendationSuccessfullyCreated"
 	SuccessfullyCreatedOperation      = "SuccessfullyCreatedOperation"
 	SuccessfullyExecutedOperation     = "SuccessfullyExecutedOperation"
+	OperationFailed                   = "OperationFailed"
 	WaitingForApproval                = "WaitingForApproval"
 	WaitingForExecution               = "WaitingForExecution"
 	WaitingForMaintenanceWindow       = "WaitingForMaintenanceWindow"
