@@ -44,22 +44,19 @@ spec:
           spec:
             description: RecommendationSpec defines the desired state of Recommendation
             properties:
+              backoffLimit:
+                description: BackoffLimit specifies the number of retries before marking
+                  this recommendation failed. By default set as five(5). If BackoffLimit
+                  is zero(0), the operation will be tried to executed only once.
+                format: int32
+                maximum: 10
+                minimum: 0
+                type: integer
               deadline:
                 format: date-time
                 type: string
               description:
                 type: string
-              maxRetry:
-                description: 'MaxRetry holds the maximum number of times the operation
-                  will be tried to executed in failure scenario. MaxRetry is optional.
-                  If not set, the value is set as zero(0) by default. If MaxRetry
-                  is zero(0), the operation will be tried to executed only once. Note:
-                  MaxRetry is an immutable field. i.e. The field can''t be updated
-                  once set.'
-                format: int32
-                maximum: 10
-                minimum: 0
-                type: integer
               operation:
                 type: object
                 x-kubernetes-embedded-resource: true

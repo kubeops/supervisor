@@ -93,7 +93,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	if obj.Status.FailedAttempt > pointer.Int32(obj.Spec.MaxRetry) {
+	if obj.Status.FailedAttempt > pointer.Int32(obj.Spec.BackoffLimit) {
 		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
 			in := obj.(*supervisorv1alpha1.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
@@ -194,7 +194,7 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 	eval := evaluator.New(obj, rcmd.Spec.Rules)
 	success, err := eval.EvaluateSuccessfulOperation()
 	if err != nil {
-		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
+		return r.recordFailedAttempt(ctx, rcmd, err)
 	}
 
 	if success == nil {
@@ -298,7 +298,7 @@ func (r *RecommendationReconciler) recordFailedAttempt(ctx context.Context, obj 
 			Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
 			Status:             core.ConditionFalse,
 			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-			Reason:             supervisorv1alpha1.OperationFailed,
+			Reason:             err.Error(),
 			Message:            err.Error(),
 		})
 		in.Status.FailedAttempt += 1
