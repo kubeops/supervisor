@@ -17,14 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
 	"errors"
 
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
@@ -32,11 +30,9 @@ import (
 // log is for logging in this package.
 var (
 	recommendationlog = logf.Log.WithName("recommendation-resource")
-	kc                client.Client
 )
 
 func (r *Recommendation) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	kc = mgr.GetClient()
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -48,9 +44,8 @@ var _ webhook.Defaulter = &Recommendation{}
 func (r *Recommendation) Default() {
 	recommendationlog.Info("default", "name", r.Name)
 
-	// TODO(user): fill in your defaulting logic.
-	if r.Spec.MaxRetry == nil {
-		r.Spec.MaxRetry = pointer.Int32P(0)
+	if r.Spec.BackoffLimit == nil {
+		r.Spec.BackoffLimit = pointer.Int32P(5)
 	}
 }
 
@@ -60,14 +55,14 @@ var _ webhook.Validator = &Recommendation{}
 func (r *Recommendation) ValidateCreate() error {
 	recommendationlog.Info("validate create", "name", r.Name)
 
-	return r.validateRecommendation(context.TODO())
+	return r.validateRecommendation()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *Recommendation) ValidateUpdate(old runtime.Object) error {
 	recommendationlog.Info("validate update", "name", r.Name)
 
-	return r.validateRecommendation(context.TODO())
+	return r.validateRecommendation()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -77,19 +72,21 @@ func (r *Recommendation) ValidateDelete() error {
 	return nil
 }
 
-func (r *Recommendation) validateRecommendation(ctx context.Context) error {
+func (r *Recommendation) validateRecommendation() error {
 	klog.Info("Validating Recommendation webhook")
-	if r.Spec.MaxRetry == nil {
-		return errors.New(".spec.maxRetry must not be nil")
-	}
-	obj := &Recommendation{}
-	err := kc.Get(ctx, client.ObjectKey{Name: r.Name, Namespace: r.Namespace}, obj)
-	if client.IgnoreNotFound(err) != nil {
-		return err
+	if r.Spec.BackoffLimit == nil {
+		return errors.New("backoffLimit field .spec.backoffLimit must not be nil")
 	}
 
-	if client.IgnoreNotFound(err) == nil && obj.Spec.MaxRetry != nil && obj.Spec.MaxRetry != r.Spec.MaxRetry {
-		return errors.New("failed to update. reason: .spec.maxRetry field is immutable")
+	if len(r.Spec.Rules.Success) == 0 {
+		return errors.New("success rule field .spec.rules.success can't be empty")
 	}
+	if len(r.Spec.Rules.InProgress) == 0 {
+		return errors.New("inProgress rule field .spec.rules.inProgress can't be empty")
+	}
+	if len(r.Spec.Rules.Failed) == 0 {
+		return errors.New("failed rule field .spec.rules.failed can't be empty")
+	}
+
 	return nil
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package evaluator
 
 import (
+	"errors"
 	"sync"
 
 	supervisorapi "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
@@ -25,6 +26,7 @@ import (
 	"github.com/google/cel-go/checker/decls"
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -54,6 +56,7 @@ func New(obj *unstructured.Unstructured, rules supervisorapi.OperationPhaseRules
 }
 
 func (e *Evaluator) EvaluateSuccessfulOperation() (*bool, error) {
+	klog.Info(e.rules.Failed)
 	success, err := e.evaluateRule(e.rules.Success)
 	if err != nil {
 		return nil, err
@@ -96,7 +99,17 @@ func (e *Evaluator) evaluateRule(rule string) (bool, error) {
 	return false, nil
 }
 
-func (e *Evaluator) evalProgram(program cel.Program) (bool, error) {
+func (e *Evaluator) evalProgram(program cel.Program) (success bool, err error) {
+	// Configure error recovery for unexpected panics during evaluation.
+	defer func() {
+		if r := recover(); r != nil {
+			klog.Info("recovered from panic, given rules is invalid")
+			success = false
+			err = errors.New("given rules is invalid")
+			return
+		}
+	}()
+
 	res := make(map[string]interface{})
 	res[defaultCELVar] = e.obj.UnstructuredContent()
 
@@ -105,9 +118,9 @@ func (e *Evaluator) evalProgram(program cel.Program) (bool, error) {
 		return false, err
 	}
 	if val.Value() == true {
-		return true, nil
+		success = true
 	}
-	return false, nil
+	return
 }
 
 func getProgramForRule(rule string) (cel.Program, error) {
@@ -124,13 +137,13 @@ func getProgramForRule(rule string) (cel.Program, error) {
 		return nil, err
 	}
 
-	ast, iss := env.Parse(rule)
-	if iss.Err() != nil {
+	ast, iss := env.Compile(rule)
+	if iss != nil && iss.Err() != nil {
 		return nil, err
 	}
 
 	checked, iss := env.Check(ast)
-	if iss.Err() != nil {
+	if iss != nil && iss.Err() != nil {
 		return nil, err
 	}
 	program, err = env.Program(checked)
