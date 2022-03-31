@@ -20,21 +20,17 @@ import (
 	"errors"
 	"time"
 
-	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	kmapi "kmodules.xyz/client-go/api/v1"
-
-	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	"gomodules.xyz/pointer"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kmapi "kmodules.xyz/client-go/api/v1"
+	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/test/e2e/framework"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Supervisor E2E Testing", func() {
@@ -59,6 +55,12 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			By("Creating Default MaintenanceWindow")
 			Expect(f.CreateDefaultMaintenanceWindow()).Should(Succeed())
 		}
+		getDefaultMaintenanceWindow = func() *api.MaintenanceWindow {
+			By("Getting Default MaintenanceWindow")
+			mw, err := f.GetDefaultMaintenanceWindow()
+			Expect(err).NotTo(HaveOccurred())
+			return mw
+		}
 		createTwoDefaultMaintenanceWindow = func() error {
 			By("Creating First Default MaintenanceWindow")
 			err := f.CreateDefaultMaintenanceWindow()
@@ -77,6 +79,12 @@ var _ = Describe("Supervisor E2E Testing", func() {
 		createDefaultClusterMaintenanceWindow = func(days map[api.DayOfWeek][]api.TimeWindow, dates []api.DateWindow) {
 			By("Creating Default Cluster MaintenanceWindow")
 			Expect(f.CreateDefaultClusterMaintenanceWindow(days, dates)).Should(Succeed())
+		}
+		getDefaultClusterMaintenanceWindow = func() *api.ClusterMaintenanceWindow {
+			By("Getting Default Cluster MaintenanceWindow")
+			cmw, err := f.GetDefaultClusterMaintenanceWindow()
+			Expect(err).NotTo(HaveOccurred())
+			return cmw
 		}
 		createMongoDBRecommendation = func(dbKey client.ObjectKey) *api.Recommendation {
 			By("Creating a Recommendation for MongoDB restart OpsRequest")
@@ -245,7 +253,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				defer cleanupRecommendation(key)
 
 				aw := &api.ApprovedWindow{
-					Window: api.Immediately,
+					Window: api.Immediate,
 				}
 				updateRecommendationApprovedWindow(key, aw)
 
@@ -542,9 +550,35 @@ var _ = Describe("Supervisor E2E Testing", func() {
 		})
 
 		Context("Failure events", func() {
-			It("Should face error while creating multiple default MaintenanceWindow in same namespace", func() {
+			It("Should encounter error while creating multiple default MaintenanceWindow in same namespace", func() {
 				err := createTwoDefaultMaintenanceWindow()
 				Expect(err).Should(HaveOccurred())
+			})
+		})
+
+		Context("Webhook test", func() {
+			It("Should create Default MaintenanceWindow and validate default maintenance window annotation", func() {
+				createDefaultMaintenanceWindow()
+				defer cleanupDefaultMaintenanceWindow()
+				mw := getDefaultMaintenanceWindow()
+				_, found := mw.Annotations[api.DefaultMaintenanceWindowKey]
+				Expect(found).To(BeTrue())
+			})
+
+			It("Should create Default Cluster MaintenanceWindow and validate default cluster maintenance window annotation", func() {
+				days := f.GetAllDayOfWeekTimeWindow()
+				createDefaultClusterMaintenanceWindow(days, nil)
+				defer cleanupDefaultClusterMaintenanceWindow()
+
+				cmw := getDefaultClusterMaintenanceWindow()
+				_, found := cmw.Annotations[api.DefaultClusterMaintenanceWindowKey]
+				Expect(found).To(BeTrue())
+			})
+
+			It("Should create Recommendation without backoffLimit and validate default backoffLimit", func() {
+				obj := createRecommendationWithDeadline(client.ObjectKey{Name: "test", Namespace: "test"}, nil)
+				defer cleanupRecommendation(client.ObjectKey{Namespace: obj.Namespace, Name: obj.Name})
+				Expect(pointer.Int32(obj.Spec.BackoffLimit)).Should(Equal(int32(api.DefaultBackoffLimit)))
 			})
 		})
 	})

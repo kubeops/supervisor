@@ -36,6 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type TransformFunc func(obj *api.Recommendation) *api.Recommendation
+
 func (f *Framework) getMongoDBRestartOpsRequest(dbKey client.ObjectKey) *opsapi.MongoDBOpsRequest {
 	return &opsapi.MongoDBOpsRequest{
 		TypeMeta: metav1.TypeMeta{

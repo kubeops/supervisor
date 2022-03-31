@@ -201,7 +201,7 @@ spec:
                     type: object
                   window:
                     description: 'Window defines the ApprovedWindow type Possible
-                      values are: Immediately: Recommendation will be executed immediately
+                      values are: Immediate: Recommendation will be executed immediately
                       NextAvailable: Recommendation will be executed in the next Available
                       window SpecificDates: Recommendation will be executed in the
                       given dates.'

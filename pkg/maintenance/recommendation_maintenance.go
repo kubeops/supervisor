@@ -46,7 +46,7 @@ func NewRecommendationMaintenance(ctx context.Context, kc client.Client, rcmd *s
 
 func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 	aw := r.rcmd.Status.ApprovedWindow
-	if aw != nil && aw.Window == supervisorv1alpha1.Immediately {
+	if aw != nil && aw.Window == supervisorv1alpha1.Immediate {
 		return true, nil
 	} else if aw != nil && aw.Window == supervisorv1alpha1.SpecificDates {
 		if len(aw.Dates) == 0 {

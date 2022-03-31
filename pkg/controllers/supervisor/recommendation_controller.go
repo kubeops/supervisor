@@ -82,6 +82,27 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 	obj = obj.DeepCopy()
 
+	// Ignore any update in the recommendation object if the recommendation is already succeeded
+	if obj.Status.Phase == supervisorv1alpha1.Succeeded {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.ObservedGeneration = in.Generation
+			return in
+		})
+		return ctrl.Result{}, err
+	}
+
+	if obj.Status.FailedAttempt > pointer.Int32(obj.Spec.BackoffLimit) {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.ObservedGeneration = in.Generation
+			in.Status.Phase = supervisorv1alpha1.Failed
+			in.Status.Reason = supervisorv1alpha1.BackoffLimitExceeded
+			return in
+		})
+		return ctrl.Result{}, err
+	}
+
 	if obj.Status.Phase == "" {
 		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
 			in := obj.(*supervisorv1alpha1.Recommendation)
@@ -91,17 +112,6 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-	}
-
-	if obj.Status.FailedAttempt > pointer.Int32(obj.Spec.BackoffLimit) {
-		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
-			in.Status.ObservedGeneration = in.Generation
-			in.Status.Phase = supervisorv1alpha1.Failed
-			in.Status.Reason = supervisorv1alpha1.OperationFailed
-			return in
-		})
-		return ctrl.Result{}, err
 	}
 
 	if obj.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
