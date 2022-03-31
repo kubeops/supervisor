@@ -34,18 +34,32 @@ const (
 
 // RecommendationSpec defines the desired state of Recommendation
 type RecommendationSpec struct {
-	Description string                         `json:"description,omitempty"`
-	Target      core.TypedLocalObjectReference `json:"target"`
+	// Description specifies the reason why this recommendation is generated.
+	// +optional
+	Description string `json:"description,omitempty"`
+
+	// Target specifies the APIGroup, Kind & Name of the target resource for which the recommendation is generated
+	Target core.TypedLocalObjectReference `json:"target"`
+
+	// Operation holds a kubernetes object yaml which will be applied when this recommendation will be executed.
+	// It should be a valid kubernetes resource yaml containing apiVersion, kind and metadata fields.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:EmbeddedResource
-	Operation   runtime.RawExtension  `json:"operation"`
+	Operation runtime.RawExtension `json:"operation"`
+
+	// Recommender holds the name and namespace of the component which generate this recommendation.
 	Recommender kmapi.ObjectReference `json:"recommender"`
+
+	// The recommendation will be executed within the given Deadline.
+	// To maintain deadline, Parallelism can be compromised.
 	// +optional
 	Deadline *metav1.Time `json:"deadline,omitempty"`
+
 	// If RequireExplicitApproval is set to `true` then the Recommendation must be Approved manually.
 	// Recommendation won't be executed without manual approval and any kind of ApprovalPolicy will be ignored.
 	// +optional
 	RequireExplicitApproval bool `json:"requireExplicitApproval,omitempty"`
+
 	// Rules defines OperationPhaseRules. It contains three identification rules of successful execution of the operation,
 	// progressing execution of the operation & failed execution of the operation.
 	// Example:
@@ -64,10 +78,35 @@ type RecommendationSpec struct {
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 }
 
+// OperationPhaseRules defines three identification rules of successful execution of the operation,
+// progressing execution of the operation & failed execution of the operation.
+// To specifies any field of the Operation object, the rule must start with the word `self`.
+// Example:
+//        .status.phase -> self.status.phase
+//        .status.observedGeneration -> self.status.observedGeneration
+// The rules can be any valid expression supported by CEL(Common Expression Language).
+// Ref: https://github.com/google/cel-spec
 type OperationPhaseRules struct {
-	Success    string `json:"success"`
+	// Success defines a rule to identify the successful execution of the operation.
+	// Example:
+	//   success: `self.status.phase == 'Successful'`
+	// Here self.status.phase is pointing to .status.phase field of the Operation object.
+	// When .status.phase becomes `Successful`, the Success rule will satisfy.
+	Success string `json:"success"`
+
+	// InProgress defines a rule to identify that applied operation is progressing.
+	// Example:
+	//   inProgress: `self.status.phase == 'Progressing'`
+	// Here self.status.phase is pointing to .status.phase field of the Operation object.
+	// When .status.phase becomes `Progressing`, the InProgress rule will satisfy.
 	InProgress string `json:"inProgress"`
-	Failed     string `json:"failed"`
+
+	// Failed defines a rule to identify that applied operation is failed.
+	// Example:
+	//   inProgress: `self.status.phase == 'Failed'`
+	// Here self.status.phase is pointing to .status.phase field of the Operation object.
+	// When .status.phase becomes `Failed`, the Failed rule will satisfy.
+	Failed string `json:"failed"`
 }
 
 // +kubebuilder:validation:Enum=Pending;Approved;Rejected
@@ -101,33 +140,67 @@ type Subject struct {
 
 // RecommendationStatus defines the observed state of Recommendation
 type RecommendationStatus struct {
+	// Specifies the Approval Status of the Recommendation.
+	// Possible values are `Pending`, `Approved`, `Rejected`
+	// Pending: Recommendation is yet to Approved or Rejected
+	// Approved: Recommendation is permitted to execute.
+	// Rejected: Recommendation is rejected and never be executed.
 	// +optional
 	// +kubebuilder:default=Pending
 	ApprovalStatus ApprovalStatus `json:"approvalStatus"`
+
+	// Specifies the Recommendation current phase.
+	// Possible values are:
+	// Pending : Recommendation misses at least one pre-requisite for executing the operation.
+	//           It also tells that some user action is needed.
+	// Skipped : Operation is skipped because of Rejection ApprovalStatus.
+	// Waiting : Recommendation is waiting for the MaintenanceWindow to execute the operation
+	//           or waiting for others Recommendation to complete far maintaining Parallelism.
+	// InProgress : The operation execution is successfully started and waiting for its final status.
+	// Succeeded : Operation has been successfully executed.
+	// Failed : Operation execution has not completed successfully i.e. encountered an error
 	// +optional
 	Phase RecommendationPhase `json:"phase,omitempty"`
-	// A message indicating details about why the Recommendation is in this phase.
+
+	// A message indicating details about Recommendation current phase.
 	// +optional
 	// +kubebuilder:default=WaitingForApproval
 	Reason string `json:"reason"`
+
+	// Specifies Reviewer's details.
 	// +optional
 	Reviewer *Subject `json:"reviewer,omitempty"`
+
+	// Specifies Reviewer's comment.
 	// +optional
 	Comments string `json:"comments,omitempty"`
+
+	// Contains review timestamp
 	// +optional
 	ReviewTimestamp *metav1.Time `json:"reviewTimestamp,omitempty"`
+
+	// ApprovedWindow specifies the time window configuration for the Recommendation execution.
 	// +optional
 	ApprovedWindow *ApprovedWindow `json:"approvedWindow,omitempty"`
+
+	// Parallelism imposes some restriction to Recommendation execution.
+	// Possible values are:
+	// Namespace: Only one Recommendation can be executed at a time in a namespace.
+	// Target: Only one Recommendation for a given target can be executed at a time.
+	// TargetAndNamespace: Only one Recommendation for a given target can be executed at a time in a namespace.
 	// +optional
 	// +kubebuilder:default=Namespace
 	Parallelism Parallelism `json:"parallelism,omitempty"`
+
 	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
 	// resource's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-	// Conditions applied to the database, such as approval or denial.
+
+	// Conditions applied to the Recommendation.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+
 	// Outdated is indicating details whether the Recommendation is outdated or not.
 	// If the value is `true`, then Recommendation will not be executed. This indicates that after generating the Recommendation,
 	// the targeted resource is changed in such a way that the generated Recommendation has become outdated & can't be executed anymore.
@@ -150,54 +223,56 @@ type RecommendationStatus struct {
 type RecommendationPhase string
 
 const (
-	// Pending : Recommendation misses at least one pre-requisite for executing the operation
-	Pending RecommendationPhase = "Pending"
-	// Skipped : Operation is skipped because of Rejection ApprovalStatus
-	Skipped RecommendationPhase = "Skipped"
-	// Waiting : Recommendation is waiting for the MaintenanceWindow to execute the operation
-	// or waiting for others Recommendation to complete far maintaining Parallelism
-	Waiting RecommendationPhase = "Waiting"
-	// InProgress : The operation execution is successfully started and yet to be completed
+	Pending    RecommendationPhase = "Pending"
+	Skipped    RecommendationPhase = "Skipped"
+	Waiting    RecommendationPhase = "Waiting"
 	InProgress RecommendationPhase = "InProgress"
-	// Succeeded : Operation has been successfully executed
-	Succeeded RecommendationPhase = "Succeeded"
-	// Failed : Operation execution has not completed successfully i.e. encountered an error
-	Failed RecommendationPhase = "Failed"
+	Succeeded  RecommendationPhase = "Succeeded"
+	Failed     RecommendationPhase = "Failed"
 )
 
 // +kubebuilder:validation:Enum=Immediate;NextAvailable;SpecificDates
 type WindowType string
 
 const (
-	Immediately   WindowType = "Immediate"
+	Immediately   WindowType = "Immediately"
 	NextAvailable WindowType = "NextAvailable"
 	SpecificDates WindowType = "SpecificDates"
 )
 
-// ApprovedWindow Scenarios
+// ApprovedWindow Scenarios:
 //
 // Scenario 1: User provides nothing and default MaintenanceWindow will be used. If any default window(cluster scoped or namespaced) is not found,
-//             an error will be thrown.
+//             Recommendation will be in `Pending` state and waiting for maintenance window to be created.
 //             Default MaintenanceWindow Priority: NamespaceScoped > ClusterScoped.
 //             Note: If NamespaceScoped default MaintenanceWindow is found, ClusterScoped default MaintenanceWindow is skipped(if any).
 //
-// Scenario 2: User provides window type `Immediate` and ops request will be created immediately
+// Scenario 2: User provides window type `Immediate` and ops request will be created immediately.
 //
-// Scenario 3: User provides a specific MaintenanceWindow and that will be used or an error will be thrown if given MaintenanceWindow is not found
+// Scenario 3: User provides a specific MaintenanceWindow and that will be used or an error will be thrown if given MaintenanceWindow is not found.
 //
 // Scenario 4: User provides window type `NextAvailable` and the ops request will be executed in the next available MaintenanceWindow.
 //             Firstly, next namespace scoped available window will be used. If there is no MaintenanceWindow is found in the same namespace
 //             then next available ClusterMaintenanceWindow will be used.
-//             If there is no available Window is found in that time, an error will be thrown.
+//             If there is no available Window is found in that time, Recommendation will be in `Pending` state and waiting for maintenance window
+//             to be created.
 //
 // Scenario 5: User provides window type `SpecificDates`. In this case, user must provide at least one DateWindows in the dates field.
 //             Otherwise controller will throw an error. DateWindow is only be used for window type `SpecificDates`
 //
-
 type ApprovedWindow struct {
+	// Window defines the ApprovedWindow type
+	// Possible values are:
+	// Immediately: Recommendation will be executed immediately
+	// NextAvailable: Recommendation will be executed in the next Available window
+	// SpecificDates: Recommendation will be executed in the given dates.
 	Window WindowType `json:"window,omitempty"`
+
+	// MaintenanceWindow holds the reference of the MaintenanceWindow resource
 	// +optional
 	MaintenanceWindow *kmapi.TypedObjectReference `json:"maintenanceWindow,omitempty"`
+
+	// Dates holds a list of DateWindow when Recommendation is permitted to execute
 	// +optional
 	Dates []DateWindow `json:"dates,omitempty"`
 }
