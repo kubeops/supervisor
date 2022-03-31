@@ -19,16 +19,12 @@ package framework
 import (
 	"time"
 
-	kmapi "kmodules.xyz/client-go/api/v1"
-
 	"gomodules.xyz/x/crypto/rand"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (f *Framework) CreateDefaultMaintenanceWindow() error {
@@ -178,6 +174,20 @@ func (f *Framework) GetDateWindowsAfter(after time.Duration, duration time.Durat
 			End:   metav1.Time{Time: f.clock.Now().Add(after + duration)},
 		},
 	}
+}
+
+func (f *Framework) GetMaintenanceWindow(key client.ObjectKey) (*api.MaintenanceWindow, error) {
+	mw := &api.MaintenanceWindow{}
+	err := f.kc.Get(f.ctx, key, mw)
+	if err != nil {
+		return nil, err
+	}
+	return mw, nil
+}
+
+func (f *Framework) GetDefaultMaintenanceWindow() (*api.MaintenanceWindow, error) {
+	key := client.ObjectKey{Name: f.defaultMaintenanceWindowName(), Namespace: f.defaultMaintenanceWindowNamespace()}
+	return f.GetMaintenanceWindow(key)
 }
 
 func (f *Framework) DeleteMaintenanceWindow(key client.ObjectKey) error {

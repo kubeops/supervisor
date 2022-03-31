@@ -235,7 +235,7 @@ const (
 type WindowType string
 
 const (
-	Immediately   WindowType = "Immediately"
+	Immediate     WindowType = "Immediate"
 	NextAvailable WindowType = "NextAvailable"
 	SpecificDates WindowType = "SpecificDates"
 )
@@ -263,7 +263,7 @@ const (
 type ApprovedWindow struct {
 	// Window defines the ApprovedWindow type
 	// Possible values are:
-	// Immediately: Recommendation will be executed immediately
+	// Immediate: Recommendation will be executed immediately
 	// NextAvailable: Recommendation will be executed in the next Available window
 	// SpecificDates: Recommendation will be executed in the given dates.
 	Window WindowType `json:"window,omitempty"`

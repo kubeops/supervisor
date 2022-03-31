@@ -19,6 +19,7 @@ package v1alpha1
 const (
 	DefaultMaintenanceWindowKey        = "supervisor.appscode.com/is-default-maintenance-window"
 	DefaultClusterMaintenanceWindowKey = "supervisor.appscode.com/is-default-cluster-maintenance-window"
+	DefaultBackoffLimit                = 5
 )
 
 // List of Condition and Phase reasons
@@ -27,6 +28,7 @@ const (
 	SuccessfullyCreatedOperation      = "SuccessfullyCreatedOperation"
 	SuccessfullyExecutedOperation     = "SuccessfullyExecutedOperation"
 	OperationFailed                   = "OperationFailed"
+	BackoffLimitExceeded              = "BackoffLimitExceeded"
 	WaitingForApproval                = "WaitingForApproval"
 	WaitingForExecution               = "WaitingForExecution"
 	WaitingForMaintenanceWindow       = "WaitingForMaintenanceWindow"

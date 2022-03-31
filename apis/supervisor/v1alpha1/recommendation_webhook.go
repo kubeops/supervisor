@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"errors"
+	"reflect"
 
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,7 +46,7 @@ func (r *Recommendation) Default() {
 	recommendationlog.Info("default", "name", r.Name)
 
 	if r.Spec.BackoffLimit == nil {
-		r.Spec.BackoffLimit = pointer.Int32P(5)
+		r.Spec.BackoffLimit = pointer.Int32P(DefaultBackoffLimit)
 	}
 }
 
@@ -62,6 +63,11 @@ func (r *Recommendation) ValidateCreate() error {
 func (r *Recommendation) ValidateUpdate(old runtime.Object) error {
 	recommendationlog.Info("validate update", "name", r.Name)
 
+	obj := old.(*Recommendation)
+
+	if !reflect.DeepEqual(obj.Spec.Operation, r.Spec.Operation) || !reflect.DeepEqual(obj.Spec.Target, r.Spec.Target) {
+		return errors.New("can't update operation or target field. fields are immutable")
+	}
 	return r.validateRecommendation()
 }
 
@@ -77,15 +83,8 @@ func (r *Recommendation) validateRecommendation() error {
 	if r.Spec.BackoffLimit == nil {
 		return errors.New("backoffLimit field .spec.backoffLimit must not be nil")
 	}
-
-	if len(r.Spec.Rules.Success) == 0 {
-		return errors.New("success rule field .spec.rules.success can't be empty")
-	}
-	if len(r.Spec.Rules.InProgress) == 0 {
-		return errors.New("inProgress rule field .spec.rules.inProgress can't be empty")
-	}
-	if len(r.Spec.Rules.Failed) == 0 {
-		return errors.New("failed rule field .spec.rules.failed can't be empty")
+	if len(r.Spec.Rules.Success) == 0 || len(r.Spec.Rules.InProgress) == 0 || len(r.Spec.Rules.Failed) == 0 {
+		return errors.New("success/inProgress/failed rules can't be empty")
 	}
 
 	return nil
