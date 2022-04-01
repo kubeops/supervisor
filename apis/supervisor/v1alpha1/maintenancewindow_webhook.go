@@ -19,7 +19,9 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -82,6 +84,11 @@ func (r *MaintenanceWindow) ValidateDelete() error {
 
 func (r *MaintenanceWindow) validateMaintenanceWindow(ctx context.Context) error {
 	klog.Info("Validating MaintenanceWindow webhook")
+	if r.Spec.TimeZone != nil {
+		if err := validateTimeZone(pointer.String(r.Spec.TimeZone)); err != nil {
+			return err
+		}
+	}
 	if !r.Spec.IsDefault {
 		return nil
 	}
@@ -99,4 +106,9 @@ func (r *MaintenanceWindow) validateMaintenanceWindow(ctx context.Context) error
 	} else {
 		return fmt.Errorf("%q is already present as default MaintenanceWindow in namespace %q", mwList.Items[0].Name, mwList.Items[0].Namespace)
 	}
+}
+
+func validateTimeZone(location string) error {
+	_, err := time.LoadLocation(location)
+	return err
 }

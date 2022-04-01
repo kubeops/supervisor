@@ -276,7 +276,7 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
-# github.com/sergi/go-diff v1.1.0
+# github.com/sergi/go-diff v1.2.0
 ## explicit; go 1.12
 github.com/sergi/go-diff/diffmatchpatch
 # github.com/spf13/cobra v1.2.1
@@ -1079,7 +1079,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20220203031013-1de48437aaf3
+# kmodules.xyz/client-go v0.0.0-20220401121140-29c3e4900d68
 ## explicit; go 1.17
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration

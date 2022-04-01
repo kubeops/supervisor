@@ -20,7 +20,7 @@ require (
 	k8s.io/client-go v0.21.1
 	k8s.io/klog/v2 v2.9.0
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
-	kmodules.xyz/client-go v0.0.0-20220203031013-1de48437aaf3
+	kmodules.xyz/client-go v0.0.0-20220401121140-29c3e4900d68
 	kmodules.xyz/crd-schema-fuzz v0.0.0-20211025154117-6edb24ef11bc
 	kubedb.dev/apimachinery v0.24.0
 	sigs.k8s.io/controller-runtime v0.9.0
@@ -89,7 +89,7 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.28.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
-	github.com/sergi/go-diff v1.1.0 // indirect
+	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect

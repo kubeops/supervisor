@@ -29,7 +29,11 @@ type ApprovalPolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Specifies MaintenanceWindow reference for ApprovalPolicy.
+	// Recommendation will be executed in this MaintenanceWindow without manual approval.
 	MaintenanceWindowRef kmapi.TypedObjectReference `json:"maintenanceWindowRef"`
+
+	// Specifies the list of TargetRef for which the ApprovalPolicy will be effective for.
 	// +optional
 	Targets []TargetRef `json:"targets"`
 }

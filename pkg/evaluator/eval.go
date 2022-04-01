@@ -56,7 +56,6 @@ func New(obj *unstructured.Unstructured, rules supervisorapi.OperationPhaseRules
 }
 
 func (e *Evaluator) EvaluateSuccessfulOperation() (*bool, error) {
-	klog.Info(e.rules.Failed)
 	success, err := e.evaluateRule(e.rules.Success)
 	if err != nil {
 		return nil, err

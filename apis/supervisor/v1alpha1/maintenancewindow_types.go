@@ -34,6 +34,14 @@ const (
 type MaintenanceWindowSpec struct {
 	// +optional
 	IsDefault bool `json:"isDefault,omitempty"`
+	// If the TimeZone is not set or "" or "UTC", the given times and dates are considered as UTC.
+	// If the name is "Local", the given times and dates are considered as server local timezone.
+	//
+	// Otherwise, the TimeZone should specify a location name corresponding to a file
+	// in the IANA Time Zone database, such as "Asia/Dhaka", "America/New_York", .
+	// Ref: https://www.iana.org/time-zones
+	// +optional
+	TimeZone *string `json:"timeZone,omitempty"`
 	// +optional
 	Days map[DayOfWeek][]TimeWindow `json:"days,omitempty"`
 	// +optional
