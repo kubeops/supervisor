@@ -6,7 +6,7 @@ metadata:
 spec:
   description: "MongoDB Database Restart"
   target:
-    apiGroup: kubedb.com/v1alpha2
+    apiGroup: kubedb.com
     kind: MongoDB
     name: mg-rs
   operation:

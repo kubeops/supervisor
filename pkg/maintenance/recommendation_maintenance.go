@@ -20,10 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	"github.com/jonboulle/clockwork"
+	"gomodules.xyz/pointer"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -69,17 +71,21 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 		return false, errors.New("no available MaintenanceWindow is found")
 	}
 
-	day := r.clock.Now().UTC().Weekday().String()
-
 	mwPassedFlag := true
 
 	for _, mw := range mwList.Items {
 		if mw.Spec.Days != nil {
 			mwPassedFlag = false
 		}
+		loc, err := getLocation(mw.Spec.TimeZone)
+		if err != nil {
+			return false, err
+		}
+		day := getCurrentDay(r.clock, loc)
+
 		mTimes, found := mw.Spec.Days[supervisorv1alpha1.DayOfWeek(day)]
 		if found {
-			if r.isMaintenanceTimeWindow(mTimes) {
+			if r.isMaintenanceTimeWindow(mTimes, loc) {
 				return true, nil
 			}
 		}
@@ -195,11 +201,11 @@ func (r *RecommendationMaintenance) isMaintenanceDateWindowPassed(dates []superv
 	return true
 }
 
-func (r *RecommendationMaintenance) isMaintenanceTimeWindow(timeWindows []supervisorv1alpha1.TimeWindow) bool {
+func (r *RecommendationMaintenance) isMaintenanceTimeWindow(timeWindows []supervisorv1alpha1.TimeWindow, location *time.Location) bool {
 	for _, tw := range timeWindows {
-		now := kmapi.NewTime(r.clock.Now().UTC())
-		start := kmapi.NewTime(tw.Start.UTC())
-		end := kmapi.NewTime(tw.End.UTC())
+		now := kmapi.NewTime(r.clock.Now().In(location))
+		start := kmapi.NewTime(tw.Start.Time)
+		end := kmapi.NewTime(tw.End.Time)
 
 		if now.Before(&end) && start.Before(&now) {
 			return true
@@ -250,4 +256,12 @@ func (r *RecommendationMaintenance) getAvailableMaintenanceWindowList() (*superv
 		}
 	}
 	return mwList, nil
+}
+
+func getCurrentDay(clock clockwork.Clock, loc *time.Location) string {
+	return clock.Now().In(loc).Weekday().String()
+}
+
+func getLocation(location *string) (*time.Location, error) {
+	return time.LoadLocation(pointer.String(location))
 }

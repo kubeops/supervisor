@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -80,6 +81,11 @@ func (r *ClusterMaintenanceWindow) ValidateDelete() error {
 }
 
 func (r *ClusterMaintenanceWindow) validateClusterMaintenanceWindow(ctx context.Context) error {
+	if r.Spec.TimeZone != nil {
+		if err := validateTimeZone(pointer.String(r.Spec.TimeZone)); err != nil {
+			return err
+		}
+	}
 	if !r.Spec.IsDefault {
 		return nil
 	}

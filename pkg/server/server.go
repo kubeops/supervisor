@@ -35,8 +35,6 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
-	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
-	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -56,8 +54,6 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
 	utilruntime.Must(supervisorv1alpha1.AddToScheme(Scheme))
-	utilruntime.Must(opsapi.AddToScheme(Scheme))
-	utilruntime.Must(kubedbapi.AddToScheme(Scheme))
 
 	// we need to add the options to empty v1
 	// TODO: fix the server code to avoid this
