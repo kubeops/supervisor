@@ -1079,7 +1079,7 @@ k8s.io/utils/net
 k8s.io/utils/path
 k8s.io/utils/pointer
 k8s.io/utils/trace
-# kmodules.xyz/client-go v0.0.0-20220401121140-29c3e4900d68
+# kmodules.xyz/client-go v0.0.0-20220401190628-98cb179b1042
 ## explicit; go 1.17
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration

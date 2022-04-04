@@ -20,7 +20,7 @@ require (
 	k8s.io/client-go v0.21.1
 	k8s.io/klog/v2 v2.9.0
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
-	kmodules.xyz/client-go v0.0.0-20220401121140-29c3e4900d68
+	kmodules.xyz/client-go v0.0.0-20220401190628-98cb179b1042
 	kmodules.xyz/crd-schema-fuzz v0.0.0-20211025154117-6edb24ef11bc
 	kubedb.dev/apimachinery v0.24.0
 	sigs.k8s.io/controller-runtime v0.9.0

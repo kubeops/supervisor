@@ -7,8 +7,8 @@ spec:
   isDefault: true
   timeZone: Asia/Dhaka
   days:
-    Friday:
-      - start: 3:32PM
+    Monday:
+      - start: 10:40AM
         end: 7:00PM
   dates:
     - start: 2022-01-24T00:00:18Z

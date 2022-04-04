@@ -40,10 +40,25 @@ type MaintenanceWindowSpec struct {
 	// Otherwise, the TimeZone should specify a location name corresponding to a file
 	// in the IANA Time Zone database, such as "Asia/Dhaka", "America/New_York", .
 	// Ref: https://www.iana.org/time-zones
+	//      https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 	// +optional
 	TimeZone *string `json:"timeZone,omitempty"`
+	// Days consists of a map of DayOfWeek and corresponding list of TimeWindow.
+	// There is `Logical OR` relationship between Days and Dates.
+	// Example:
+	//  days:
+	//    Monday:
+	//     - start: 10:40AM
+	//       end: 7:00PM
 	// +optional
 	Days map[DayOfWeek][]TimeWindow `json:"days,omitempty"`
+	// Dates consists of a list of Dates as Maintenance time.
+	// Dates are always needed to be given in UTC format.
+	// Format: yyyy-mm-ddThh.mm.ssZ [Here Z stands for Zero time zone / UTC time zone / GMT (+0000)]
+	// Example:
+	//  dates:
+	//   - start: 2022-01-24T00:00:18Z
+	//     end: 2022-01-24T23:41:18Z
 	// +optional
 	Dates []DateWindow `json:"dates,omitempty"`
 }
