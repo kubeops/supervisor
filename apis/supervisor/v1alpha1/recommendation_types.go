@@ -64,9 +64,9 @@ type RecommendationSpec struct {
 	// progressing execution of the operation & failed execution of the operation.
 	// Example:
 	// rules:
-	//   success:    `self.status.phase == 'Successful'`
-	//   inProgress: `self.status.phase == 'Progressing'`
-	//   failed:     `self.status.phase == 'Failed'`
+	//   success:    `has(self.status.phase) && self.status.phase == 'Successful'`
+	//   inProgress: `has(self.status.phase) && self.status.phase == 'Progressing'`
+	//   failed:     `has(self.status.phase) && self.status.phase == 'Failed'`
 	Rules OperationPhaseRules `json:"rules"`
 
 	// BackoffLimit specifies the number of retries before marking this recommendation failed.
@@ -89,23 +89,23 @@ type RecommendationSpec struct {
 type OperationPhaseRules struct {
 	// Success defines a rule to identify the successful execution of the operation.
 	// Example:
-	//   success: `self.status.phase == 'Successful'`
+	//   success: `has(self.status.phase) && self.status.phase == 'Successful'`
 	// Here self.status.phase is pointing to .status.phase field of the Operation object.
-	// When .status.phase becomes `Successful`, the Success rule will satisfy.
+	// When .status.phase field presents and becomes `Successful`, the Success rule will satisfy.
 	Success string `json:"success"`
 
 	// InProgress defines a rule to identify that applied operation is progressing.
 	// Example:
-	//   inProgress: `self.status.phase == 'Progressing'`
+	//   inProgress: `has(self.status.phase) && self.status.phase == 'Progressing'`
 	// Here self.status.phase is pointing to .status.phase field of the Operation object.
-	// When .status.phase becomes `Progressing`, the InProgress rule will satisfy.
+	// When .status.phase field presents and becomes `Progressing`, the InProgress rule will satisfy.
 	InProgress string `json:"inProgress"`
 
 	// Failed defines a rule to identify that applied operation is failed.
 	// Example:
-	//   inProgress: `self.status.phase == 'Failed'`
+	//   inProgress: `has(self.status.phase) && self.status.phase == 'Failed'`
 	// Here self.status.phase is pointing to .status.phase field of the Operation object.
-	// When .status.phase becomes `Failed`, the Failed rule will satisfy.
+	// When .status.phase field presents and becomes `Failed`, the Failed rule will satisfy.
 	Failed string `json:"failed"`
 }
 

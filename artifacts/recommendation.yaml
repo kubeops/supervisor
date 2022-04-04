@@ -20,9 +20,9 @@ spec:
       databaseRef:
         name: mg-rs
   rules:
-    inProgress: self.status.phase == 'Progressing'
-    success: self.status.phase == 'Successful'
-    failed: self.status.phase == 'Failed'
+    inProgress: has(self.status.phase) && self.status.phase == 'Progressing'
+    success: has(self.status.phase) && self.status.phase == 'Successful'
+    failed: has(self.status.phase) && self.status.phase == 'Failed'
   recommender:
     name: kubedb-ops-manager
 

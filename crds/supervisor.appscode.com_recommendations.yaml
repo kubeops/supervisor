@@ -92,29 +92,32 @@ spec:
                 description: 'Rules defines OperationPhaseRules. It contains three
                   identification rules of successful execution of the operation, progressing
                   execution of the operation & failed execution of the operation.
-                  Example: rules:   success:    `self.status.phase == ''Successful''`   inProgress:
-                  `self.status.phase == ''Progressing''`   failed:     `self.status.phase
+                  Example: rules:   success:    `has(self.status.phase) && self.status.phase
+                  == ''Successful''`   inProgress: `has(self.status.phase) && self.status.phase
+                  == ''Progressing''`   failed:     `has(self.status.phase) && self.status.phase
                   == ''Failed''`'
                 properties:
                   failed:
                     description: 'Failed defines a rule to identify that applied operation
-                      is failed. Example:   inProgress: `self.status.phase == ''Failed''`
-                      Here self.status.phase is pointing to .status.phase field of
-                      the Operation object. When .status.phase becomes `Failed`, the
-                      Failed rule will satisfy.'
+                      is failed. Example:   inProgress: `has(self.status.phase) &&
+                      self.status.phase == ''Failed''` Here self.status.phase is pointing
+                      to .status.phase field of the Operation object. When .status.phase
+                      field presents and becomes `Failed`, the Failed rule will satisfy.'
                     type: string
                   inProgress:
                     description: 'InProgress defines a rule to identify that applied
-                      operation is progressing. Example:   inProgress: `self.status.phase
-                      == ''Progressing''` Here self.status.phase is pointing to .status.phase
-                      field of the Operation object. When .status.phase becomes `Progressing`,
+                      operation is progressing. Example:   inProgress: `has(self.status.phase)
+                      && self.status.phase == ''Progressing''` Here self.status.phase
+                      is pointing to .status.phase field of the Operation object.
+                      When .status.phase field presents and becomes `Progressing`,
                       the InProgress rule will satisfy.'
                     type: string
                   success:
                     description: 'Success defines a rule to identify the successful
-                      execution of the operation. Example:   success: `self.status.phase
-                      == ''Successful''` Here self.status.phase is pointing to .status.phase
-                      field of the Operation object. When .status.phase becomes `Successful`,
+                      execution of the operation. Example:   success: `has(self.status.phase)
+                      && self.status.phase == ''Successful''` Here self.status.phase
+                      is pointing to .status.phase field of the Operation object.
+                      When .status.phase field presents and becomes `Successful`,
                       the Success rule will satisfy.'
                     type: string
                 required:
