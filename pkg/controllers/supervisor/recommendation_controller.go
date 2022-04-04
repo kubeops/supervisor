@@ -190,7 +190,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
 	gvk, err := shared.GetGVK(rcmd.Spec.Operation)
 	if err != nil {
-		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
+		return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, err
 	}
 	obj := &unstructured.Unstructured{}
 	obj.SetGroupVersionKind(gvk)
@@ -198,13 +198,13 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 	key := client.ObjectKey{Name: rcmd.Status.CreatedOperationRef.Name, Namespace: rcmd.Namespace}
 	err = r.Client.Get(ctx, key, obj)
 	if err != nil {
-		return r.recordFailedAttempt(ctx, rcmd, err)
+		return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, err
 	}
 
 	eval := evaluator.New(obj, rcmd.Spec.Rules)
 	success, err := eval.EvaluateSuccessfulOperation()
 	if err != nil {
-		return r.recordFailedAttempt(ctx, rcmd, err)
+		return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, err
 	}
 
 	if success == nil {
