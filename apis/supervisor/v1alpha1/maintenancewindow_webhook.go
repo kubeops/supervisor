@@ -84,8 +84,8 @@ func (r *MaintenanceWindow) ValidateDelete() error {
 
 func (r *MaintenanceWindow) validateMaintenanceWindow(ctx context.Context) error {
 	klog.Info("Validating MaintenanceWindow webhook")
-	if r.Spec.TimeZone != nil {
-		if err := validateTimeZone(pointer.String(r.Spec.TimeZone)); err != nil {
+	if r.Spec.Timezone != nil {
+		if err := validateTimeZone(pointer.String(r.Spec.Timezone)); err != nil {
 			return err
 		}
 	}

@@ -82,11 +82,11 @@ spec:
                 type: object
               isDefault:
                 type: boolean
-              timeZone:
-                description: "If the TimeZone is not set or \"\" or \"UTC\", the given
+              timezone:
+                description: "If the Timezone is not set or \"\" or \"UTC\", the given
                   times and dates are considered as UTC. If the name is \"Local\",
                   the given times and dates are considered as server local timezone.
-                  \n Otherwise, the TimeZone should specify a location name corresponding
+                  \n Otherwise, the Timezone should specify a location name corresponding
                   to a file in the IANA Time Zone database, such as \"Asia/Dhaka\",
                   \"America/New_York\", . Ref: https://www.iana.org/time-zones      https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
                 type: string
