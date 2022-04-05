@@ -82,6 +82,18 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 	obj = obj.DeepCopy()
 
+	// Skipped outdated Recommendation
+	if obj.Status.Outdated {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+			in := obj.(*supervisorv1alpha1.Recommendation)
+			in.Status.ObservedGeneration = in.Generation
+			in.Status.Phase = supervisorv1alpha1.Skipped
+
+			return in
+		})
+		return ctrl.Result{}, err
+	}
+
 	// Ignore any update in the recommendation object if the recommendation is already succeeded
 	if obj.Status.Phase == supervisorv1alpha1.Succeeded {
 		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
@@ -115,16 +127,6 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if obj.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
-		if obj.Status.Outdated {
-			_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-				in := obj.(*supervisorv1alpha1.Recommendation)
-				in.Status.ObservedGeneration = in.Generation
-
-				return in
-			})
-			return ctrl.Result{}, err
-		}
-
 		if obj.Status.Phase == supervisorv1alpha1.InProgress && obj.Status.CreatedOperationRef != nil {
 			return r.checkOpsRequestStatus(ctx, obj)
 		}
