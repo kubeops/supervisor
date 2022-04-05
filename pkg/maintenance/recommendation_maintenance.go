@@ -77,7 +77,7 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 		if mw.Spec.Days != nil {
 			mwPassedFlag = false
 		}
-		loc, err := getLocation(mw.Spec.TimeZone)
+		loc, err := getLocation(mw.Spec.Timezone)
 		if err != nil {
 			return false, err
 		}

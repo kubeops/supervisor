@@ -81,8 +81,8 @@ func (r *ClusterMaintenanceWindow) ValidateDelete() error {
 }
 
 func (r *ClusterMaintenanceWindow) validateClusterMaintenanceWindow(ctx context.Context) error {
-	if r.Spec.TimeZone != nil {
-		if err := validateTimeZone(pointer.String(r.Spec.TimeZone)); err != nil {
+	if r.Spec.Timezone != nil {
+		if err := validateTimeZone(pointer.String(r.Spec.Timezone)); err != nil {
 			return err
 		}
 	}
