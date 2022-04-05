@@ -61,6 +61,14 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			Expect(err).NotTo(HaveOccurred())
 			return mw
 		}
+		checkDefaultMaintenanceWindowAnnotation = func() {
+			By("Checking Default MaintenanceWindow Annotation")
+			Eventually(func() bool {
+				mw := getDefaultMaintenanceWindow()
+				_, found := mw.Annotations[api.DefaultMaintenanceWindowKey]
+				return found
+			}).WithTimeout(time.Minute).WithPolling(time.Second).Should(BeTrue())
+		}
 		createTwoDefaultMaintenanceWindow = func() error {
 			By("Creating First Default MaintenanceWindow")
 			err := f.CreateDefaultMaintenanceWindow()
@@ -85,6 +93,14 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			cmw, err := f.GetDefaultClusterMaintenanceWindow()
 			Expect(err).NotTo(HaveOccurred())
 			return cmw
+		}
+		checkDefaultClusterMaintenanceWindowAnnotation = func() {
+			By("Checking Default ClusterMaintenanceWindow Annotation")
+			Eventually(func() bool {
+				mw := getDefaultClusterMaintenanceWindow()
+				_, found := mw.Annotations[api.DefaultClusterMaintenanceWindowKey]
+				return found
+			}).WithTimeout(time.Minute).WithPolling(time.Second).Should(BeTrue())
 		}
 		createMongoDBRecommendation = func(dbKey client.ObjectKey) *api.Recommendation {
 			By("Creating a Recommendation for MongoDB restart OpsRequest")
@@ -552,6 +568,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 		Context("Failure events", func() {
 			It("Should encounter error while creating multiple default MaintenanceWindow in same namespace", func() {
 				err := createTwoDefaultMaintenanceWindow()
+				defer cleanupDefaultMaintenanceWindow()
 				Expect(err).Should(HaveOccurred())
 			})
 		})
@@ -560,19 +577,14 @@ var _ = Describe("Supervisor E2E Testing", func() {
 			It("Should create Default MaintenanceWindow and validate default maintenance window annotation", func() {
 				createDefaultMaintenanceWindow()
 				defer cleanupDefaultMaintenanceWindow()
-				mw := getDefaultMaintenanceWindow()
-				_, found := mw.Annotations[api.DefaultMaintenanceWindowKey]
-				Expect(found).To(BeTrue())
+				checkDefaultMaintenanceWindowAnnotation()
 			})
 
 			It("Should create Default Cluster MaintenanceWindow and validate default cluster maintenance window annotation", func() {
 				days := f.GetAllDayOfWeekTimeWindow()
 				createDefaultClusterMaintenanceWindow(days, nil)
 				defer cleanupDefaultClusterMaintenanceWindow()
-
-				cmw := getDefaultClusterMaintenanceWindow()
-				_, found := cmw.Annotations[api.DefaultClusterMaintenanceWindowKey]
-				Expect(found).To(BeTrue())
+				checkDefaultClusterMaintenanceWindowAnnotation()
 			})
 
 			It("Should create Recommendation without backoffLimit and validate default backoffLimit", func() {
