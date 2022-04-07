@@ -24,14 +24,14 @@ const (
 
 // List of Condition and Phase reasons
 const (
-	RecommendationSuccessfullyCreated = "RecommendationSuccessfullyCreated"
-	SuccessfullyCreatedOperation      = "SuccessfullyCreatedOperation"
-	SuccessfullyExecutedOperation     = "SuccessfullyExecutedOperation"
-	OperationFailed                   = "OperationFailed"
-	BackoffLimitExceeded              = "BackoffLimitExceeded"
-	WaitingForApproval                = "WaitingForApproval"
-	WaitingForExecution               = "WaitingForExecution"
-	WaitingForMaintenanceWindow       = "WaitingForMaintenanceWindow"
-	StartedExecutingOperation         = "StartedExecutingOperation"
-	RecommendationRejected            = "RecommendationRejected"
+	SuccessfullyCreatedOperation  = "SuccessfullyCreatedOperation"
+	SuccessfullyExecutedOperation = "SuccessfullyExecutedOperation"
+	OperationFailed               = "OperationFailed"
+	BackoffLimitExceeded          = "BackoffLimitExceeded"
+	WaitingForApproval            = "WaitingForApproval"
+	WaitingForExecution           = "WaitingForExecution"
+	WaitingForMaintenanceWindow   = "WaitingForMaintenanceWindow"
+	StartedExecutingOperation     = "StartedExecutingOperation"
+	RecommendationRejected        = "RecommendationRejected"
+	RecommendationOutdated        = "RecommendationOutdated"
 )

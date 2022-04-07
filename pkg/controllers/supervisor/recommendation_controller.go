@@ -88,6 +88,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			in := obj.(*supervisorv1alpha1.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
 			in.Status.Phase = supervisorv1alpha1.Skipped
+			in.Status.Reason = supervisorv1alpha1.RecommendationOutdated
 
 			return in
 		})
@@ -119,6 +120,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
 			in := obj.(*supervisorv1alpha1.Recommendation)
 			in.Status.Phase = supervisorv1alpha1.Pending
+			in.Status.Reason = supervisorv1alpha1.WaitingForApproval
 			return in
 		})
 		if err != nil {
