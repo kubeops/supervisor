@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	fuzz "github.com/google/gofuzz"
 )
 
@@ -44,8 +43,16 @@ func (t *TimeOfDay) DeepCopyInto(out *TimeOfDay) {
 
 // NewTime returns a wrapped instance of the provided time
 func NewTime(t time.Time) TimeOfDay {
-	utc := t.UTC()
-	return TimeOfDay{time.Date(0, 0, 0, utc.Hour(), utc.Minute(), utc.Second(), 0, time.UTC)}
+	return TimeOfDay{time.Date(0, 0, 0, t.Hour(), t.Minute(), t.Second(), 0, time.UTC)}
+}
+
+// NewTimeInLocation returns a wrapped instance of the provided time according to location
+func NewTimeInLocation(t time.Time, loc *time.Location) TimeOfDay {
+	if loc == nil {
+		loc = time.UTC
+	}
+	t = t.In(loc)
+	return TimeOfDay{time.Date(0, 0, 0, t.Hour(), t.Minute(), t.Second(), 0, loc)}
 }
 
 // Date returns the TimeOfDay corresponding to the supplied parameters
@@ -164,14 +171,6 @@ func (t TimeOfDay) ToUnstructured() interface{} {
 	buf := make([]byte, 0, len(time.Kitchen))
 	buf = t.UTC().AppendFormat(buf, time.Kitchen)
 	return string(buf)
-}
-
-func (t TimeOfDay) MarshalJSONPB(_ *jsonpb.Marshaler) ([]byte, error) {
-	return t.MarshalJSON()
-}
-
-func (t *TimeOfDay) UnmarshalJSONPB(_ *jsonpb.Unmarshaler, jstr []byte) error {
-	return t.UnmarshalJSON(jstr)
 }
 
 // OpenAPISchemaType is used by the kube-openapi generator when constructing

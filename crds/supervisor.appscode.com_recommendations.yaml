@@ -14,7 +14,17 @@ spec:
     singular: recommendation
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Status
+      type: string
+    - jsonPath: .status.outdated
+      name: Outdated
+      type: boolean
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Recommendation is the Schema for the recommendations API
@@ -34,18 +44,34 @@ spec:
           spec:
             description: RecommendationSpec defines the desired state of Recommendation
             properties:
+              backoffLimit:
+                description: BackoffLimit specifies the number of retries before marking
+                  this recommendation failed. By default set as five(5). If BackoffLimit
+                  is zero(0), the operation will be tried to executed only once.
+                format: int32
+                maximum: 10
+                minimum: 0
+                type: integer
               deadline:
+                description: The recommendation will be executed within the given
+                  Deadline. To maintain deadline, Parallelism can be compromised.
                 format: date-time
                 type: string
               description:
+                description: Description specifies the reason why this recommendation
+                  is generated.
                 type: string
               operation:
+                description: Operation holds a kubernetes object yaml which will be
+                  applied when this recommendation will be executed. It should be
+                  a valid kubernetes resource yaml containing apiVersion, kind and
+                  metadata fields.
                 type: object
                 x-kubernetes-embedded-resource: true
                 x-kubernetes-preserve-unknown-fields: true
               recommender:
-                description: ObjectReference contains enough information to let you
-                  inspect or modify the referred object.
+                description: Recommender holds the name and namespace of the component
+                  which generate this recommendation.
                 properties:
                   name:
                     description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
@@ -56,9 +82,52 @@ spec:
                 required:
                 - name
                 type: object
+              requireExplicitApproval:
+                description: If RequireExplicitApproval is set to `true` then the
+                  Recommendation must be Approved manually. Recommendation won't be
+                  executed without manual approval and any kind of ApprovalPolicy
+                  will be ignored.
+                type: boolean
+              rules:
+                description: 'Rules defines OperationPhaseRules. It contains three
+                  identification rules of successful execution of the operation, progressing
+                  execution of the operation & failed execution of the operation.
+                  Example: rules:   success:    `has(self.status.phase) && self.status.phase
+                  == ''Successful''`   inProgress: `has(self.status.phase) && self.status.phase
+                  == ''Progressing''`   failed:     `has(self.status.phase) && self.status.phase
+                  == ''Failed''`'
+                properties:
+                  failed:
+                    description: 'Failed defines a rule to identify that applied operation
+                      is failed. Example:   inProgress: `has(self.status.phase) &&
+                      self.status.phase == ''Failed''` Here self.status.phase is pointing
+                      to .status.phase field of the Operation object. When .status.phase
+                      field presents and becomes `Failed`, the Failed rule will satisfy.'
+                    type: string
+                  inProgress:
+                    description: 'InProgress defines a rule to identify that applied
+                      operation is progressing. Example:   inProgress: `has(self.status.phase)
+                      && self.status.phase == ''Progressing''` Here self.status.phase
+                      is pointing to .status.phase field of the Operation object.
+                      When .status.phase field presents and becomes `Progressing`,
+                      the InProgress rule will satisfy.'
+                    type: string
+                  success:
+                    description: 'Success defines a rule to identify the successful
+                      execution of the operation. Example:   success: `has(self.status.phase)
+                      && self.status.phase == ''Successful''` Here self.status.phase
+                      is pointing to .status.phase field of the Operation object.
+                      When .status.phase field presents and becomes `Successful`,
+                      the Success rule will satisfy.'
+                    type: string
+                required:
+                - failed
+                - inProgress
+                - success
+                type: object
               target:
-                description: TypedLocalObjectReference contains enough information
-                  to let you locate the typed referenced object inside the same namespace.
+                description: Target specifies the APIGroup, Kind & Name of the target
+                  resource for which the recommendation is generated
                 properties:
                   apiGroup:
                     description: APIGroup is the group for the resource being referenced.
@@ -79,14 +148,30 @@ spec:
             required:
             - operation
             - recommender
+            - rules
             - target
             type: object
           status:
             description: RecommendationStatus defines the observed state of Recommendation
             properties:
+              approvalStatus:
+                default: Pending
+                description: 'Specifies the Approval Status of the Recommendation.
+                  Possible values are `Pending`, `Approved`, `Rejected` Pending: Recommendation
+                  is yet to Approved or Rejected Approved: Recommendation is permitted
+                  to execute. Rejected: Recommendation is rejected and never be executed.'
+                enum:
+                - Pending
+                - Approved
+                - Rejected
+                type: string
               approvedWindow:
+                description: ApprovedWindow specifies the time window configuration
+                  for the Recommendation execution.
                 properties:
                   dates:
+                    description: Dates holds a list of DateWindow when Recommendation
+                      is permitted to execute
                     items:
                       properties:
                         end:
@@ -101,8 +186,8 @@ spec:
                       type: object
                     type: array
                   maintenanceWindow:
-                    description: TypedObjectReference represents an typed namespaced
-                      object.
+                    description: MaintenanceWindow holds the reference of the MaintenanceWindow
+                      resource
                     properties:
                       apiGroup:
                         type: string
@@ -118,6 +203,11 @@ spec:
                     - name
                     type: object
                   window:
+                    description: 'Window defines the ApprovedWindow type Possible
+                      values are: Immediate: Recommendation will be executed immediately
+                      NextAvailable: Recommendation will be executed in the next Available
+                      window SpecificDates: Recommendation will be executed in the
+                      given dates.'
                     enum:
                     - Immediate
                     - NextAvailable
@@ -125,10 +215,10 @@ spec:
                     type: string
                 type: object
               comments:
+                description: Specifies Reviewer's comment.
                 type: string
               conditions:
-                description: Conditions applied to the database, such as approval
-                  or denial.
+                description: Conditions applied to the Recommendation.
                 items:
                   properties:
                     lastTransitionTime:
@@ -174,26 +264,77 @@ spec:
                   - type
                   type: object
                 type: array
+              createdOperationRef:
+                description: CreatedOperationRef holds the created operation name.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+              failedAttempt:
+                default: 0
+                description: FailedAttempt holds the number of times the operation
+                  is failed.
+                format: int32
+                type: integer
               observedGeneration:
                 description: observedGeneration is the most recent generation observed
                   for this resource. It corresponds to the resource's generation,
                   which is updated on mutation by the API Server.
                 format: int64
                 type: integer
+              outdated:
+                default: false
+                description: Outdated is indicating details whether the Recommendation
+                  is outdated or not. If the value is `true`, then Recommendation
+                  will not be executed. This indicates that after generating the Recommendation,
+                  the targeted resource is changed in such a way that the generated
+                  Recommendation has become outdated & can't be executed anymore.
+                type: boolean
               parallelism:
                 default: Namespace
+                description: 'Parallelism imposes some restriction to Recommendation
+                  execution. Possible values are: Namespace: Only one Recommendation
+                  can be executed at a time in a namespace. Target: Only one Recommendation
+                  for a given target can be executed at a time. TargetAndNamespace:
+                  Only one Recommendation for a given target can be executed at a
+                  time in a namespace.'
                 enum:
                 - Namespace
                 - Target
                 - TargetAndNamespace
                 type: string
+              phase:
+                description: 'Specifies the Recommendation current phase. Possible
+                  values are: Pending : Recommendation misses at least one pre-requisite
+                  for executing the operation.           It also tells that some user
+                  action is needed. Skipped : Operation is skipped because of Rejection
+                  ApprovalStatus. Waiting : Recommendation is waiting for the MaintenanceWindow
+                  to execute the operation           or waiting for others Recommendation
+                  to complete far maintaining Parallelism. InProgress : The operation
+                  execution is successfully started and waiting for its final status.
+                  Succeeded : Operation has been successfully executed. Failed : Operation
+                  execution has not completed successfully i.e. encountered an error'
+                enum:
+                - Pending
+                - Skipped
+                - Waiting
+                - InProgress
+                - Succeeded
+                - Failed
+                type: string
+              reason:
+                default: WaitingForApproval
+                description: A message indicating details about Recommendation current
+                  phase.
+                type: string
               reviewTimestamp:
+                description: Contains review timestamp
                 format: date-time
                 type: string
               reviewer:
-                description: Subject contains a reference to the object or user identities
-                  a role binding applies to.  This can either hold a direct API object
-                  reference, or a value for non-objects such as user and group names.
+                description: Specifies Reviewer's details.
                 properties:
                   apiGroup:
                     description: APIGroup holds the API group of the referenced subject.
@@ -218,13 +359,6 @@ spec:
                 - kind
                 - name
                 type: object
-              status:
-                default: UnderReview
-                enum:
-                - Pending
-                - Approved
-                - Rejected
-                type: string
             type: object
         type: object
     served: true

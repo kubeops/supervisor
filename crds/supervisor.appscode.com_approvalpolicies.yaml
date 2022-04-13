@@ -30,7 +30,9 @@ spec:
               submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           maintenanceWindowRef:
-            description: TypedObjectReference represents an typed namespaced object.
+            description: Specifies MaintenanceWindow reference for ApprovalPolicy.
+              Recommendation will be executed in this MaintenanceWindow without manual
+              approval.
             properties:
               apiGroup:
                 type: string
@@ -48,6 +50,8 @@ spec:
           metadata:
             type: object
           targets:
+            description: Specifies the list of TargetRef for which the ApprovalPolicy
+              will be effective for.
             items:
               properties:
                 group:
@@ -56,9 +60,6 @@ spec:
                   type: string
                 operations:
                   items:
-                    description: GroupKind specifies a Group and a Kind, but does
-                      not force a version.  This is useful for identifying concepts
-                      during lookup stages without having partially valid types
                     properties:
                       group:
                         type: string

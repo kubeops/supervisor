@@ -14,7 +14,14 @@ spec:
     singular: clustermaintenancewindow
   scope: Cluster
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.isDefault
+      name: Default
+      type: boolean
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: ClusterMaintenanceWindow is the Schema for the clustermaintenancewindows
@@ -36,6 +43,10 @@ spec:
             description: MaintenanceWindowSpec defines the desired state of MaintenanceWindow
             properties:
               dates:
+                description: 'Dates consists of a list of Dates as Maintenance time.
+                  Dates are always needed to be given in UTC format. Format: yyyy-mm-ddThh.mm.ssZ
+                  [Here Z stands for Zero time zone / UTC time zone / GMT (+0000)]
+                  Example:  dates:   - start: 2022-01-24T00:00:18Z     end: 2022-01-24T23:41:18Z'
                 items:
                   properties:
                     end:
@@ -64,9 +75,21 @@ spec:
                     - start
                     type: object
                   type: array
+                description: 'Days consists of a map of DayOfWeek and corresponding
+                  list of TimeWindow. There is `Logical OR` relationship between Days
+                  and Dates. Example:  days:    Monday:     - start: 10:40AM       end:
+                  7:00PM'
                 type: object
               isDefault:
                 type: boolean
+              timezone:
+                description: "If the Timezone is not set or \"\" or \"UTC\", the given
+                  times and dates are considered as UTC. If the name is \"Local\",
+                  the given times and dates are considered as server local timezone.
+                  \n Otherwise, the Timezone should specify a location name corresponding
+                  to a file in the IANA Time Zone database, such as \"Asia/Dhaka\",
+                  \"America/New_York\", . Ref: https://www.iana.org/time-zones      https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
+                type: string
             type: object
           status:
             description: MaintenanceWindowStatus defines the observed state of MaintenanceWindow

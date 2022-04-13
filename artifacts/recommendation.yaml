@@ -1,0 +1,29 @@
+apiVersion: supervisor.appscode.com/v1alpha1
+kind: Recommendation
+metadata:
+  name: mongo-restart
+  namespace: demo
+spec:
+  description: "MongoDB Database Restart"
+  target:
+    apiGroup: kubedb.com
+    kind: MongoDB
+    name: mg-rs
+  operation:
+    apiVersion: ops.kubedb.com/v1alpha1
+    kind: MongoDBOpsRequest
+    metadata:
+      name: mongo-restart
+      namespace: demo
+    spec:
+      type: Restart
+      databaseRef:
+        name: mg-rs
+  rules:
+    inProgress: has(self.status.phase) && self.status.phase == 'Progressing'
+    success: has(self.status.phase) && self.status.phase == 'Successful'
+    failed: has(self.status.phase) && self.status.phase == 'Failed'
+  recommender:
+    name: kubedb-ops-manager
+
+

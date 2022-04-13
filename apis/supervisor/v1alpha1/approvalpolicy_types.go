@@ -29,15 +29,23 @@ type ApprovalPolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Specifies MaintenanceWindow reference for ApprovalPolicy.
+	// Recommendation will be executed in this MaintenanceWindow without manual approval.
 	MaintenanceWindowRef kmapi.TypedObjectReference `json:"maintenanceWindowRef"`
+
+	// Specifies the list of TargetRef for which the ApprovalPolicy will be effective for.
 	// +optional
 	Targets []TargetRef `json:"targets"`
+}
+
+type Operation struct {
+	metav1.GroupKind `json:",inline"`
 }
 
 type TargetRef struct {
 	metav1.GroupKind `json:",inline"`
 	// +optional
-	Operations []metav1.GroupKind `json:"operations,omitempty"`
+	Operations []Operation `json:"operations,omitempty"`
 }
 
 //+kubebuilder:object:root=true

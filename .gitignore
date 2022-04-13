@@ -24,5 +24,49 @@ testbin/*
 *.swo
 *~
 
-.idea
 .DS_Store
+*.env
+
+*.prof
+/.idea
+/dist
+**/junit.xml
+**/.env
+/.vscode
+/coverage.txt
+
+/bin
+/.go
+
+**/apiserver.local.config
+
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+
+# Folders
+_obj
+_test
+
+# Architecture specific extensions/prefixes
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+
+_testmain.go
+
+/.markdownlint.json
+
+/apiserver.local.config
+/hack/config/.env
+/test/e2e/junit.xml
+/test/e2e/report.xml
+
+.terraform
+*.tfstate*
+
+# ignore directory/file generated from test
+testbin
+cover.out
