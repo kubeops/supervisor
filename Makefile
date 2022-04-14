@@ -16,6 +16,7 @@ SHELL=/bin/bash -o pipefail
 
 PRODUCT_OWNER_NAME := appscode
 PRODUCT_NAME       := supervisor
+ENFORCE_LICENSE    ?=
 
 GO_PKG   := kubeops.dev
 REPO     := $(notdir $(shell pwd))
@@ -75,9 +76,9 @@ TAG              := $(VERSION)_$(OS)_$(ARCH)
 TAG_PROD         := $(TAG)
 TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
-GO_VERSION       ?= 1.17
+GO_VERSION       ?= 1.18
 BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)
-CHART_TEST_IMAGE ?= quay.io/helmpack/chart-testing:v3.4.0
+CHART_TEST_IMAGE ?= quay.io/helmpack/chart-testing:v3.5.1
 
 OUTBIN = bin/$(OS)_$(ARCH)/$(BIN)
 ifeq ($(OS),windows)
@@ -433,12 +434,12 @@ endif
 .PHONY: install
 install:
 	@cd ../installer; \
-	helm install supervisor charts/supervisor --wait \
+	helm upgrade -i supervisor charts/supervisor --wait \
 		--namespace=$(KUBE_NAMESPACE) --create-namespace \
 		--set image.registry=$(REGISTRY) \
 		--set image.tag=$(TAG_PROD) \
 		--set imagePullPolicy=$(IMAGE_PULL_POLICY) \
-		$(IMAGE_PULL_SECRETS); \
+		$(IMAGE_PULL_SECRETS)
 
 .PHONY: uninstall
 uninstall:
@@ -547,4 +548,7 @@ push-to-kind: container
 	@echo "Image has been pushed successfully into kind cluster."
 
 .PHONY: deploy-to-kind
-deploy-to-kind: uninstall push-to-kind install
+deploy-to-kind: push-to-kind install
+
+.PHONY: deploy
+deploy: uninstall push install

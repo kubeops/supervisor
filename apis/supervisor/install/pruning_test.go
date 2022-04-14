@@ -30,6 +30,9 @@ func TestPruneTypes(t *testing.T) {
 	Install(clientsetscheme.Scheme)
 
 	// CRD v1
+	if crd := (v1alpha1.ApprovalPolicy{}).CustomResourceDefinition(); crd.V1 != nil {
+		crdfuzz.SchemaFuzzTestForV1CRD(t, clientsetscheme.Scheme, crd.V1, fuzzer.Funcs)
+	}
 	if crd := (v1alpha1.ClusterMaintenanceWindow{}).CustomResourceDefinition(); crd.V1 != nil {
 		crdfuzz.SchemaFuzzTestForV1CRD(t, clientsetscheme.Scheme, crd.V1, fuzzer.Funcs)
 	}

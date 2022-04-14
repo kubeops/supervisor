@@ -17,8 +17,17 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"kubeops.dev/supervisor/crds"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	"kmodules.xyz/client-go/apiextensions"
+)
+
+const (
+	ResourceKindApprovalPolicy = "ApprovalPolicy"
+	ResourceApprovalPolicy     = "approvalpolicy"
+	ResourceApprovalPolicies   = "approvalpolicies"
 )
 
 //+kubebuilder:object:root=true
@@ -59,4 +68,8 @@ type ApprovalPolicyList struct {
 
 func init() {
 	SchemeBuilder.Register(&ApprovalPolicy{}, &ApprovalPolicyList{})
+}
+
+func (_ ApprovalPolicy) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+	return crds.MustCustomResourceDefinition(GroupVersion.WithResource(ResourceApprovalPolicies))
 }
