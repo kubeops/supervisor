@@ -1113,6 +1113,11 @@ kmodules.xyz/monitoring-agent-api/api/v1
 # kmodules.xyz/offshoot-api v0.0.0-20220323112402-3b0fd2ea77d6
 ## explicit; go 1.15
 kmodules.xyz/offshoot-api/api/v1
+# kmodules.xyz/webhook-runtime v0.0.0-20220317222714-0ddfc9e4c221
+## explicit; go 1.17
+kmodules.xyz/webhook-runtime/admission/v1
+kmodules.xyz/webhook-runtime/builder
+kmodules.xyz/webhook-runtime/registry/admissionreview/v1
 # kubedb.dev/apimachinery v0.26.0
 ## explicit; go 1.17
 kubedb.dev/apimachinery/apis

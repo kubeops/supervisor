@@ -19,7 +19,7 @@ package parallelism
 import (
 	"context"
 
-	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,10 +28,10 @@ import (
 type ParallelRunner struct {
 	ctx  context.Context
 	kc   client.Client
-	rcmd *supervisorv1alpha1.Recommendation
+	rcmd *api.Recommendation
 }
 
-func NewParallelRunner(ctx context.Context, kc client.Client, rcmd *supervisorv1alpha1.Recommendation) *ParallelRunner {
+func NewParallelRunner(ctx context.Context, kc client.Client, rcmd *api.Recommendation) *ParallelRunner {
 	return &ParallelRunner{
 		ctx:  ctx,
 		kc:   kc,
@@ -40,9 +40,9 @@ func NewParallelRunner(ctx context.Context, kc client.Client, rcmd *supervisorv1
 }
 
 func (r *ParallelRunner) MaintainParallelism() (bool, error) {
-	if r.rcmd.Status.Parallelism == supervisorv1alpha1.QueuePerTarget {
+	if r.rcmd.Status.Parallelism == api.QueuePerTarget {
 		return r.isMaintainingQueuePerTarget()
-	} else if r.rcmd.Status.Parallelism == supervisorv1alpha1.QueuePerTargetAndNamespace {
+	} else if r.rcmd.Status.Parallelism == api.QueuePerTargetAndNamespace {
 		return r.isMaintainingQueuePerTargetAndNamespace()
 	} else {
 		return r.isMaintainingQueuePerNamespace()
@@ -50,14 +50,14 @@ func (r *ParallelRunner) MaintainParallelism() (bool, error) {
 }
 
 func (r *ParallelRunner) isMaintainingQueuePerNamespace() (bool, error) {
-	rcmdList := &supervisorv1alpha1.RecommendationList{}
+	rcmdList := &api.RecommendationList{}
 
 	if err := r.kc.List(r.ctx, rcmdList, client.InNamespace(r.rcmd.Namespace)); err != nil {
 		return false, err
 	}
 
 	for _, rc := range rcmdList.Items {
-		if rc.Status.Phase == supervisorv1alpha1.InProgress {
+		if rc.Status.Phase == api.InProgress {
 			return false, nil
 		}
 	}
@@ -74,7 +74,7 @@ func (r *ParallelRunner) isMaintainingQueuePerTargetAndNamespace() (bool, error)
 		Kind:  r.rcmd.Spec.Target.Kind,
 	}
 
-	rcmdList := &supervisorv1alpha1.RecommendationList{}
+	rcmdList := &api.RecommendationList{}
 	if err := r.kc.List(r.ctx, rcmdList, client.InNamespace(r.rcmd.Namespace)); err != nil {
 		return false, err
 	}
@@ -91,14 +91,14 @@ func (r *ParallelRunner) isMaintainingQueuePerTarget() (bool, error) {
 		Kind:  r.rcmd.Spec.Target.Kind,
 	}
 
-	rcmdList := &supervisorv1alpha1.RecommendationList{}
+	rcmdList := &api.RecommendationList{}
 	if err := r.kc.List(r.ctx, rcmdList); err != nil {
 		return false, err
 	}
 	return isMaintainingQueuePerGK(reqGK, rcmdList)
 }
 
-func isMaintainingQueuePerGK(reqGK schema.GroupKind, rcList *supervisorv1alpha1.RecommendationList) (bool, error) {
+func isMaintainingQueuePerGK(reqGK schema.GroupKind, rcList *api.RecommendationList) (bool, error) {
 	for _, rc := range rcList.Items {
 		gv, err := schema.ParseGroupVersion(*rc.Spec.Target.APIGroup)
 		if err != nil {
@@ -113,7 +113,7 @@ func isMaintainingQueuePerGK(reqGK schema.GroupKind, rcList *supervisorv1alpha1.
 			continue
 		}
 
-		if rc.Status.Phase == supervisorv1alpha1.InProgress {
+		if rc.Status.Phase == api.InProgress {
 			return false, nil
 		}
 	}

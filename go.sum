@@ -1272,6 +1272,7 @@ kmodules.xyz/resource-metrics v0.0.6/go.mod h1:M7rWuo2qh3BpHhogiEVPnvGY9Xx4Pfygq
 kmodules.xyz/resource-metrics v0.0.8/go.mod h1:M7rWuo2qh3BpHhogiEVPnvGY9Xx4Pfygqn1Rex8YbgM=
 kmodules.xyz/schema-checker v0.2.0/go.mod h1:J1QUIFsqW0h/WNrIGzzy3UopTzg+RmMJXxvAZfmYDb4=
 kmodules.xyz/schema-checker v0.2.1/go.mod h1:1R2s4FH23Rz73DnfT8paWGNeMQpT7ia3KoyF8X4HCGU=
+kmodules.xyz/webhook-runtime v0.0.0-20220317222714-0ddfc9e4c221 h1:FCnfxyTewrH2yo8o09bOAlS1nq7HSQvFBglX4kysVCk=
 kmodules.xyz/webhook-runtime v0.0.0-20220317222714-0ddfc9e4c221/go.mod h1:Q+4LHbCHVlkKxpEgaDa/EyZb5p/Bpj767zInBwyyitc=
 kubedb.dev/apimachinery v0.26.0 h1:kqvPZdM1uBglc9eu3ySCK0c9ALi98MarOYSe4hz4X4c=
 kubedb.dev/apimachinery v0.26.0/go.mod h1:LAfg7PrC3y90bK8t0NqQ6aYMe/jadl9ZrV+CEPu0TrY=

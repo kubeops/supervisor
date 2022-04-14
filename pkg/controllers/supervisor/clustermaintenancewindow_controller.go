@@ -19,7 +19,7 @@ package supervisor
 import (
 	"context"
 
-	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
@@ -50,20 +50,20 @@ func (r *ClusterMaintenanceWindowReconciler) Reconcile(ctx context.Context, req 
 	key := req.NamespacedName
 	klog.Info("got event for ClusterMaintenanceWindow: ", key.String())
 
-	clusterMW := &supervisorv1alpha1.ClusterMaintenanceWindow{}
+	clusterMW := &api.ClusterMaintenanceWindow{}
 	if err := r.Client.Get(ctx, key, clusterMW); err != nil {
 		klog.Infof("ClusterMaintenanceWindow %q doesn't exist anymore", key.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if clusterMW.Spec.IsDefault {
-		if _, ok := clusterMW.Annotations[supervisorv1alpha1.DefaultClusterMaintenanceWindowKey]; !ok {
+		if _, ok := clusterMW.Annotations[api.DefaultClusterMaintenanceWindowKey]; !ok {
 			_, _, err := kmc.CreateOrPatch(ctx, r.Client, clusterMW, func(obj client.Object, createOp bool) client.Object {
-				in := obj.(*supervisorv1alpha1.ClusterMaintenanceWindow)
+				in := obj.(*api.ClusterMaintenanceWindow)
 				if in.Annotations == nil {
 					in.Annotations = make(map[string]string)
 				}
-				in.Annotations[supervisorv1alpha1.DefaultClusterMaintenanceWindowKey] = "true"
+				in.Annotations[api.DefaultClusterMaintenanceWindowKey] = "true"
 				return in
 			})
 			return ctrl.Result{}, err
@@ -76,6 +76,6 @@ func (r *ClusterMaintenanceWindowReconciler) Reconcile(ctx context.Context, req 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterMaintenanceWindowReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&supervisorv1alpha1.ClusterMaintenanceWindow{}).
+		For(&api.ClusterMaintenanceWindow{}).
 		Complete(r)
 }

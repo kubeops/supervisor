@@ -20,7 +20,7 @@ import (
 	"errors"
 	"sync"
 
-	supervisorapi "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/checker/decls"
@@ -45,10 +45,10 @@ func init() {
 
 type Evaluator struct {
 	obj   *unstructured.Unstructured
-	rules supervisorapi.OperationPhaseRules
+	rules api.OperationPhaseRules
 }
 
-func New(obj *unstructured.Unstructured, rules supervisorapi.OperationPhaseRules) *Evaluator {
+func New(obj *unstructured.Unstructured, rules api.OperationPhaseRules) *Evaluator {
 	return &Evaluator{
 		obj:   obj,
 		rules: rules,

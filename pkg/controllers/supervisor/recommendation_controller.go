@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	deadline_manager "kubeops.dev/supervisor/pkg/deadline-manager"
 	"kubeops.dev/supervisor/pkg/evaluator"
 	"kubeops.dev/supervisor/pkg/maintenance"
@@ -75,7 +75,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	key := req.NamespacedName
 	klog.Info("got event for Recommendation: ", key.String())
 
-	obj := &supervisorv1alpha1.Recommendation{}
+	obj := &api.Recommendation{}
 	if err := r.Client.Get(ctx, key, obj); err != nil {
 		klog.Infof("Recommendation %q doesn't exist anymore", key.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -85,10 +85,10 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// Skipped outdated Recommendation
 	if obj.Status.Outdated {
 		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
+			in := obj.(*api.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
-			in.Status.Phase = supervisorv1alpha1.Skipped
-			in.Status.Reason = supervisorv1alpha1.RecommendationOutdated
+			in.Status.Phase = api.Skipped
+			in.Status.Reason = api.RecommendationOutdated
 
 			return in
 		})
@@ -96,9 +96,9 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	// Ignore any update in the recommendation object if the recommendation is already succeeded
-	if obj.Status.Phase == supervisorv1alpha1.Succeeded {
+	if obj.Status.Phase == api.Succeeded {
 		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
+			in := obj.(*api.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
 			return in
 		})
@@ -107,10 +107,10 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	if obj.Status.FailedAttempt > pointer.Int32(obj.Spec.BackoffLimit) {
 		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
+			in := obj.(*api.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
-			in.Status.Phase = supervisorv1alpha1.Failed
-			in.Status.Reason = supervisorv1alpha1.BackoffLimitExceeded
+			in.Status.Phase = api.Failed
+			in.Status.Reason = api.BackoffLimitExceeded
 			return in
 		})
 		return ctrl.Result{}, err
@@ -118,9 +118,9 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	if obj.Status.Phase == "" {
 		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
-			in.Status.Phase = supervisorv1alpha1.Pending
-			in.Status.Reason = supervisorv1alpha1.WaitingForApproval
+			in := obj.(*api.Recommendation)
+			in.Status.Phase = api.Pending
+			in.Status.Reason = api.WaitingForApproval
 			return in
 		})
 		if err != nil {
@@ -128,23 +128,23 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	if obj.Status.ApprovalStatus == supervisorv1alpha1.ApprovalApproved {
-		if obj.Status.Phase == supervisorv1alpha1.InProgress && obj.Status.CreatedOperationRef != nil {
+	if obj.Status.ApprovalStatus == api.ApprovalApproved {
+		if obj.Status.Phase == api.InProgress && obj.Status.CreatedOperationRef != nil {
 			return r.checkOpsRequestStatus(ctx, obj)
 		}
 
 		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, obj, r.Clock)
 		isMaintenanceTime, err := rcmdMaintenance.IsMaintenanceTime()
 		if err != nil {
-			return r.handleErr(ctx, obj, err, supervisorv1alpha1.Pending)
+			return r.handleErr(ctx, obj, err, api.Pending)
 		}
 
 		if !isMaintenanceTime {
-			if obj.Status.Phase == supervisorv1alpha1.Pending {
+			if obj.Status.Phase == api.Pending {
 				_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-					in := obj.(*supervisorv1alpha1.Recommendation)
-					in.Status.Phase = supervisorv1alpha1.Waiting
-					in.Status.Reason = supervisorv1alpha1.WaitingForMaintenanceWindow
+					in := obj.(*api.Recommendation)
+					in.Status.Phase = api.Waiting
+					in.Status.Reason = api.WaitingForMaintenanceWindow
 					return in
 				})
 				if err != nil {
@@ -155,11 +155,11 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 
 		return r.runMaintenanceWork(ctx, obj)
-	} else if obj.Status.ApprovalStatus == supervisorv1alpha1.ApprovalRejected {
+	} else if obj.Status.ApprovalStatus == api.ApprovalRejected {
 		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
-			in.Status.Phase = supervisorv1alpha1.Skipped
-			in.Status.Reason = supervisorv1alpha1.RecommendationRejected
+			in := obj.(*api.Recommendation)
+			in.Status.Phase = api.Skipped
+			in.Status.Reason = api.RecommendationRejected
 			in.Status.ObservedGeneration = in.Generation
 
 			return in
@@ -175,9 +175,9 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 		if approvalPolicy != nil {
 			_, _, err = kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-				in := obj.(*supervisorv1alpha1.Recommendation)
-				in.Status.ApprovalStatus = supervisorv1alpha1.ApprovalApproved
-				in.Status.ApprovedWindow = &supervisorv1alpha1.ApprovedWindow{
+				in := obj.(*api.Recommendation)
+				in.Status.ApprovalStatus = api.ApprovalApproved
+				in.Status.ApprovedWindow = &api.ApprovedWindow{
 					MaintenanceWindow: &approvalPolicy.MaintenanceWindowRef,
 				}
 				return in
@@ -191,7 +191,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 }
 
-func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
+func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rcmd *api.Recommendation) (ctrl.Result, error) {
 	gvk, err := shared.GetGVK(rcmd.Spec.Operation)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, err
@@ -217,14 +217,14 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 
 	if pointer.Bool(success) {
 		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
-			in.Status.Phase = supervisorv1alpha1.Succeeded
-			in.Status.Reason = supervisorv1alpha1.SuccessfullyExecutedOperation
+			in := obj.(*api.Recommendation)
+			in.Status.Phase = api.Succeeded
+			in.Status.Reason = api.SuccessfullyExecutedOperation
 			in.Status.Conditions = kmapi.SetCondition(in.Status.Conditions, kmapi.Condition{
-				Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
+				Type:               api.SuccessfullyExecutedOperation,
 				Status:             core.ConditionTrue,
 				LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-				Reason:             supervisorv1alpha1.SuccessfullyExecutedOperation,
+				Reason:             api.SuccessfullyExecutedOperation,
 				Message:            "OpsRequest is successfully executed",
 			})
 			in.Status.ObservedGeneration = in.Generation
@@ -236,7 +236,7 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 	}
 }
 
-func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation) (ctrl.Result, error) {
+func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd *api.Recommendation) (ctrl.Result, error) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 
@@ -251,9 +251,9 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 
 	if !(maintainParallelism || deadlineKnocking) {
 		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-			in := obj.(*supervisorv1alpha1.Recommendation)
-			in.Status.Phase = supervisorv1alpha1.Waiting
-			in.Status.Reason = supervisorv1alpha1.WaitingForExecution
+			in := obj.(*api.Recommendation)
+			in.Status.Phase = api.Waiting
+			in.Status.Reason = api.WaitingForExecution
 			return in
 		})
 		if err != nil {
@@ -266,24 +266,24 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 	opsReqName := rand.WithUniqSuffix("supervisor")
 	unObj, err := shared.GetUnstructuredObj(rcmd.Spec.Operation)
 	if err != nil {
-		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
+		return r.handleErr(ctx, rcmd, err, api.Failed)
 	}
 	unObj.SetName(opsReqName)
 
 	err = r.Client.Create(ctx, unObj)
 	if err != nil {
-		return r.handleErr(ctx, rcmd, err, supervisorv1alpha1.Failed)
+		return r.handleErr(ctx, rcmd, err, api.Failed)
 	}
 
 	_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-		in := obj.(*supervisorv1alpha1.Recommendation)
-		in.Status.Phase = supervisorv1alpha1.InProgress
-		in.Status.Reason = supervisorv1alpha1.StartedExecutingOperation
+		in := obj.(*api.Recommendation)
+		in.Status.Phase = api.InProgress
+		in.Status.Reason = api.StartedExecutingOperation
 		in.Status.Conditions = kmapi.SetCondition(in.Status.Conditions, kmapi.Condition{
-			Type:               supervisorv1alpha1.SuccessfullyCreatedOperation,
+			Type:               api.SuccessfullyCreatedOperation,
 			Status:             core.ConditionTrue,
 			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
-			Reason:             supervisorv1alpha1.SuccessfullyCreatedOperation,
+			Reason:             api.SuccessfullyCreatedOperation,
 			Message:            "OpsRequest is successfully created",
 		})
 		in.Status.CreatedOperationRef = &core.LocalObjectReference{Name: opsReqName}
@@ -292,9 +292,9 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 	return ctrl.Result{}, err
 }
 
-func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *supervisorv1alpha1.Recommendation, err error, phase supervisorv1alpha1.RecommendationPhase) (ctrl.Result, error) {
+func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *api.Recommendation, err error, phase api.RecommendationPhase) (ctrl.Result, error) {
 	_, _, pErr := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
-		in := obj.(*supervisorv1alpha1.Recommendation)
+		in := obj.(*api.Recommendation)
 		in.Status.Phase = phase
 		in.Status.Reason = err.Error()
 		return in
@@ -303,13 +303,13 @@ func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *supervis
 	return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, pErr
 }
 
-func (r *RecommendationReconciler) recordFailedAttempt(ctx context.Context, obj *supervisorv1alpha1.Recommendation, err error) (ctrl.Result, error) {
+func (r *RecommendationReconciler) recordFailedAttempt(ctx context.Context, obj *api.Recommendation, err error) (ctrl.Result, error) {
 	_, _, pErr := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
-		in := obj.(*supervisorv1alpha1.Recommendation)
-		in.Status.Phase = supervisorv1alpha1.Failed
-		in.Status.Reason = supervisorv1alpha1.OperationFailed
+		in := obj.(*api.Recommendation)
+		in.Status.Phase = api.Failed
+		in.Status.Reason = api.OperationFailed
 		in.Status.Conditions = kmapi.SetCondition(in.Status.Conditions, kmapi.Condition{
-			Type:               supervisorv1alpha1.SuccessfullyExecutedOperation,
+			Type:               api.SuccessfullyExecutedOperation,
 			Status:             core.ConditionFalse,
 			LastTransitionTime: metav1.Time{Time: time.Now().UTC()},
 			Reason:             err.Error(),
@@ -324,7 +324,7 @@ func (r *RecommendationReconciler) recordFailedAttempt(ctx context.Context, obj 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RecommendationReconciler) SetupWithManager(mgr ctrl.Manager, opts controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&supervisorv1alpha1.Recommendation{}).
+		For(&api.Recommendation{}).
 		WithEventFilter(predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
 				return !meta_util.MustAlreadyReconciled(e.Object)
