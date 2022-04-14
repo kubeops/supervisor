@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"time"
 
-	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	"github.com/jonboulle/clockwork"
 	"gomodules.xyz/pointer"
@@ -33,11 +33,11 @@ import (
 type RecommendationMaintenance struct {
 	ctx   context.Context
 	kc    client.Client
-	rcmd  *supervisorv1alpha1.Recommendation
+	rcmd  *api.Recommendation
 	clock clockwork.Clock
 }
 
-func NewRecommendationMaintenance(ctx context.Context, kc client.Client, rcmd *supervisorv1alpha1.Recommendation, clock clockwork.Clock) *RecommendationMaintenance {
+func NewRecommendationMaintenance(ctx context.Context, kc client.Client, rcmd *api.Recommendation, clock clockwork.Clock) *RecommendationMaintenance {
 	return &RecommendationMaintenance{
 		ctx:   ctx,
 		kc:    kc,
@@ -48,9 +48,9 @@ func NewRecommendationMaintenance(ctx context.Context, kc client.Client, rcmd *s
 
 func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 	aw := r.rcmd.Status.ApprovedWindow
-	if aw != nil && aw.Window == supervisorv1alpha1.Immediate {
+	if aw != nil && aw.Window == api.Immediate {
 		return true, nil
-	} else if aw != nil && aw.Window == supervisorv1alpha1.SpecificDates {
+	} else if aw != nil && aw.Window == api.SpecificDates {
 		if len(aw.Dates) == 0 {
 			return false, errors.New("WindowType is SpecificDates but no DateWindow is provided")
 		}
@@ -83,7 +83,7 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 		}
 		day := getCurrentDay(r.clock, loc)
 
-		mTimes, found := mw.Spec.Days[supervisorv1alpha1.DayOfWeek(day)]
+		mTimes, found := mw.Spec.Days[api.DayOfWeek(day)]
 		if found {
 			if r.isMaintenanceTimeWindow(mTimes, loc) {
 				return true, nil
@@ -104,10 +104,10 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 	return false, nil
 }
 
-func (r *RecommendationMaintenance) getDefaultMaintenanceWindow() (*supervisorv1alpha1.MaintenanceWindow, error) {
-	mwList := &supervisorv1alpha1.MaintenanceWindowList{}
+func (r *RecommendationMaintenance) getDefaultMaintenanceWindow() (*api.MaintenanceWindow, error) {
+	mwList := &api.MaintenanceWindowList{}
 	if err := r.kc.List(r.ctx, mwList, client.InNamespace(r.rcmd.Namespace), client.MatchingFields{
-		supervisorv1alpha1.DefaultMaintenanceWindowKey: "true",
+		api.DefaultMaintenanceWindowKey: "true",
 	}); err != nil {
 		return nil, err
 	}
@@ -120,10 +120,10 @@ func (r *RecommendationMaintenance) getDefaultMaintenanceWindow() (*supervisorv1
 	return &mwList.Items[0], nil
 }
 
-func (r *RecommendationMaintenance) getDefaultClusterMaintenanceWindow() (*supervisorv1alpha1.MaintenanceWindow, error) {
-	clusterMWList := &supervisorv1alpha1.ClusterMaintenanceWindowList{}
+func (r *RecommendationMaintenance) getDefaultClusterMaintenanceWindow() (*api.MaintenanceWindow, error) {
+	clusterMWList := &api.ClusterMaintenanceWindowList{}
 	if err := r.kc.List(r.ctx, clusterMWList, client.MatchingFields{
-		supervisorv1alpha1.DefaultClusterMaintenanceWindowKey: "true",
+		api.DefaultClusterMaintenanceWindowKey: "true",
 	}); err != nil {
 		return nil, err
 	}
@@ -134,15 +134,15 @@ func (r *RecommendationMaintenance) getDefaultClusterMaintenanceWindow() (*super
 		return nil, nil
 	}
 
-	mw := &supervisorv1alpha1.MaintenanceWindow{
+	mw := &api.MaintenanceWindow{
 		Spec:   clusterMWList.Items[0].Spec,
 		Status: clusterMWList.Items[0].Status,
 	}
 	return mw, nil
 }
 
-func (r *RecommendationMaintenance) getMaintenanceWindow(key client.ObjectKey) (*supervisorv1alpha1.MaintenanceWindow, error) {
-	mw := &supervisorv1alpha1.MaintenanceWindow{}
+func (r *RecommendationMaintenance) getMaintenanceWindow(key client.ObjectKey) (*api.MaintenanceWindow, error) {
+	mw := &api.MaintenanceWindow{}
 	if key.Namespace == "" {
 		key.Namespace = r.rcmd.Namespace
 	}
@@ -152,22 +152,22 @@ func (r *RecommendationMaintenance) getMaintenanceWindow(key client.ObjectKey) (
 	return mw, nil
 }
 
-func (r *RecommendationMaintenance) getMaintenanceWindows() (*supervisorv1alpha1.MaintenanceWindowList, error) {
-	mwList := &supervisorv1alpha1.MaintenanceWindowList{}
+func (r *RecommendationMaintenance) getMaintenanceWindows() (*api.MaintenanceWindowList, error) {
+	mwList := &api.MaintenanceWindowList{}
 	if err := r.kc.List(r.ctx, mwList, client.InNamespace(r.rcmd.Namespace)); err != nil {
 		return nil, err
 	}
 	return mwList, nil
 }
 
-func (r *RecommendationMaintenance) getMWListFromClusterMWList() (*supervisorv1alpha1.MaintenanceWindowList, error) {
-	clusterMWList := &supervisorv1alpha1.ClusterMaintenanceWindowList{}
+func (r *RecommendationMaintenance) getMWListFromClusterMWList() (*api.MaintenanceWindowList, error) {
+	clusterMWList := &api.ClusterMaintenanceWindowList{}
 	if err := r.kc.List(r.ctx, clusterMWList); err != nil {
 		return nil, err
 	}
-	mwList := &supervisorv1alpha1.MaintenanceWindowList{}
+	mwList := &api.MaintenanceWindowList{}
 	for _, cMW := range clusterMWList.Items {
-		mw := supervisorv1alpha1.MaintenanceWindow{
+		mw := api.MaintenanceWindow{
 			Spec:   cMW.Spec,
 			Status: cMW.Status,
 		}
@@ -176,7 +176,7 @@ func (r *RecommendationMaintenance) getMWListFromClusterMWList() (*supervisorv1a
 	return mwList, nil
 }
 
-func (r *RecommendationMaintenance) isMaintenanceDateWindow(dates []supervisorv1alpha1.DateWindow) bool {
+func (r *RecommendationMaintenance) isMaintenanceDateWindow(dates []api.DateWindow) bool {
 	for _, d := range dates {
 		start := d.Start.UTC().Unix()
 		end := d.End.UTC().Unix()
@@ -189,7 +189,7 @@ func (r *RecommendationMaintenance) isMaintenanceDateWindow(dates []supervisorv1
 	return false
 }
 
-func (r *RecommendationMaintenance) isMaintenanceDateWindowPassed(dates []supervisorv1alpha1.DateWindow) bool {
+func (r *RecommendationMaintenance) isMaintenanceDateWindowPassed(dates []api.DateWindow) bool {
 	for _, d := range dates {
 		end := d.End.UTC().Unix()
 		now := r.clock.Now().UTC().Unix()
@@ -201,7 +201,7 @@ func (r *RecommendationMaintenance) isMaintenanceDateWindowPassed(dates []superv
 	return true
 }
 
-func (r *RecommendationMaintenance) isMaintenanceTimeWindow(timeWindows []supervisorv1alpha1.TimeWindow, location *time.Location) bool {
+func (r *RecommendationMaintenance) isMaintenanceTimeWindow(timeWindows []api.TimeWindow, location *time.Location) bool {
 	for _, tw := range timeWindows {
 		now := kmapi.NewTime(r.clock.Now().In(location))
 		start := kmapi.NewTime(tw.Start.Time)
@@ -214,9 +214,9 @@ func (r *RecommendationMaintenance) isMaintenanceTimeWindow(timeWindows []superv
 	return false
 }
 
-func (r *RecommendationMaintenance) getAvailableMaintenanceWindowList() (*supervisorv1alpha1.MaintenanceWindowList, error) {
+func (r *RecommendationMaintenance) getAvailableMaintenanceWindowList() (*api.MaintenanceWindowList, error) {
 	aw := r.rcmd.Status.ApprovedWindow
-	mwList := &supervisorv1alpha1.MaintenanceWindowList{}
+	mwList := &api.MaintenanceWindowList{}
 	if aw == nil {
 		mw, err := r.getDefaultMaintenanceWindow()
 		if err != nil {
@@ -241,7 +241,7 @@ func (r *RecommendationMaintenance) getAvailableMaintenanceWindowList() (*superv
 			return nil, err
 		}
 		mwList.Items = append(mwList.Items, *mw)
-	} else if aw.Window == supervisorv1alpha1.NextAvailable {
+	} else if aw.Window == api.NextAvailable {
 		var err error
 		mwList, err = r.getMaintenanceWindows()
 		if err != nil {

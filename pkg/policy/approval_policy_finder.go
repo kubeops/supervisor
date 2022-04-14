@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 
-	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/pkg/shared"
 
 	"gomodules.xyz/pointer"
@@ -31,10 +31,10 @@ import (
 type ApprovalPolicyFinder struct {
 	ctx  context.Context
 	kc   client.Client
-	rcmd *supervisorv1alpha1.Recommendation
+	rcmd *api.Recommendation
 }
 
-func NewApprovalPolicyFinder(ctx context.Context, kc client.Client, rcmd *supervisorv1alpha1.Recommendation) *ApprovalPolicyFinder {
+func NewApprovalPolicyFinder(ctx context.Context, kc client.Client, rcmd *api.Recommendation) *ApprovalPolicyFinder {
 	return &ApprovalPolicyFinder{
 		ctx:  ctx,
 		kc:   kc,
@@ -42,8 +42,8 @@ func NewApprovalPolicyFinder(ctx context.Context, kc client.Client, rcmd *superv
 	}
 }
 
-func (c *ApprovalPolicyFinder) FindApprovalPolicy() (*supervisorv1alpha1.ApprovalPolicy, error) {
-	policyList := &supervisorv1alpha1.ApprovalPolicyList{}
+func (c *ApprovalPolicyFinder) FindApprovalPolicy() (*api.ApprovalPolicy, error) {
+	policyList := &api.ApprovalPolicyList{}
 	if err := c.kc.List(c.ctx, policyList, client.InNamespace(c.rcmd.Namespace)); err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (c *ApprovalPolicyFinder) FindApprovalPolicy() (*supervisorv1alpha1.Approva
 	return nil, nil
 }
 
-func isMatched(ref supervisorv1alpha1.TargetRef, targetObjGK, targetOpsGK metav1.GroupKind) bool {
+func isMatched(ref api.TargetRef, targetObjGK, targetOpsGK metav1.GroupKind) bool {
 	if ref.Group == targetObjGK.Group && ref.Kind == targetObjGK.Kind {
 		for _, op := range ref.Operations {
 			if op.GroupKind == targetOpsGK {

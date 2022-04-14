@@ -18,27 +18,34 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 	"sync"
 
-	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	"kubeops.dev/supervisor/pkg/controllers"
 	supervisorcontrollers "kubeops.dev/supervisor/pkg/controllers/supervisor"
 
+	admissionv1 "k8s.io/api/admission/v1"
+	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/version"
+	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
-	ctrl "sigs.k8s.io/controller-runtime"
+	cu "kmodules.xyz/client-go/client"
+	hooks "kmodules.xyz/webhook-runtime/admission/v1"
+	admissionreview "kmodules.xyz/webhook-runtime/registry/admissionreview/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -52,8 +59,10 @@ var (
 )
 
 func init() {
+	utilruntime.Must(api.AddToScheme(Scheme))
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
-	utilruntime.Must(supervisorv1alpha1.AddToScheme(Scheme))
+	utilruntime.Must(admissionv1.AddToScheme(Scheme))
+	utilruntime.Must(admissionv1beta1.AddToScheme(Scheme))
 
 	// we need to add the options to empty v1
 	// TODO: fix the server code to avoid this
@@ -70,16 +79,10 @@ func init() {
 	)
 }
 
-// ExtraConfig holds custom apiserver config
-type ExtraConfig struct {
-	ClientConfig    *restclient.Config
-	ReconcileConfig supervisorcontrollers.RecommendationReconcileConfig
-}
-
 // SupervisorOperatorConfig defines the config for the apiserver
 type SupervisorOperatorConfig struct {
 	GenericConfig *genericapiserver.RecommendedConfig
-	ExtraConfig   ExtraConfig
+	ExtraConfig   *controllers.Config
 }
 
 // SupervisorOperator contains state for a Kubernetes cluster master/api server.
@@ -90,7 +93,7 @@ type SupervisorOperator struct {
 
 type completedConfig struct {
 	GenericConfig genericapiserver.CompletedConfig
-	ExtraConfig   *ExtraConfig
+	ExtraConfig   *controllers.Config
 }
 
 // CompletedConfig embeds a private pointer that cannot be instantiated outside of this package.
@@ -102,7 +105,7 @@ type CompletedConfig struct {
 func (cfg *SupervisorOperatorConfig) Complete() CompletedConfig {
 	c := completedConfig{
 		cfg.GenericConfig.Complete(),
-		&cfg.ExtraConfig,
+		cfg.ExtraConfig,
 	}
 
 	c.GenericConfig.Version = &version.Info{
@@ -114,61 +117,77 @@ func (cfg *SupervisorOperatorConfig) Complete() CompletedConfig {
 }
 
 // New returns a new instance of SupervisorOperator from the given config.
-func (c completedConfig) New(ctx context.Context) (*SupervisorOperator, error) {
-	genericServer, err := c.GenericConfig.New("ui-server", genericapiserver.NewEmptyDelegate())
+func (c completedConfig) New() (*SupervisorOperator, error) {
+	genericServer, err := c.GenericConfig.New("supervisor", genericapiserver.NewEmptyDelegate())
 	if err != nil {
 		return nil, err
 	}
 
 	// ctrl.SetLogger(...)
 	log.SetLogger(klogr.New())
+	setupLog := log.Log.WithName("setup")
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	cfg := c.ExtraConfig.ClientConfig
+
+	crdClient, err := crd_cs.NewForConfig(cfg)
+	if err != nil {
+		setupLog.Error(err, "failed to create crd client")
+		os.Exit(1)
+	}
+	err = controllers.EnsureCustomResourceDefinitions(crdClient)
+	if err != nil {
+		setupLog.Error(err, "failed to register crds")
+		os.Exit(1)
+	}
+
+	mgr, err := manager.New(cfg, manager.Options{
 		Scheme:                 Scheme,
-		MetricsBindAddress:     "",
-		Port:                   9443,
-		HealthProbeBindAddress: "",
+		MetricsBindAddress:     "0",
+		Port:                   0,
+		HealthProbeBindAddress: "0",
 		LeaderElection:         false,
 		LeaderElectionID:       "3a57c480.supervisor.appscode.com",
+		SyncPeriod:             &c.ExtraConfig.ResyncPeriod,
+		NewClient:              cu.NewClient,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &supervisorv1alpha1.MaintenanceWindow{}, supervisorv1alpha1.DefaultMaintenanceWindowKey, func(rawObj client.Object) []string {
-		app := rawObj.(*supervisorv1alpha1.MaintenanceWindow)
-		if v, ok := app.Annotations[supervisorv1alpha1.DefaultMaintenanceWindowKey]; ok && v == "true" {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &api.MaintenanceWindow{}, api.DefaultMaintenanceWindowKey, func(rawObj client.Object) []string {
+		app := rawObj.(*api.MaintenanceWindow)
+		if v, ok := app.Annotations[api.DefaultMaintenanceWindowKey]; ok && v == "true" {
 			return []string{"true"}
 		}
 		return nil
 	}); err != nil {
-		klog.Error(err, "unable to set up MaintenanceWindow Indexer", "field", supervisorv1alpha1.DefaultMaintenanceWindowKey)
+		klog.Error(err, "unable to set up MaintenanceWindow Indexer", "field", api.DefaultMaintenanceWindowKey)
 		os.Exit(1)
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &supervisorv1alpha1.ClusterMaintenanceWindow{}, supervisorv1alpha1.DefaultClusterMaintenanceWindowKey, func(rawObj client.Object) []string {
-		app := rawObj.(*supervisorv1alpha1.ClusterMaintenanceWindow)
-		if v, ok := app.Annotations[supervisorv1alpha1.DefaultClusterMaintenanceWindowKey]; ok && v == "true" {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &api.ClusterMaintenanceWindow{}, api.DefaultClusterMaintenanceWindowKey, func(rawObj client.Object) []string {
+		app := rawObj.(*api.ClusterMaintenanceWindow)
+		if v, ok := app.Annotations[api.DefaultClusterMaintenanceWindowKey]; ok && v == "true" {
 			return []string{"true"}
 		}
 		return nil
 	}); err != nil {
-		klog.Error(err, "unable to set up ClusterMaintenanceWindow Indexer", "field", supervisorv1alpha1.DefaultClusterMaintenanceWindowKey)
+		klog.Error(err, "unable to set up ClusterMaintenanceWindow Indexer", "field", api.DefaultClusterMaintenanceWindowKey)
 		os.Exit(1)
 	}
 
 	recommendationControllerOpts := controller.Options{
-		MaxConcurrentReconciles: c.ExtraConfig.ReconcileConfig.MaxConcurrentReconcile,
+		MaxConcurrentReconciles: c.ExtraConfig.MaxConcurrentReconcile,
 	}
 	if err = (&supervisorcontrollers.RecommendationReconciler{
 		Client:                 mgr.GetClient(),
 		Scheme:                 mgr.GetScheme(),
 		Mutex:                  &sync.Mutex{},
-		RequeueAfterDuration:   c.ExtraConfig.ReconcileConfig.RequeueAfterDuration,
-		RetryAfterDuration:     c.ExtraConfig.ReconcileConfig.RetryAfterDuration,
-		BeforeDeadlineDuration: c.ExtraConfig.ReconcileConfig.BeforeDeadlineDuration,
-		Clock:                  supervisorv1alpha1.GetClock(),
+		RequeueAfterDuration:   c.ExtraConfig.RequeueAfterDuration,
+		RetryAfterDuration:     c.ExtraConfig.RetryAfterDuration,
+		BeforeDeadlineDuration: c.ExtraConfig.BeforeDeadlineDuration,
+		Clock:                  api.GetClock(),
 	}).SetupWithManager(mgr, recommendationControllerOpts); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Recommendation")
 		os.Exit(1)
@@ -194,34 +213,101 @@ func (c completedConfig) New(ctx context.Context) (*SupervisorOperator, error) {
 		setupLog.Error(err, "unable to create controller", "controller", "ApprovalPolicy")
 		os.Exit(1)
 	}
-	mgr.GetWebhookServer().CertDir = c.ExtraConfig.ReconcileConfig.WebhookCertDir
-	if err = (&supervisorv1alpha1.MaintenanceWindow{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "MaintenanceWindow")
-		os.Exit(1)
-	}
-	if err = (&supervisorv1alpha1.ClusterMaintenanceWindow{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "ClusterMaintenanceWindow")
-		os.Exit(1)
-	}
-	if err = (&supervisorv1alpha1.Recommendation{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Recommendation")
-		os.Exit(1)
-	}
 	//+kubebuilder:scaffold:builder
-
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
-		os.Exit(1)
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
-		os.Exit(1)
-	}
 
 	s := &SupervisorOperator{
 		GenericAPIServer: genericServer,
 		Manager:          mgr,
 	}
 
+	for _, versionMap := range admissionHooksByGroupThenVersion(c.ExtraConfig.AdmissionHooks...) {
+		// TODO we're going to need a later k8s.io/apiserver so that we can get discovery to list a different group version for
+		// our endpoint which we'll use to back some custom storage which will consume the AdmissionReview type and give back the correct response
+		apiGroupInfo := genericapiserver.APIGroupInfo{
+			VersionedResourcesStorageMap: map[string]map[string]rest.Storage{},
+			// TODO unhardcode this.  It was hardcoded before, but we need to re-evaluate
+			OptionsExternalVersion: &schema.GroupVersion{Version: "v1"},
+			Scheme:                 Scheme,
+			ParameterCodec:         metav1.ParameterCodec,
+			NegotiatedSerializer:   Codecs,
+		}
+
+		for _, admissionHooks := range versionMap {
+			for i := range admissionHooks {
+				admissionHook := admissionHooks[i]
+				admissionResource, _ := admissionHook.Resource()
+				admissionVersion := admissionResource.GroupVersion()
+
+				// just overwrite the groupversion with a random one.  We don't really care or know.
+				apiGroupInfo.PrioritizedVersions = appendUniqueGroupVersion(apiGroupInfo.PrioritizedVersions, admissionVersion)
+
+				admissionReview := admissionreview.NewREST(admissionHook.Admit)
+				v1alpha1storage, ok := apiGroupInfo.VersionedResourcesStorageMap[admissionVersion.Version]
+				if !ok {
+					v1alpha1storage = map[string]rest.Storage{}
+				}
+				v1alpha1storage[admissionResource.Resource] = admissionReview
+				apiGroupInfo.VersionedResourcesStorageMap[admissionVersion.Version] = v1alpha1storage
+			}
+		}
+
+		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
+			return nil, err
+		}
+	}
+
+	for i := range c.ExtraConfig.AdmissionHooks {
+		admissionHook := c.ExtraConfig.AdmissionHooks[i]
+		postStartName := postStartHookName(admissionHook)
+		if len(postStartName) == 0 {
+			continue
+		}
+		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
+			func(context genericapiserver.PostStartHookContext) error {
+				return admissionHook.Initialize(c.ExtraConfig.ClientConfig, context.StopCh)
+			},
+		)
+	}
+
 	return s, nil
+}
+
+func appendUniqueGroupVersion(slice []schema.GroupVersion, elems ...schema.GroupVersion) []schema.GroupVersion {
+	m := map[schema.GroupVersion]bool{}
+	for _, gv := range slice {
+		m[gv] = true
+	}
+	for _, e := range elems {
+		m[e] = true
+	}
+	out := make([]schema.GroupVersion, 0, len(m))
+	for gv := range m {
+		out = append(out, gv)
+	}
+	return out
+}
+
+func postStartHookName(hook hooks.AdmissionHook) string {
+	var ns []string
+	gvr, _ := hook.Resource()
+	ns = append(ns, fmt.Sprintf("admit-%s.%s.%s", gvr.Resource, gvr.Version, gvr.Group))
+	if len(ns) == 0 {
+		return ""
+	}
+	return strings.Join(append(ns, "init"), "-")
+}
+
+func admissionHooksByGroupThenVersion(admissionHooks ...hooks.AdmissionHook) map[string]map[string][]hooks.AdmissionHook {
+	ret := map[string]map[string][]hooks.AdmissionHook{}
+	for i := range admissionHooks {
+		hook := admissionHooks[i]
+		gvr, _ := hook.Resource()
+		group, ok := ret[gvr.Group]
+		if !ok {
+			group = map[string][]hooks.AdmissionHook{}
+			ret[gvr.Group] = group
+		}
+		group[gvr.Version] = append(group[gvr.Version], hook)
+	}
+	return ret
 }

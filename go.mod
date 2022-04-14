@@ -15,6 +15,7 @@ require (
 	gomodules.xyz/pointer v0.1.0
 	gomodules.xyz/x v0.0.13
 	k8s.io/api v0.21.1
+	k8s.io/apiextensions-apiserver v0.21.1
 	k8s.io/apimachinery v0.21.1
 	k8s.io/apiserver v0.21.1
 	k8s.io/client-go v0.21.1
@@ -22,6 +23,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
 	kmodules.xyz/client-go v0.0.0-20220404224906-af7b092cfac5
 	kmodules.xyz/crd-schema-fuzz v0.0.0-20211025154117-6edb24ef11bc
+	kmodules.xyz/webhook-runtime v0.0.0-20220317222714-0ddfc9e4c221
 	kubedb.dev/apimachinery v0.26.0
 	sigs.k8s.io/controller-runtime v0.9.0
 	sigs.k8s.io/yaml v1.3.0
@@ -125,7 +127,6 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/apiextensions-apiserver v0.21.1 // indirect
 	k8s.io/cli-runtime v0.21.1 // indirect
 	k8s.io/component-base v0.21.1 // indirect
 	k8s.io/kube-aggregator v0.21.1 // indirect

@@ -19,17 +19,17 @@ package deadline_manager
 import (
 	"time"
 
-	supervisorv1alpha1 "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	"github.com/jonboulle/clockwork"
 )
 
 type manager struct {
-	rcmd  *supervisorv1alpha1.Recommendation
+	rcmd  *api.Recommendation
 	clock clockwork.Clock
 }
 
-func NewManager(rcmd *supervisorv1alpha1.Recommendation, clock clockwork.Clock) *manager {
+func NewManager(rcmd *api.Recommendation, clock clockwork.Clock) *manager {
 	return &manager{
 		rcmd:  rcmd,
 		clock: clock,
