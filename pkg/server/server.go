@@ -155,6 +155,8 @@ func (c completedConfig) New() (*SupervisorOperator, error) {
 		os.Exit(1)
 	}
 
+	api.SetupWebhookClient(mgr.GetClient())
+
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &api.MaintenanceWindow{}, api.DefaultMaintenanceWindowKey, func(rawObj client.Object) []string {
 		app := rawObj.(*api.MaintenanceWindow)
 		if v, ok := app.Annotations[api.DefaultMaintenanceWindowKey]; ok && v == "true" {

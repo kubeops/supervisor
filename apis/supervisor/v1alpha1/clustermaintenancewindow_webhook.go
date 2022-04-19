@@ -18,11 +18,11 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -31,15 +31,7 @@ import (
 // log is for logging in this package.
 var (
 	clustermaintenancewindowlog = logf.Log.WithName("clustermaintenancewindow-resource")
-	cmwClient                   client.Client
 )
-
-func (r *ClusterMaintenanceWindow) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	cmwClient = mgr.GetClient()
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
@@ -89,8 +81,12 @@ func (r *ClusterMaintenanceWindow) validateClusterMaintenanceWindow(ctx context.
 	if !r.Spec.IsDefault {
 		return nil
 	}
+
+	if webhookClient == nil {
+		return errors.New("webhook client is not set")
+	}
 	cmwList := &ClusterMaintenanceWindowList{}
-	if err := cmwClient.List(ctx, cmwList, client.MatchingFields{
+	if err := webhookClient.List(ctx, cmwList, client.MatchingFields{
 		DefaultClusterMaintenanceWindowKey: "true",
 	}); err != nil {
 		return err

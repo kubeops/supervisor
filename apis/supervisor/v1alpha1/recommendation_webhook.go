@@ -23,7 +23,6 @@ import (
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
-	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
@@ -32,12 +31,6 @@ import (
 var (
 	recommendationlog = logf.Log.WithName("recommendation-resource")
 )
-
-func (r *Recommendation) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
 
 var _ webhook.Defaulter = &Recommendation{}
 
