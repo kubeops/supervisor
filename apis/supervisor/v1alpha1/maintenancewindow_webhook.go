@@ -18,13 +18,13 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -33,15 +33,7 @@ import (
 // log is for logging in this package.
 var (
 	maintenancewindowlog = logf.Log.WithName("maintenancewindow-resource")
-	mwClient             client.Client
 )
-
-func (r *MaintenanceWindow) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	mwClient = mgr.GetClient()
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
@@ -92,8 +84,11 @@ func (r *MaintenanceWindow) validateMaintenanceWindow(ctx context.Context) error
 	if !r.Spec.IsDefault {
 		return nil
 	}
+	if webhookClient == nil {
+		return errors.New("webhook client is not set")
+	}
 	mwList := &MaintenanceWindowList{}
-	if err := mwClient.List(ctx, mwList, client.InNamespace(r.Namespace), client.MatchingFields{
+	if err := webhookClient.List(ctx, mwList, client.InNamespace(r.Namespace), client.MatchingFields{
 		DefaultMaintenanceWindowKey: "true",
 	}); err != nil {
 		return err
