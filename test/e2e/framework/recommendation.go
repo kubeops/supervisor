@@ -218,7 +218,7 @@ func (f *Framework) ApproveRecommendation(key client.ObjectKey) error {
 	if err := f.kc.Get(f.ctx, key, rcmd); err != nil {
 		return err
 	}
-	_, _, err := kmc.PatchStatus(f.ctx, f.kc, rcmd, func(obj client.Object, createOp bool) client.Object {
+	_, _, err := kmc.PatchStatus(f.ctx, f.kc, rcmd, func(obj client.Object) client.Object {
 		in := obj.(*api.Recommendation)
 		in.Status.ApprovalStatus = api.ApprovalApproved
 
@@ -258,7 +258,7 @@ func (f *Framework) UpdateRecommendationApprovedWindow(key client.ObjectKey, aw 
 		return err
 	}
 
-	_, _, err := kmc.PatchStatus(f.ctx, f.kc, rcmd, func(obj client.Object, createOp bool) client.Object {
+	_, _, err := kmc.PatchStatus(f.ctx, f.kc, rcmd, func(obj client.Object) client.Object {
 		in := obj.(*api.Recommendation)
 		in.Status.ApprovedWindow = aw
 		return in
@@ -285,7 +285,7 @@ func (f *Framework) UpdateRecommendationParallelism(key client.ObjectKey, par ap
 		return err
 	}
 
-	_, _, err := kmc.PatchStatus(f.ctx, f.kc, rcmd, func(obj client.Object, createOp bool) client.Object {
+	_, _, err := kmc.PatchStatus(f.ctx, f.kc, rcmd, func(obj client.Object) client.Object {
 		in := obj.(*api.Recommendation)
 		in.Status.Parallelism = par
 		return in

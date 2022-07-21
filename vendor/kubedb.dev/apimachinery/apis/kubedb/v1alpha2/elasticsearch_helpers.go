@@ -27,6 +27,7 @@ import (
 	"kubedb.dev/apimachinery/apis/kubedb"
 	"kubedb.dev/apimachinery/crds"
 
+	"github.com/Masterminds/semver/v3"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -391,7 +392,7 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 		if e.Spec.Topology.Ingest.Suffix == "" {
 			e.Spec.Topology.Ingest.Suffix = string(ElasticsearchNodeRoleTypeIngest)
 		}
-		apis.SetDefaultResourceLimits(&e.Spec.Topology.Ingest.Resources, DefaultResources)
+		apis.SetDefaultResourceLimits(&e.Spec.Topology.Ingest.Resources, DefaultResourcesElasticSearch)
 		if e.Spec.Topology.Ingest.Replicas == nil {
 			e.Spec.Topology.Ingest.Replicas = pointer.Int32P(1)
 		}
@@ -401,7 +402,7 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 		if e.Spec.Topology.Master.Suffix == "" {
 			e.Spec.Topology.Master.Suffix = string(ElasticsearchNodeRoleTypeMaster)
 		}
-		apis.SetDefaultResourceLimits(&e.Spec.Topology.Master.Resources, DefaultResources)
+		apis.SetDefaultResourceLimits(&e.Spec.Topology.Master.Resources, DefaultResourcesElasticSearch)
 		if e.Spec.Topology.Master.Replicas == nil {
 			e.Spec.Topology.Master.Replicas = pointer.Int32P(1)
 		}
@@ -413,7 +414,7 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 			if e.Spec.Topology.Data.Suffix == "" {
 				e.Spec.Topology.Data.Suffix = string(ElasticsearchNodeRoleTypeData)
 			}
-			apis.SetDefaultResourceLimits(&e.Spec.Topology.Data.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&e.Spec.Topology.Data.Resources, DefaultResourcesElasticSearch)
 			if e.Spec.Topology.Data.Replicas == nil {
 				e.Spec.Topology.Data.Replicas = pointer.Int32P(1)
 			}
@@ -425,7 +426,7 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 			if e.Spec.Topology.DataHot.Suffix == "" {
 				e.Spec.Topology.DataHot.Suffix = string(ElasticsearchNodeRoleTypeDataHot)
 			}
-			apis.SetDefaultResourceLimits(&e.Spec.Topology.DataHot.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&e.Spec.Topology.DataHot.Resources, DefaultResourcesElasticSearch)
 			if e.Spec.Topology.DataHot.Replicas == nil {
 				e.Spec.Topology.DataHot.Replicas = pointer.Int32P(1)
 			}
@@ -437,7 +438,7 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 			if e.Spec.Topology.DataWarm.Suffix == "" {
 				e.Spec.Topology.DataWarm.Suffix = string(ElasticsearchNodeRoleTypeDataWarm)
 			}
-			apis.SetDefaultResourceLimits(&e.Spec.Topology.DataWarm.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&e.Spec.Topology.DataWarm.Resources, DefaultResourcesElasticSearch)
 			if e.Spec.Topology.DataWarm.Replicas == nil {
 				e.Spec.Topology.DataWarm.Replicas = pointer.Int32P(1)
 			}
@@ -449,7 +450,7 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 			if e.Spec.Topology.DataCold.Suffix == "" {
 				e.Spec.Topology.DataCold.Suffix = string(ElasticsearchNodeRoleTypeDataCold)
 			}
-			apis.SetDefaultResourceLimits(&e.Spec.Topology.DataCold.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&e.Spec.Topology.DataCold.Resources, DefaultResourcesElasticSearch)
 			if e.Spec.Topology.DataCold.Replicas == nil {
 				e.Spec.Topology.DataCold.Replicas = pointer.Int32P(1)
 			}
@@ -461,7 +462,7 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 			if e.Spec.Topology.DataFrozen.Suffix == "" {
 				e.Spec.Topology.DataFrozen.Suffix = string(ElasticsearchNodeRoleTypeDataFrozen)
 			}
-			apis.SetDefaultResourceLimits(&e.Spec.Topology.DataFrozen.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&e.Spec.Topology.DataFrozen.Resources, DefaultResourcesElasticSearch)
 			if e.Spec.Topology.DataFrozen.Replicas == nil {
 				e.Spec.Topology.DataFrozen.Replicas = pointer.Int32P(1)
 			}
@@ -473,7 +474,7 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 			if e.Spec.Topology.DataContent.Suffix == "" {
 				e.Spec.Topology.DataContent.Suffix = string(ElasticsearchNodeRoleTypeDataContent)
 			}
-			apis.SetDefaultResourceLimits(&e.Spec.Topology.DataContent.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&e.Spec.Topology.DataContent.Resources, DefaultResourcesElasticSearch)
 			if e.Spec.Topology.DataContent.Replicas == nil {
 				e.Spec.Topology.DataContent.Replicas = pointer.Int32P(1)
 			}
@@ -485,7 +486,7 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 			if e.Spec.Topology.ML.Suffix == "" {
 				e.Spec.Topology.ML.Suffix = string(ElasticsearchNodeRoleTypeML)
 			}
-			apis.SetDefaultResourceLimits(&e.Spec.Topology.ML.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&e.Spec.Topology.ML.Resources, DefaultResourcesElasticSearch)
 			if e.Spec.Topology.ML.Replicas == nil {
 				e.Spec.Topology.ML.Replicas = pointer.Int32P(1)
 			}
@@ -497,14 +498,14 @@ func (e *Elasticsearch) SetDefaults(esVersion *catalog.ElasticsearchVersion, top
 			if e.Spec.Topology.Transform.Suffix == "" {
 				e.Spec.Topology.Transform.Suffix = string(ElasticsearchNodeRoleTypeTransform)
 			}
-			apis.SetDefaultResourceLimits(&e.Spec.Topology.Transform.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&e.Spec.Topology.Transform.Resources, DefaultResourcesElasticSearch)
 			if e.Spec.Topology.Transform.Replicas == nil {
 				e.Spec.Topology.Transform.Replicas = pointer.Int32P(1)
 			}
 		}
 
 	} else {
-		apis.SetDefaultResourceLimits(&e.Spec.PodTemplate.Spec.Resources, DefaultResources)
+		apis.SetDefaultResourceLimits(&e.Spec.PodTemplate.Spec.Resources, DefaultResourcesElasticSearch)
 		if e.Spec.Replicas == nil {
 			e.Spec.Replicas = pointer.Int32P(1)
 		}
@@ -595,7 +596,53 @@ func (e *Elasticsearch) setDefaultInternalUsersAndRoleMappings(esVersion *catalo
 		return
 	}
 
-	// The internalUsers feature only works with searchGuard, openSearch, and openDistro
+	version, err := semver.NewVersion(esVersion.Spec.Version)
+	if err != nil {
+		return
+	}
+	// set missing internal users for Xpack,
+	// internal users are supported for version>=7.8.x
+	if esVersion.Spec.AuthPlugin == catalog.ElasticsearchAuthPluginXpack &&
+		(version.Major() >= 8 || (version.Major() == 7 && version.Minor() >= 8)) {
+		inUsers := e.Spec.InternalUsers
+		// If not set, create empty map
+		if inUsers == nil {
+			inUsers = make(map[string]ElasticsearchUserSpec)
+		}
+
+		// "elastic" user
+		if userSpec, exists := inUsers[string(ElasticsearchInternalUserElastic)]; !exists {
+			inUsers[string(ElasticsearchInternalUserElastic)] = ElasticsearchUserSpec{
+				BackendRoles: []string{"superuser"},
+			}
+		} else {
+			// upsert "superuser" role, if missing
+			// elastic user must have the superuser role
+			userSpec.BackendRoles = upsertStringSlice(userSpec.BackendRoles, "superuser")
+			inUsers[string(ElasticsearchInternalUserElastic)] = userSpec
+		}
+
+		// "Kibana_system", "logstash_system", "beats_system", "apm_system", "remote_monitoring_user" user
+		setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserKibanaSystem), ElasticsearchUserSpec{
+			BackendRoles: []string{"kibana_system"},
+		})
+		setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserBeatsSystem), ElasticsearchUserSpec{
+			BackendRoles: []string{"beats_system"},
+		})
+		setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserApmSystem), ElasticsearchUserSpec{
+			BackendRoles: []string{"apm_system"},
+		})
+		setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserRemoteMonitoringUser), ElasticsearchUserSpec{
+			BackendRoles: []string{"remote_monitoring_collector", "remote_monitoring_agent"},
+		})
+		setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserLogstashSystem), ElasticsearchUserSpec{
+			BackendRoles: []string{"logstash_system"},
+		})
+
+		e.Spec.InternalUsers = inUsers
+	}
+
+	// set missing internal users and roles for OpenDistro, SearchGuard & OpenSearch
 	if esVersion.Spec.AuthPlugin == catalog.ElasticsearchAuthPluginOpenDistro ||
 		esVersion.Spec.AuthPlugin == catalog.ElasticsearchAuthPluginSearchGuard ||
 		esVersion.Spec.AuthPlugin == catalog.ElasticsearchAuthPluginOpenSearch {
@@ -628,26 +675,6 @@ func (e *Elasticsearch) setDefaultInternalUsersAndRoleMappings(esVersion *catalo
 		// "MetricsExporter", Only if the monitoring is enabled.
 		if e.Spec.Monitor != nil {
 			setMissingElasticsearchUser(inUsers, string(ElasticsearchInternalUserMetricsExporter), ElasticsearchUserSpec{})
-		}
-
-		// Set missing user secret names
-		for username, userSpec := range inUsers {
-			// For admin user, spec.authSecret.Name must have high precedence over default field
-			if username == string(ElasticsearchInternalUserAdmin) {
-				if e.Spec.AuthSecret != nil && e.Spec.AuthSecret.Name != "" {
-					userSpec.SecretName = e.Spec.AuthSecret.Name
-				} else {
-					if userSpec.SecretName == "" {
-						userSpec.SecretName = e.DefaultUserCredSecretName(username)
-					}
-					e.Spec.AuthSecret = &core.LocalObjectReference{
-						Name: userSpec.SecretName,
-					}
-				}
-			} else if userSpec.SecretName == "" {
-				userSpec.SecretName = e.DefaultUserCredSecretName(username)
-			}
-			inUsers[username] = userSpec
 		}
 
 		// If monitoring is enabled,
@@ -691,6 +718,28 @@ func (e *Elasticsearch) setDefaultInternalUsersAndRoleMappings(esVersion *catalo
 		}
 		e.Spec.InternalUsers = inUsers
 	}
+
+	inUsers := e.Spec.InternalUsers
+	// Set missing user secret names
+	for username, userSpec := range inUsers {
+		// For admin user, spec.authSecret.Name must have high precedence over default field
+		if username == string(ElasticsearchInternalUserAdmin) || username == string(ElasticsearchInternalUserElastic) {
+			if e.Spec.AuthSecret != nil && e.Spec.AuthSecret.Name != "" {
+				userSpec.SecretName = e.Spec.AuthSecret.Name
+			} else {
+				if userSpec.SecretName == "" {
+					userSpec.SecretName = e.DefaultUserCredSecretName(username)
+				}
+				e.Spec.AuthSecret = &core.LocalObjectReference{
+					Name: userSpec.SecretName,
+				}
+			}
+		} else if userSpec.SecretName == "" {
+			userSpec.SecretName = e.DefaultUserCredSecretName(username)
+		}
+		inUsers[username] = userSpec
+	}
+	e.Spec.InternalUsers = inUsers
 }
 
 // set default tls configuration (ie. alias, secretName)
@@ -752,10 +801,13 @@ func (e *Elasticsearch) SetTLSDefaults(esVersion *catalog.ElasticsearchVersion) 
 
 		// archiver
 		tlsConfig.Certificates = kmapi.SetMissingSpecForCertificate(tlsConfig.Certificates, kmapi.CertificateSpec{
-			Alias:      string(ElasticsearchArchiverCert),
-			SecretName: e.CertificateName(ElasticsearchArchiverCert),
+			Alias:      string(ElasticsearchClientCert),
+			SecretName: e.CertificateName(ElasticsearchClientCert),
 		})
 	}
+
+	// remove archiverCert from old spec if exists
+	tlsConfig.Certificates = kmapi.RemoveCertificate(tlsConfig.Certificates, string(ElasticsearchArchiverCert))
 
 	for id := range tlsConfig.Certificates {
 		// Force overwrite the private key encoding type to PKCS#8

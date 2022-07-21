@@ -84,7 +84,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// Skipped outdated Recommendation
 	if obj.Status.Outdated {
-		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
 			in.Status.Phase = api.Skipped
@@ -97,7 +97,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// Ignore any update in the recommendation object if the recommendation is already succeeded
 	if obj.Status.Phase == api.Succeeded {
-		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
 			return in
@@ -106,7 +106,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if obj.Status.FailedAttempt > pointer.Int32(obj.Spec.BackoffLimit) {
-		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
 			in.Status.Phase = api.Failed
@@ -117,7 +117,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if obj.Status.Phase == "" {
-		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.Phase = api.Pending
 			in.Status.Reason = api.WaitingForApproval
@@ -141,7 +141,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 		if !isMaintenanceTime {
 			if obj.Status.Phase == api.Pending {
-				_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+				_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 					in := obj.(*api.Recommendation)
 					in.Status.Phase = api.Waiting
 					in.Status.Reason = api.WaitingForMaintenanceWindow
@@ -156,7 +156,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 		return r.runMaintenanceWork(ctx, obj)
 	} else if obj.Status.ApprovalStatus == api.ApprovalRejected {
-		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+		_, _, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.Phase = api.Skipped
 			in.Status.Reason = api.RecommendationRejected
@@ -174,7 +174,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, err
 		}
 		if approvalPolicy != nil {
-			_, _, err = kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+			_, _, err = kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 				in := obj.(*api.Recommendation)
 				in.Status.ApprovalStatus = api.ApprovalApproved
 				in.Status.ApprovedWindow = &api.ApprovedWindow{
@@ -216,7 +216,7 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 	}
 
 	if pointer.Bool(success) {
-		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.Phase = api.Succeeded
 			in.Status.Reason = api.SuccessfullyExecutedOperation
@@ -250,7 +250,7 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 	deadlineKnocking := deadlineMgr.IsDeadlineLessThan(r.BeforeDeadlineDuration)
 
 	if !(maintainParallelism || deadlineKnocking) {
-		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+		_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.Phase = api.Waiting
 			in.Status.Reason = api.WaitingForExecution
@@ -275,7 +275,7 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 		return r.handleErr(ctx, rcmd, err, api.Failed)
 	}
 
-	_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+	_, _, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 		in := obj.(*api.Recommendation)
 		in.Status.Phase = api.InProgress
 		in.Status.Reason = api.StartedExecutingOperation
@@ -293,7 +293,7 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 }
 
 func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *api.Recommendation, err error, phase api.RecommendationPhase) (ctrl.Result, error) {
-	_, _, pErr := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object, createOp bool) client.Object {
+	_, _, pErr := kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 		in := obj.(*api.Recommendation)
 		in.Status.Phase = phase
 		in.Status.Reason = err.Error()
@@ -304,7 +304,7 @@ func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *api.Reco
 }
 
 func (r *RecommendationReconciler) recordFailedAttempt(ctx context.Context, obj *api.Recommendation, err error) (ctrl.Result, error) {
-	_, _, pErr := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object, createOp bool) client.Object {
+	_, _, pErr := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 		in := obj.(*api.Recommendation)
 		in.Status.Phase = api.Failed
 		in.Status.Reason = api.OperationFailed

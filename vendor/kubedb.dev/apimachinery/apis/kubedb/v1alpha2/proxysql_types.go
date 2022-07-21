@@ -59,12 +59,22 @@ type ProxySQL struct {
 }
 
 type ProxySQLSpec struct {
+	// AutoOps contains configuration of automatic ops-request-recommendation generation
+	// +optional
+	AutoOps AutoOpsSpec `json:"autoOps,omitempty"`
+
 	// Version of ProxySQL to be deployed.
 	Version string `json:"version"`
 
 	// Number of instances to deploy for ProxySQL. Currently we support only replicas = 1.
 	// TODO: If replicas > 1, proxysql will be clustered
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// StorageType can be durable (default) or ephemeral
+	StorageType StorageType `json:"storageType,omitempty"`
+
+	// Storage spec to specify how storage shall be used.
+	Storage *core.PersistentVolumeClaimSpec `json:"storage,omitempty"`
 
 	// Mode specifies the type of MySQL/Percona-XtraDB/MariaDB cluster for which proxysql
 	// will be configured. It must be either "Galera" or "GroupReplication"
@@ -95,6 +105,10 @@ type ProxySQLSpec struct {
 	// TLS contains tls configurations for client and server.
 	// +optional
 	TLS *kmapi.TLSConfig `json:"tls,omitempty"`
+
+	// TerminationPolicy controls the delete operation for database
+	// +optional
+	TerminationPolicy TerminationPolicy `json:"terminationPolicy,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=server;archiver;metrics-exporter
@@ -102,7 +116,7 @@ type ProxySQLCertificateAlias string
 
 const (
 	ProxySQLServerCert          ProxySQLCertificateAlias = "server"
-	ProxySQLArchiverCert        ProxySQLCertificateAlias = "archiver"
+	ProxySQLClientCert          ProxySQLCertificateAlias = "client"
 	ProxySQLMetricsExporterCert ProxySQLCertificateAlias = "metrics-exporter"
 )
 

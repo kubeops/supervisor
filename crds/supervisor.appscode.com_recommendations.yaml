@@ -92,21 +92,21 @@ spec:
                 description: 'Rules defines OperationPhaseRules. It contains three
                   identification rules of successful execution of the operation, progressing
                   execution of the operation & failed execution of the operation.
-                  Example: rules:   success:    `has(self.status.phase) && self.status.phase
-                  == ''Successful''`   inProgress: `has(self.status.phase) && self.status.phase
-                  == ''Progressing''`   failed:     `has(self.status.phase) && self.status.phase
+                  Example: rules: success:    `has(self.status.phase) && self.status.phase
+                  == ''Successful''` inProgress: `has(self.status.phase) && self.status.phase
+                  == ''Progressing''` failed:     `has(self.status.phase) && self.status.phase
                   == ''Failed''`'
                 properties:
                   failed:
                     description: 'Failed defines a rule to identify that applied operation
-                      is failed. Example:   inProgress: `has(self.status.phase) &&
-                      self.status.phase == ''Failed''` Here self.status.phase is pointing
-                      to .status.phase field of the Operation object. When .status.phase
-                      field presents and becomes `Failed`, the Failed rule will satisfy.'
+                      is failed. Example: inProgress: `has(self.status.phase) && self.status.phase
+                      == ''Failed''` Here self.status.phase is pointing to .status.phase
+                      field of the Operation object. When .status.phase field presents
+                      and becomes `Failed`, the Failed rule will satisfy.'
                     type: string
                   inProgress:
                     description: 'InProgress defines a rule to identify that applied
-                      operation is progressing. Example:   inProgress: `has(self.status.phase)
+                      operation is progressing. Example: inProgress: `has(self.status.phase)
                       && self.status.phase == ''Progressing''` Here self.status.phase
                       is pointing to .status.phase field of the Operation object.
                       When .status.phase field presents and becomes `Progressing`,
@@ -114,7 +114,7 @@ spec:
                     type: string
                   success:
                     description: 'Success defines a rule to identify the successful
-                      execution of the operation. Example:   success: `has(self.status.phase)
+                      execution of the operation. Example: success: `has(self.status.phase)
                       && self.status.phase == ''Successful''` Here self.status.phase
                       is pointing to .status.phase field of the Operation object.
                       When .status.phase field presents and becomes `Successful`,
@@ -308,14 +308,14 @@ spec:
               phase:
                 description: 'Specifies the Recommendation current phase. Possible
                   values are: Pending : Recommendation misses at least one pre-requisite
-                  for executing the operation.           It also tells that some user
-                  action is needed. Skipped : Operation is skipped because of Rejection
-                  ApprovalStatus. Waiting : Recommendation is waiting for the MaintenanceWindow
-                  to execute the operation           or waiting for others Recommendation
-                  to complete far maintaining Parallelism. InProgress : The operation
-                  execution is successfully started and waiting for its final status.
-                  Succeeded : Operation has been successfully executed. Failed : Operation
-                  execution has not completed successfully i.e. encountered an error'
+                  for executing the operation. It also tells that some user action
+                  is needed. Skipped : Operation is skipped because of Rejection ApprovalStatus.
+                  Waiting : Recommendation is waiting for the MaintenanceWindow to
+                  execute the operation or waiting for others Recommendation to complete
+                  far maintaining Parallelism. InProgress : The operation execution
+                  is successfully started and waiting for its final status. Succeeded
+                  : Operation has been successfully executed. Failed : Operation execution
+                  has not completed successfully i.e. encountered an error'
                 enum:
                 - Pending
                 - Skipped
