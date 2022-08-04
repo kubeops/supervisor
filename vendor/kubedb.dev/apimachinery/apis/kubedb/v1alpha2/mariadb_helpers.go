@@ -18,6 +18,7 @@ package v1alpha2
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"kubedb.dev/apimachinery/apis"
 	"kubedb.dev/apimachinery/apis/kubedb"
@@ -245,14 +246,14 @@ func (m *MariaDB) setDefaultAffinity(podTemplate *ofst.PodTemplateSpec, labels m
 }
 
 func (m *MariaDB) SetHealthCheckerDefaults() {
-	if m.Spec.HealthCheck.PeriodSeconds == nil {
-		m.Spec.HealthCheck.PeriodSeconds = pointer.Int32P(10)
+	if m.Spec.HealthChecker.PeriodSeconds == nil {
+		m.Spec.HealthChecker.PeriodSeconds = pointer.Int32P(10)
 	}
-	if m.Spec.HealthCheck.TimeoutSeconds == nil {
-		m.Spec.HealthCheck.TimeoutSeconds = pointer.Int32P(10)
+	if m.Spec.HealthChecker.TimeoutSeconds == nil {
+		m.Spec.HealthChecker.TimeoutSeconds = pointer.Int32P(10)
 	}
-	if m.Spec.HealthCheck.FailureThreshold == nil {
-		m.Spec.HealthCheck.FailureThreshold = pointer.Int32P(1)
+	if m.Spec.HealthChecker.FailureThreshold == nil {
+		m.Spec.HealthChecker.FailureThreshold = pointer.Int32P(1)
 	}
 }
 
@@ -262,7 +263,7 @@ func (m *MariaDB) SetTLSDefaults() {
 	}
 	m.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(m.Spec.TLS.Certificates, string(MariaDBServerCert), m.CertificateName(MariaDBServerCert))
 	m.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(m.Spec.TLS.Certificates, string(MariaDBClientCert), m.CertificateName(MariaDBClientCert))
-	m.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(m.Spec.TLS.Certificates, string(MariaDBMetricsExporterCert), m.CertificateName(MariaDBMetricsExporterCert))
+	m.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(m.Spec.TLS.Certificates, string(MariaDBExporterCert), m.CertificateName(MariaDBExporterCert))
 }
 
 func (m *MariaDBSpec) GetPersistentSecrets() []string {
@@ -306,4 +307,12 @@ func (m *MariaDB) ReplicasAreReady(lister appslister.StatefulSetLister) (bool, s
 
 func (m *MariaDB) InlineConfigSecretName() string {
 	return meta_util.NameWithSuffix(m.Name, "inline")
+}
+
+func (m *MariaDB) CertMountPath(alias MariaDBCertificateAlias) string {
+	return filepath.Join(PerconaXtraDBCertMountPath, string(alias))
+}
+
+func (m *MariaDB) CertFilePath(certAlias MariaDBCertificateAlias, certFileName string) string {
+	return filepath.Join(m.CertMountPath(certAlias), certFileName)
 }

@@ -256,6 +256,7 @@ func (p *Postgres) SetDefaults(postgresVersion *catalog.PostgresVersion, topolog
 
 	p.Spec.Monitor.SetDefaults()
 	p.SetTLSDefaults()
+	p.SetHealthCheckerDefaults()
 	apis.SetDefaultResourceLimits(&p.Spec.PodTemplate.Spec.Resources, DefaultResources)
 	p.setDefaultAffinity(&p.Spec.PodTemplate, p.OffshootSelectors(), topology)
 }
@@ -371,4 +372,16 @@ func GetSharedBufferSizeForPostgres(resource *resource.Quantity) string {
 	}
 
 	return sharedBuffer
+}
+
+func (m *Postgres) SetHealthCheckerDefaults() {
+	if m.Spec.HealthChecker.PeriodSeconds == nil {
+		m.Spec.HealthChecker.PeriodSeconds = pointer.Int32P(10)
+	}
+	if m.Spec.HealthChecker.TimeoutSeconds == nil {
+		m.Spec.HealthChecker.TimeoutSeconds = pointer.Int32P(10)
+	}
+	if m.Spec.HealthChecker.FailureThreshold == nil {
+		m.Spec.HealthChecker.FailureThreshold = pointer.Int32P(1)
+	}
 }

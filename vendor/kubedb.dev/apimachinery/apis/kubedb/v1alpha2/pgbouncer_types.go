@@ -97,6 +97,11 @@ type PgBouncerSpec struct {
 	// TerminationPolicy controls the delete operation for database
 	// +optional
 	TerminationPolicy PgBouncerTerminationPolicy `json:"terminationPolicy,omitempty"`
+
+	// HealthChecker defines attributes of the health checker
+	// +optional
+	// +kubebuilder:default={periodSeconds: 10, timeoutSeconds: 10, failureThreshold: 1}
+	HealthChecker HealthCheckSpec `json:"healthChecker"`
 }
 
 // +kubebuilder:validation:Enum=server;archiver;metrics-exporter

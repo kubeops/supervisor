@@ -3,28 +3,28 @@ module kubeops.dev/supervisor
 go 1.18
 
 require (
-	github.com/google/cel-go v0.11.2
+	github.com/google/cel-go v0.12.4
 	github.com/google/gofuzz v1.2.0
-	github.com/jonboulle/clockwork v0.2.2
+	github.com/jonboulle/clockwork v0.3.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.18.1
-	github.com/spf13/cobra v1.4.0
+	github.com/onsi/gomega v1.20.0
+	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/pointer v0.1.0
 	gomodules.xyz/x v0.0.14
-	k8s.io/api v0.24.1
-	k8s.io/apiextensions-apiserver v0.24.1
-	k8s.io/apimachinery v0.24.1
-	k8s.io/apiserver v0.24.1
-	k8s.io/client-go v0.24.1
-	k8s.io/klog/v2 v2.60.1
+	k8s.io/api v0.24.3
+	k8s.io/apiextensions-apiserver v0.24.3
+	k8s.io/apimachinery v0.24.3
+	k8s.io/apiserver v0.24.3
+	k8s.io/client-go v0.24.3
+	k8s.io/klog/v2 v2.70.1
 	k8s.io/kube-openapi v0.0.0-20220413171646-5e7f5fdc6da6
 	kmodules.xyz/client-go v0.24.5
 	kmodules.xyz/crd-schema-fuzz v0.24.1
 	kmodules.xyz/webhook-runtime v0.24.0
-	kubedb.dev/apimachinery v0.27.1-0.20220721090657-6a841c2e02c9
-	sigs.k8s.io/controller-runtime v0.12.1
+	kubedb.dev/apimachinery v0.28.0-rc.0.0.20220803084214-1241b40d48ec
+	sigs.k8s.io/controller-runtime v0.12.3
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -38,7 +38,7 @@ require (
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/NYTimes/gziphandler v1.1.1 // indirect
-	github.com/antlr/antlr4/runtime/Go/antlr v0.0.0-20220209173558-ad29539cd2e9 // indirect
+	github.com/antlr/antlr4/runtime/Go/antlr v0.0.0-20220418222510-f25a4f6275ed // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
@@ -128,24 +128,24 @@ require (
 	gomodules.xyz/sets v0.2.1 // indirect
 	gomodules.xyz/wait v0.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220310185008-1973136f34c6 // indirect
-	google.golang.org/grpc v1.44.0 // indirect
+	google.golang.org/genproto v0.0.0-20220502173005-c8bf987b8c21 // indirect
+	google.golang.org/grpc v1.46.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/cli-runtime v0.24.1 // indirect
-	k8s.io/component-base v0.24.1 // indirect
+	k8s.io/component-base v0.24.3 // indirect
 	k8s.io/kube-aggregator v0.24.1 // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
-	kmodules.xyz/custom-resources v0.24.1-0.20220604054425-6f858e720115 // indirect
+	kmodules.xyz/custom-resources v0.24.1 // indirect
 	kmodules.xyz/monitoring-agent-api v0.24.0 // indirect
-	kmodules.xyz/offshoot-api v0.24.1 // indirect
+	kmodules.xyz/offshoot-api v0.24.2 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.30 // indirect
 	sigs.k8s.io/json v0.0.0-20220525155127-227cbc7cc124 // indirect
 	sigs.k8s.io/kustomize/api v0.11.4 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.6 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )

@@ -828,6 +828,18 @@ func (e *Elasticsearch) SetTLSDefaults(esVersion *catalog.ElasticsearchVersion) 
 	e.Spec.TLS = tlsConfig
 }
 
+func (e *Elasticsearch) SetHealthCheckerDefaults() {
+	if e.Spec.HealthChecker.PeriodSeconds == nil {
+		e.Spec.HealthChecker.PeriodSeconds = pointer.Int32P(10)
+	}
+	if e.Spec.HealthChecker.TimeoutSeconds == nil {
+		e.Spec.HealthChecker.TimeoutSeconds = pointer.Int32P(10)
+	}
+	if e.Spec.HealthChecker.FailureThreshold == nil {
+		e.Spec.HealthChecker.FailureThreshold = pointer.Int32P(1)
+	}
+}
+
 func (e *Elasticsearch) GetMatchExpressions() []metav1.LabelSelectorRequirement {
 	if e.Spec.Topology == nil {
 		return nil

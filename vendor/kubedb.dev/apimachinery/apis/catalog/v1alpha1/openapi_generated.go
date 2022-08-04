@@ -468,6 +468,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/catalog/v1alpha1.MySQLVersionRouterInitContainer":            schema_apimachinery_apis_catalog_v1alpha1_MySQLVersionRouterInitContainer(ref),
 		"kubedb.dev/apimachinery/apis/catalog/v1alpha1.MySQLVersionSpec":                           schema_apimachinery_apis_catalog_v1alpha1_MySQLVersionSpec(ref),
 		"kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersion":                       schema_apimachinery_apis_catalog_v1alpha1_PerconaXtraDBVersion(ref),
+		"kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionCoordinator":            schema_apimachinery_apis_catalog_v1alpha1_PerconaXtraDBVersionCoordinator(ref),
 		"kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionDatabase":               schema_apimachinery_apis_catalog_v1alpha1_PerconaXtraDBVersionDatabase(ref),
 		"kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionExporter":               schema_apimachinery_apis_catalog_v1alpha1_PerconaXtraDBVersionExporter(ref),
 		"kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionInitContainer":          schema_apimachinery_apis_catalog_v1alpha1_PerconaXtraDBVersionInitContainer(ref),
@@ -20319,6 +20320,13 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodSpec(ref common.ReferenceCallback
 							Ref:         ref("k8s.io/api/core/v1.PodSecurityContext"),
 						},
 					},
+					"terminationGracePeriodSeconds": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request. Value must be non-negative integer. The value zero indicates stop immediately via the kill signal (no opportunity to shut down). If this value is nil, the default grace period will be used instead. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process. Defaults to 30 seconds.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
 					"dnsPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Set DNS policy for the pod. Defaults to \"ClusterFirst\". Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'. DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy. To have DNS options set along with hostNetwork, you have to specify DNS policy explicitly to 'ClusterFirstWithHostNet'.\n\nPossible enum values:\n - `\"ClusterFirst\"` indicates that the pod should use cluster DNS first unless hostNetwork is true, if it is available, then fall back on the default (as determined by kubelet) DNS settings.\n - `\"ClusterFirstWithHostNet\"` indicates that the pod should use cluster DNS first, if it is available, then fall back on the default (as determined by kubelet) DNS settings.\n - `\"Default\"` indicates that the pod should use the default (as determined by kubelet) DNS settings.\n - `\"None\"` indicates that the pod should use empty DNS settings. DNS parameters such as nameservers and search paths should be defined via DNSConfig.",
@@ -20330,6 +20338,51 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodSpec(ref common.ReferenceCallback
 						SchemaProps: spec.SchemaProps{
 							Description: "Specifies the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS configuration based on DNSPolicy.",
 							Ref:         ref("k8s.io/api/core/v1.PodDNSConfig"),
+						},
+					},
+					"topologySpreadConstraints": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"topologyKey",
+									"whenUnsatisfiable",
+								},
+								"x-kubernetes-list-type":       "map",
+								"x-kubernetes-patch-merge-key": "topologyKey",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "TopologySpreadConstraints describes how a group of pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. All topologySpreadConstraints are ANDed.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.TopologySpreadConstraint"),
+									},
+								},
+							},
+						},
+					},
+					"volumes": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-patch-merge-key": "name",
+								"x-kubernetes-patch-strategy":  "merge,retainKeys",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "List of volumes that can be mounted by containers belonging to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
 						},
 					},
 					"initContainers": {
@@ -20412,26 +20465,21 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodSpec(ref common.ReferenceCallback
 							Ref:         ref("k8s.io/api/core/v1.SecurityContext"),
 						},
 					},
-					"topologySpreadConstraints": {
+					"volumeMounts": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
-								"x-kubernetes-list-map-keys": []interface{}{
-									"topologyKey",
-									"whenUnsatisfiable",
-								},
-								"x-kubernetes-list-type":       "map",
-								"x-kubernetes-patch-merge-key": "topologyKey",
+								"x-kubernetes-patch-merge-key": "mountPath",
 								"x-kubernetes-patch-strategy":  "merge",
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "TopologySpreadConstraints describes how a group of pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. All topologySpreadConstraints are ANDed.",
+							Description: "Pod volumes to mount into the container's filesystem. Cannot be updated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("k8s.io/api/core/v1.TopologySpreadConstraint"),
+										Ref:     ref("k8s.io/api/core/v1.VolumeMount"),
 									},
 								},
 							},
@@ -20441,7 +20489,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodSpec(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Lifecycle", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodDNSConfig", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Probe", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.TopologySpreadConstraint"},
+			"k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Lifecycle", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodDNSConfig", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Probe", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.TopologySpreadConstraint", "k8s.io/api/core/v1.Volume", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 
@@ -22450,6 +22498,27 @@ func schema_apimachinery_apis_catalog_v1alpha1_PerconaXtraDBVersion(ref common.R
 	}
 }
 
+func schema_apimachinery_apis_catalog_v1alpha1_PerconaXtraDBVersionCoordinator(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PerconaXtraDBVersionCoordinator is the PerconaXtraDB Coordinator image",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"image"},
+			},
+		},
+	}
+}
+
 func schema_apimachinery_apis_catalog_v1alpha1_PerconaXtraDBVersionDatabase(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -22612,6 +22681,13 @@ func schema_apimachinery_apis_catalog_v1alpha1_PerconaXtraDBVersionSpec(ref comm
 							Ref:         ref("kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionExporter"),
 						},
 					},
+					"coordinator": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Coordinator Image",
+							Default:     map[string]interface{}{},
+							Ref:         ref("kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionCoordinator"),
+						},
+					},
 					"deprecated": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.",
@@ -22652,7 +22728,7 @@ func schema_apimachinery_apis_catalog_v1alpha1_PerconaXtraDBVersionSpec(ref comm
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.StashAddonSpec", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionDatabase", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionExporter", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionInitContainer", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionPodSecurityPolicy", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.UpgradeConstraints"},
+			"kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1.StashAddonSpec", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionCoordinator", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionDatabase", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionExporter", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionInitContainer", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.PerconaXtraDBVersionPodSecurityPolicy", "kubedb.dev/apimachinery/apis/catalog/v1alpha1.UpgradeConstraints"},
 	}
 }
 
@@ -22967,6 +23043,12 @@ func schema_apimachinery_apis_catalog_v1alpha1_PostgresVersionDatabase(ref commo
 							Default: "",
 							Type:    []string{"string"},
 							Format:  "",
+						},
+					},
+					"baseOS": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
 						},
 					},
 				},
