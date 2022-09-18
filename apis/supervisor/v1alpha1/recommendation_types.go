@@ -82,8 +82,10 @@ type RecommendationSpec struct {
 // progressing execution of the operation & failed execution of the operation.
 // To specifies any field of the Operation object, the rule must start with the word `self`.
 // Example:
-//        .status.phase -> self.status.phase
-//        .status.observedGeneration -> self.status.observedGeneration
+//
+//	.status.phase -> self.status.phase
+//	.status.observedGeneration -> self.status.observedGeneration
+//
 // The rules can be any valid expression supported by CEL(Common Expression Language).
 // Ref: https://github.com/google/cel-spec
 type OperationPhaseRules struct {
@@ -243,23 +245,25 @@ const (
 // ApprovedWindow Scenarios:
 //
 // Scenario 1: User provides nothing and default MaintenanceWindow will be used. If any default window(cluster scoped or namespaced) is not found,
-//             Recommendation will be in `Pending` state and waiting for maintenance window to be created.
-//             Default MaintenanceWindow Priority: NamespaceScoped > ClusterScoped.
-//             Note: If NamespaceScoped default MaintenanceWindow is found, ClusterScoped default MaintenanceWindow is skipped(if any).
+//
+//	Recommendation will be in `Pending` state and waiting for maintenance window to be created.
+//	Default MaintenanceWindow Priority: NamespaceScoped > ClusterScoped.
+//	Note: If NamespaceScoped default MaintenanceWindow is found, ClusterScoped default MaintenanceWindow is skipped(if any).
 //
 // Scenario 2: User provides window type `Immediate` and ops request will be created immediately.
 //
 // Scenario 3: User provides a specific MaintenanceWindow and that will be used or an error will be thrown if given MaintenanceWindow is not found.
 //
 // Scenario 4: User provides window type `NextAvailable` and the ops request will be executed in the next available MaintenanceWindow.
-//             Firstly, next namespace scoped available window will be used. If there is no MaintenanceWindow is found in the same namespace
-//             then next available ClusterMaintenanceWindow will be used.
-//             If there is no available Window is found in that time, Recommendation will be in `Pending` state and waiting for maintenance window
-//             to be created.
+//
+//	Firstly, next namespace scoped available window will be used. If there is no MaintenanceWindow is found in the same namespace
+//	then next available ClusterMaintenanceWindow will be used.
+//	If there is no available Window is found in that time, Recommendation will be in `Pending` state and waiting for maintenance window
+//	to be created.
 //
 // Scenario 5: User provides window type `SpecificDates`. In this case, user must provide at least one DateWindows in the dates field.
-//             Otherwise controller will throw an error. DateWindow is only be used for window type `SpecificDates`
 //
+//	Otherwise controller will throw an error. DateWindow is only be used for window type `SpecificDates`
 type ApprovedWindow struct {
 	// Window defines the ApprovedWindow type
 	// Possible values are:
