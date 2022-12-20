@@ -38,6 +38,10 @@ type RecommendationSpec struct {
 	// +optional
 	Description string `json:"description,omitempty"`
 
+	// VersionUpgradeReport tells about the newest version availability &
+	// cve fixed reports in the newest version
+	VersionUpgradeReport *ImageScanReport `json:"versionUpgradeReport,omitempty"`
+
 	// Target specifies the APIGroup, Kind & Name of the target resource for which the recommendation is generated
 	Target core.TypedLocalObjectReference `json:"target"`
 
@@ -76,6 +80,22 @@ type RecommendationSpec struct {
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=10
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+}
+
+type ImageScanReport struct {
+	OldVersionReports []ImageReport `json:"oldVersionReport"`
+	NewVersionReports []ImageReport `json:"newVersionReport"`
+	CVEFixed          []CVEReport   `json:"cveFixed"`
+}
+
+type ImageReport struct {
+	Image      string `json:"image"`
+	ReportName string `json:"reportName"`
+}
+
+type CVEReport struct {
+	VulnerabilityID string `json:"vulnerabilityID"`
+	Severity        string `json:"severity"`
 }
 
 // OperationPhaseRules defines three identification rules of successful execution of the operation,

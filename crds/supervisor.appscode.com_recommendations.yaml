@@ -146,6 +146,51 @@ spec:
                 - name
                 type: object
                 x-kubernetes-map-type: atomic
+              versionUpgradeReport:
+                description: VersionUpgradeReport tells about the newest version availability
+                  & cve fixed reports in the newest version
+                properties:
+                  cveFixed:
+                    items:
+                      properties:
+                        severity:
+                          type: string
+                        vulnerabilityID:
+                          type: string
+                      required:
+                      - severity
+                      - vulnerabilityID
+                      type: object
+                    type: array
+                  newVersionReport:
+                    items:
+                      properties:
+                        image:
+                          type: string
+                        reportName:
+                          type: string
+                      required:
+                      - image
+                      - reportName
+                      type: object
+                    type: array
+                  oldVersionReport:
+                    items:
+                      properties:
+                        image:
+                          type: string
+                        reportName:
+                          type: string
+                      required:
+                      - image
+                      - reportName
+                      type: object
+                    type: array
+                required:
+                - cveFixed
+                - newVersionReport
+                - oldVersionReport
+                type: object
             required:
             - operation
             - recommender
