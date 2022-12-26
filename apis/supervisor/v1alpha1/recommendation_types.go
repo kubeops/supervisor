@@ -38,9 +38,8 @@ type RecommendationSpec struct {
 	// +optional
 	Description string `json:"description,omitempty"`
 
-	// VersionUpgradeReport tells about the newest version availability &
-	// cve fixed reports in the newest version
-	VersionUpgradeReport *ImageScanReport `json:"versionUpgradeReport,omitempty"`
+	// VulnerabilityReport specifies about the cve fixed in the new version
+	VulnerabilityReport *VulnerabilityReport `json:"vulnerabilityReport,omitempty"`
 
 	// Target specifies the APIGroup, Kind & Name of the target resource for which the recommendation is generated
 	Target core.TypedLocalObjectReference `json:"target"`
@@ -82,20 +81,28 @@ type RecommendationSpec struct {
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
 }
 
-type ImageScanReport struct {
-	OldVersionReports []ImageReport `json:"oldVersionReport"`
-	NewVersionReports []ImageReport `json:"newVersionReport"`
-	CVEFixed          []CVEReport   `json:"cveFixed"`
+type ReportGenerationStatus string
+
+const (
+	ReportGenerationStatusSuccess ReportGenerationStatus = "Success"
+	ReportGenerationStatusFailure ReportGenerationStatus = "Failure"
+)
+
+type VulnerabilityReport struct {
+	Status               ReportGenerationStatus `json:"status,omitempty"`
+	Message              string                 `json:"message,omitempty"`
+	CVEFixed             *CVEReport             `json:"CVEFixed,omitempty"`
+	KnownVulnerabilities *CVEReport             `json:"knownVulnerabilities,omitempty"`
 }
 
-type ImageReport struct {
-	Image      string `json:"image"`
-	ReportName string `json:"reportName"`
+type Vulnerability struct {
+	VulnerabilityID string `json:"vulnerabilityID,omitempty"`
+	Severity        string `json:"severity,omitempty"`
 }
 
 type CVEReport struct {
-	VulnerabilityID string `json:"vulnerabilityID"`
-	Severity        string `json:"severity"`
+	Count           map[string]int  `json:"count,omitempty"`
+	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
 }
 
 // OperationPhaseRules defines three identification rules of successful execution of the operation,

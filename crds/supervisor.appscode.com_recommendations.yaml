@@ -146,50 +146,46 @@ spec:
                 - name
                 type: object
                 x-kubernetes-map-type: atomic
-              versionUpgradeReport:
-                description: VersionUpgradeReport tells about the newest version availability
-                  & cve fixed reports in the newest version
+              vulnerabilityReport:
+                description: VulnerabilityReport specifies about the cve fixed in
+                  the new version
                 properties:
-                  cveFixed:
-                    items:
-                      properties:
-                        severity:
-                          type: string
-                        vulnerabilityID:
-                          type: string
-                      required:
-                      - severity
-                      - vulnerabilityID
-                      type: object
-                    type: array
-                  newVersionReport:
-                    items:
-                      properties:
-                        image:
-                          type: string
-                        reportName:
-                          type: string
-                      required:
-                      - image
-                      - reportName
-                      type: object
-                    type: array
-                  oldVersionReport:
-                    items:
-                      properties:
-                        image:
-                          type: string
-                        reportName:
-                          type: string
-                      required:
-                      - image
-                      - reportName
-                      type: object
-                    type: array
-                required:
-                - cveFixed
-                - newVersionReport
-                - oldVersionReport
+                  CVEFixed:
+                    properties:
+                      count:
+                        additionalProperties:
+                          type: integer
+                        type: object
+                      vulnerabilities:
+                        items:
+                          properties:
+                            severity:
+                              type: string
+                            vulnerabilityID:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  knownVulnerabilities:
+                    properties:
+                      count:
+                        additionalProperties:
+                          type: integer
+                        type: object
+                      vulnerabilities:
+                        items:
+                          properties:
+                            severity:
+                              type: string
+                            vulnerabilityID:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  message:
+                    type: string
+                  status:
+                    type: string
                 type: object
             required:
             - operation
