@@ -97,6 +97,7 @@ type VulnerabilityReport struct {
 
 type Vulnerability struct {
 	VulnerabilityID string `json:"vulnerabilityID,omitempty"`
+	PrimaryURL      string `json:"primaryURL,omitempty"`
 	Severity        string `json:"severity,omitempty"`
 }
 

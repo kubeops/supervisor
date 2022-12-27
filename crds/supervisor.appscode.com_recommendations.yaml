@@ -159,6 +159,8 @@ spec:
                       vulnerabilities:
                         items:
                           properties:
+                            primaryURL:
+                              type: string
                             severity:
                               type: string
                             vulnerabilityID:
@@ -175,6 +177,8 @@ spec:
                       vulnerabilities:
                         items:
                           properties:
+                            primaryURL:
+                              type: string
                             severity:
                               type: string
                             vulnerabilityID:
