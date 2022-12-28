@@ -38,7 +38,7 @@ type RecommendationSpec struct {
 	// +optional
 	Description string `json:"description,omitempty"`
 
-	// VulnerabilityReport specifies about the cve fixed in the new version
+	// VulnerabilityReport specifies any kind vulnerability report like cve fixed information
 	VulnerabilityReport *VulnerabilityReport `json:"vulnerabilityReport,omitempty"`
 
 	// Target specifies the APIGroup, Kind & Name of the target resource for which the recommendation is generated
@@ -89,10 +89,12 @@ const (
 )
 
 type VulnerabilityReport struct {
-	Status               ReportGenerationStatus `json:"status,omitempty"`
-	Message              string                 `json:"message,omitempty"`
-	CVEFixed             *CVEReport             `json:"CVEFixed,omitempty"`
-	KnownVulnerabilities *CVEReport             `json:"knownVulnerabilities,omitempty"`
+	Status  ReportGenerationStatus `json:"status,omitempty"`
+	Message string                 `json:"message,omitempty"`
+	// CVEFixed represents the list of fixed CVE report
+	CVEFixed *CVEReport `json:"CVEFixed,omitempty"`
+	// KnownVulnerabilities represents the list of existing CVE report
+	KnownVulnerabilities *CVEReport `json:"knownVulnerabilities,omitempty"`
 }
 
 type Vulnerability struct {

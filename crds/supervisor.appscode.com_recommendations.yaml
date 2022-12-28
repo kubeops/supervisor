@@ -147,10 +147,11 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               vulnerabilityReport:
-                description: VulnerabilityReport specifies about the cve fixed in
-                  the new version
+                description: VulnerabilityReport specifies any kind vulnerability
+                  report like cve fixed information
                 properties:
                   CVEFixed:
+                    description: CVEFixed represents the list of fixed CVE report
                     properties:
                       count:
                         additionalProperties:
@@ -169,6 +170,8 @@ spec:
                         type: array
                     type: object
                   knownVulnerabilities:
+                    description: KnownVulnerabilities represents the list of existing
+                      CVE report
                     properties:
                       count:
                         additionalProperties:
