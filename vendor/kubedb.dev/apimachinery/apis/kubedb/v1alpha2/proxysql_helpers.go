@@ -79,7 +79,7 @@ func (p ProxySQL) ResourceFQN() string {
 }
 
 func (p ProxySQL) ResourceShortCode() string {
-	return ""
+	return ResourceCodeProxySQL
 }
 
 func (p ProxySQL) ResourceKind() string {
@@ -92,6 +92,13 @@ func (p ProxySQL) ResourceSingular() string {
 
 func (p ProxySQL) ResourcePlural() string {
 	return ResourcePluralProxySQL
+}
+
+func (p ProxySQL) GetAuthSecretName() string {
+	if p.Spec.AuthSecret != nil && p.Spec.AuthSecret.Name != "" {
+		return p.Spec.AuthSecret.Name
+	}
+	return meta_util.NameWithSuffix(p.OffshootName(), "auth")
 }
 
 func (p ProxySQL) ServiceName() string {

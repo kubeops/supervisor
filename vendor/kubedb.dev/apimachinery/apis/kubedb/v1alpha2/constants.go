@@ -141,6 +141,7 @@ const (
 	NodeTypeShard                 = "shard"
 	NodeTypeConfig                = "configsvr"
 	NodeTypeArbiter               = "arbiter"
+	NodeTypeHidden                = "hidden"
 	NodeTypeReplica               = "replica"
 	NodeTypeStandalone            = "standalone"
 
@@ -207,6 +208,7 @@ const (
 	MySQLRootUserName         = "MYSQL_ROOT_USERNAME"
 	MySQLRootPassword         = "MYSQL_ROOT_PASSWORD"
 	MySQLName                 = "MYSQL_NAME"
+	MySQLRootUser             = "root"
 
 	MySQLTLSConfigCustom     = "custom"
 	MySQLTLSConfigSkipVerify = "skip-verify"
@@ -327,9 +329,11 @@ const (
 	PostgresPodStandby               = "standby"
 	EnvPostgresUser                  = "POSTGRES_USER"
 	EnvPostgresPassword              = "POSTGRES_PASSWORD"
+	PostgresRootUser                 = "postgres"
 	PostgresCoordinatorContainerName = "pg-coordinator"
 	PostgresCoordinatorPort          = 2380
 	PostgresCoordinatorPortName      = "coordinator"
+	PostgresContainerName            = ResourceSingularPostgres
 
 	PostgresCoordinatorClientPort     = 2379
 	PostgresCoordinatorClientPortName = "coordinatclient"
@@ -369,10 +373,15 @@ const (
 
 	SharedBuffersGbAsByte = 1024 * 1024 * 1024
 	SharedBuffersMbAsByte = 1024 * 1024
+
+	SharedBuffersGbAsKiloByte = 1024 * 1024
+	SharedBuffersMbAsKiloByte = 1024
+
 	// =========================== ProxySQL Constants ============================
 	LabelProxySQLName        = ProxySQLKey + "/name"
 	LabelProxySQLLoadBalance = ProxySQLKey + "/load-balance"
 
+	ProxySQLContainerName          = ResourceSingularProxySQL
 	ProxySQLDatabasePort           = 6033
 	ProxySQLDatabasePortName       = "db"
 	ProxySQLPrimaryServicePortName = "db"
@@ -387,10 +396,16 @@ const (
 	ProxySQLClusterPasswordField = "cluster_password"
 	ProxySQLTLSConfigCustom      = "custom"
 	ProxySQLTLSConfigSkipVerify  = "skip-verify"
+
+	ProxySQLMonitorUsername = "proxysql"
+	ProxySQLAuthUsername    = "cluster"
+	ProxySQLConfigSecretKey = "proxysql.cnf"
+
 	// =========================== Redis Constants ============================
 	RedisConfigKey = "redis.conf" // RedisConfigKey is going to create for the customize redis configuration
 	// DefaultConfigKey is going to create for the default redis configuration
 	RedisContainerName          = ResourceSingularRedis
+	RedisSentinelContainerName  = "redissentinel"
 	DefaultConfigKey            = "default.conf"
 	RedisShardKey               = RedisKey + "/shard"
 	RedisDatabasePortName       = "db"
@@ -408,29 +423,37 @@ const (
 	RedisTLSVolumeName         = "tls-volume"
 	RedisExporterTLSVolumeName = "exporter-tls-volume"
 	RedisTLSVolumePath         = "/certs"
+	RedisSentinelTLSVolumeName = "sentinel-tls-volume"
+	RedisSentinelTLSVolumePath = "/sentinel-certs"
 	RedisConfigVolumeName      = "redis-config"
 	RedisConfigVolumePath      = "/usr/local/etc/redis/"
 
+	RedisNodeFlagMaster = "master"
+	RedisNodeFlagNoAddr = "noaddr"
+	RedisNodeFlagSlave  = "slave"
+
 	RedisKeyFileSecretSuffix = "key"
 	RedisPEMSecretSuffix     = "pem"
-	RedisRootUsername        = "root"
+	RedisRootUsername        = "default"
 	EnvRedisUser             = "USERNAME"
 	EnvRedisPassword         = "REDISCLI_AUTH"
 
 	// =========================== PgBouncer Constants ============================
-	PgBouncerUpstreamServerCA         = "upstream-server-ca.crt"
-	PgBouncerUpstreamServerClientCert = "upstream-server-client.crt"
-	PgBouncerUpstreamServerClientKey  = "upstream-server-client.key"
-	PgBouncerClientCrt                = "client.crt"
-	PgBouncerClientKey                = "client.key"
-	PgBouncerCACrt                    = "ca.crt"
-	PgBouncerTLSCrt                   = "tls.crt"
-	PgBouncerTLSKey                   = "tls.key"
-	PgBouncerDatabasePortName         = "db"
-	PgBouncerPrimaryServicePortName   = "primary"
-	PgBouncerDatabasePort             = 5432
-	PgBouncerConfigFile               = "pgbouncer.ini"
-	PgBouncerAdminUsername            = "kubedb"
+	PgBouncerUpstreamServerCA               = "upstream-server-ca.crt"
+	PgBouncerUpstreamServerClientCert       = "upstream-server-client.crt"
+	PgBouncerUpstreamServerClientKey        = "upstream-server-client.key"
+	PgBouncerClientCrt                      = "client.crt"
+	PgBouncerClientKey                      = "client.key"
+	PgBouncerCACrt                          = "ca.crt"
+	PgBouncerTLSCrt                         = "tls.crt"
+	PgBouncerTLSKey                         = "tls.key"
+	PgBouncerDatabasePortName               = "db"
+	PgBouncerPrimaryServicePortName         = "primary"
+	PgBouncerDatabasePort                   = 5432
+	PgBouncerConfigFile                     = "pgbouncer.ini"
+	PgBouncerAdminUsername                  = "pgbouncer"
+	PgBouncerDefaultPoolMode                = "session"
+	PgBouncerDefaultIgnoreStartupParameters = "empty"
 )
 
 // List of possible condition types for a KubeDB object
@@ -484,6 +507,86 @@ const (
 	DatabaseWriteAccessCheckFailed             = "DatabaseReadAccessCheckFailed"
 	InternalUsersCredentialSyncFailed          = "InternalUsersCredentialsSyncFailed"
 	InternalUsersCredentialsSyncedSuccessfully = "InternalUsersCredentialsSyncedSuccessfully"
+)
+
+const (
+	KafkaPortNameREST                 = "http"
+	KafkaPortNameController           = "controller"
+	KafkaBrokerClientPortName         = "broker"
+	KafkaControllerClientPortName     = "controller"
+	KafkaPortNameInternal             = "internal"
+	KafkaTopicNameHealth              = "kafka-health"
+	KafkaTopicDeletionThresholdOffset = 1000
+	KafkaRESTPort                     = 9092
+	KafkaControllerRESTPort           = 9093
+	KafkaInternalRESTPort             = 29092
+
+	KafkaContainerName        = "kafka"
+	KafkaUserAdmin            = "admin"
+	KafkaNodeRoleSet          = "set"
+	KafkaNodeRolesCombined    = "controller,broker"
+	KafkaNodeRolesController  = "controller"
+	KafkaNodeRolesBrokers     = "broker"
+	KafkaStandbyServiceSuffix = "standby"
+
+	KafkaBrokerListener     = "KafkaBrokerListener"
+	KafkaControllerListener = "KafkaControllerListener"
+
+	KafkaDataDir                  = "/var/log/kafka"
+	KafkaMetaDataDir              = "/var/log/kafka/metadata"
+	KafkaCertDir                  = "/var/private/ssl"
+	KafkaConfigDir                = "/opt/kafka/config/kafkaconfig"
+	KafkaTempConfigDir            = "/opt/kafka/config/temp-config"
+	KafkaConfigFileName           = "config.properties"
+	KafkaSSLPropertiesFileName    = "ssl.properties"
+	KafkaClientAuthConfigFileName = "clientauth.properties"
+
+	KafkaListeners                   = "listeners"
+	KafkaAdvertisedListeners         = "advertised.listeners"
+	KafkaListenerSecurityProtocolMap = "listener.security.protocol.map"
+	KafkaControllerNodeCount         = "controller.count"
+	KafkaControllerQuorumVoters      = "controller.quorum.voters"
+	KafkaControllerListenersName     = "controller.listener.names"
+	KafkaInterBrokerListener         = "inter.broker.listener.name"
+	KafkaNodeRole                    = "process.roles"
+	KafkaClusterID                   = "cluster.id"
+	KafkaDataDirName                 = "log.dirs"
+	KafkaMetadataDirName             = "metadata.log.dir"
+	KafkaKeystorePasswordKey         = "keystore_password"
+	KafkaTruststorePasswordKey       = "truststore_password"
+	KafkaServerKeystoreKey           = "server.keystore.jks"
+	KafkaServerTruststoreKey         = "server.truststore.jks"
+	KafkaSecurityProtocol            = "security.protocol"
+	KafkaGracefulShutdownTimeout     = "task.shutdown.graceful.timeout.ms"
+
+	KafkaEndpointVerifyAlgo  = "ssl.endpoint.identification.algorithm"
+	KafkaKeystoreLocation    = "ssl.keystore.location"
+	KafkaTruststoreLocation  = "ssl.truststore.location"
+	KafkaKeystorePassword    = "ssl.keystore.password"
+	KafkaTruststorePassword  = "ssl.truststore.password"
+	KafkaKeyPassword         = "ssl.key.password"
+	KafkaKeystoreDefaultPass = "changeit"
+
+	KafkaEnabledSASLMechanisms       = "sasl.enabled.mechanisms"
+	KafkaSASLMechanism               = "sasl.mechanism"
+	KafkaMechanismControllerProtocol = "sasl.mechanism.controller.protocol"
+	KafkaSASLInterBrokerProtocol     = "sasl.mechanism.inter.broker.protocol"
+	KafkaSASLPLAINConfigKey          = "listener.name.SASL_PLAINTEXT.plain.sasl.jaas.config"
+	KafkaSASLSSLConfigKey            = "listener.name.SASL_SSL.plain.sasl.jaas.config"
+	KafkaSASLJAASConfig              = "sasl.jaas.config"
+	KafkaServiceName                 = "serviceName"
+	KafkaSASLPlainMechanism          = "PLAIN"
+
+	KafkaVolumeData       = "data"
+	KafkaVolumeConfig     = "kafkaconfig"
+	KafkaVolumeTempConfig = "temp-config"
+
+	EnvKafkaUser     = "KAFKA_USER"
+	EnvKafkaPassword = "KAFKA_PASSWORD"
+
+	KafkaListenerPLAINTEXTProtocol = "PLAINTEXT"
+	KafkaListenerSASLProtocol      = "SASL_PLAINTEXT"
+	KafkaListenerSASLSSLProtocol   = "SASL_SSL"
 )
 
 // Resource kind related constants

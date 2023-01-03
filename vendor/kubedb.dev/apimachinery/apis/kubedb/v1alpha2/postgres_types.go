@@ -72,7 +72,8 @@ type PostgresSpec struct {
 	LeaderElection *PostgreLeaderElectionConfig `json:"leaderElection,omitempty"`
 
 	// Database authentication secret
-	AuthSecret *core.LocalObjectReference `json:"authSecret,omitempty"`
+	// +optional
+	AuthSecret *SecretReference `json:"authSecret,omitempty"`
 
 	// StorageType can be durable (default) or ephemeral
 	StorageType StorageType `json:"storageType,omitempty"`
@@ -140,7 +141,7 @@ type PostgresSpec struct {
 	// HealthChecker defines attributes of the health checker
 	// +optional
 	// +kubebuilder:default={periodSeconds: 10, timeoutSeconds: 10, failureThreshold: 1}
-	HealthChecker HealthCheckSpec `json:"healthChecker"`
+	HealthChecker kmapi.HealthCheckSpec `json:"healthChecker"`
 }
 
 // PostgreLeaderElectionConfig contains essential attributes of leader election.
@@ -192,6 +193,18 @@ type PostgreLeaderElectionConfig struct {
 	// +kubebuilder:default=1
 	// +optional
 	HeartbeatTick int32 `json:"heartbeatTick,omitempty"`
+
+	// TransferLeadershipInterval retry interval for transfer leadership
+	// to the healthiest node
+	// +kubebuilder:default="1000ms"
+	// +optional
+	TransferLeadershipInterval *metav1.Duration `json:"transferLeadershipInterval,omitempty"`
+
+	// TransferLeadershipTimeout retry timeout for transfer leadership
+	// to the healthiest node
+	// +kubebuilder:default="120s"
+	// +optional
+	TransferLeadershipTimeout *metav1.Duration `json:"transferLeadershipTimeout,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=server;archiver;metrics-exporter
@@ -215,6 +228,8 @@ type PostgresStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+	// +optional
+	AuthSecret *Age `json:"authSecret,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

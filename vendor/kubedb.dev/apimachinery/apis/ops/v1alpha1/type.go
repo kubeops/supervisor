@@ -40,6 +40,7 @@ const (
 	ScalingDown                  = "ScalingDown"
 	ScalingUp                    = "ScalingUp"
 	Successful                   = "Successful"
+	Running                      = "Running"
 	Updating                     = "Updating"
 	Upgrading                    = "Upgrading"
 	UpgradeVersion               = "UpgradeVersion"
@@ -69,8 +70,12 @@ const (
 	UpdateShardImage            = "UpdateShardImage"
 	UpdateStatefulSetResources  = "UpdateStatefulSetResources"
 	UpdateShardResources        = "UpdateShardResources"
+	UpdateArbiterResources      = "UpdateArbiterResources"
+	UpdateHiddenResources       = "UpdateHiddenResources"
 	ScaleDownShard              = "ScaleDownShard"
 	ScaleUpShard                = "ScaleUpShard"
+	ScaleDownHidden             = "ScaleDownHidden"
+	ScaleUpHidden               = "ScaleUpHidden"
 	UpdateReplicaSetImage       = "UpdateReplicaSetImage"
 	UpdateConfigServerImage     = "UpdateConfigServerImage"
 	UpdateMongosImage           = "UpdateMongosImage"
@@ -91,6 +96,7 @@ const (
 	ReconfigureShard            = "ReconfigureShard"
 	ReconfigureConfigServer     = "ReconfigureConfigServer"
 	ReconfigureArbiter          = "ReconfigureArbiter"
+	ReconfigureHidden           = "ReconfigureHidden"
 	UpdateStandaloneImage       = "UpdateStandaloneImage"
 	UpdateStandaloneResources   = "UpdateStandaloneResources"
 	ScaleDownStandalone         = "ScaleDownStandalone"
@@ -98,6 +104,7 @@ const (
 	StandaloneVolumeExpansion   = "StandaloneVolumeExpansion"
 	ReplicasetVolumeExpansion   = "ReplicasetVolumeExpansion"
 	ShardVolumeExpansion        = "ShardVolumeExpansion"
+	HiddenVolumeExpansion       = "HiddenVolumeExpansion"
 	ConfigServerVolumeExpansion = "ConfigServerVolumeExpansion"
 	RestartStandalone           = "RestartStandalone"
 	RestartReplicaSet           = "RestartReplicaSet"
@@ -105,6 +112,7 @@ const (
 	RestartConfigServer         = "RestartConfigServer"
 	RestartShard                = "RestartShard"
 	RestartArbiter              = "RestartArbiter"
+	RestartHidden               = "RestartHidden"
 	DeleteStatefulSets          = "DeleteStatefulSets"
 	DatabaseReady               = "DatabaseReady"
 
@@ -151,15 +159,20 @@ const (
 	ReconfigureSecurityAdmin           = "ReconfigureSecurityAdmin"
 
 	// Redis Constants
-	PatchedSecret           = "patchedSecret"
-	ConfigKeyRedis          = "redis.conf"
-	RedisTLSArg             = "--tls-port 6379"
-	DBReady                 = "DBReady"
-	RestartedPods           = "RestartedPods"
-	ScaleUpReplicas         = "ScaleUpReplicas"
-	ScaleDownReplicas       = "ScaleDownReplicas"
-	UpdateRedisImage        = "UpdateRedisImage"
-	RestartPodWithResources = "RestartedPodsWithResources"
+	PatchedSecret                        = "patchedSecret"
+	ConfigKeyRedis                       = "redis.conf"
+	RedisTLSArg                          = "--tls-port 6379"
+	DBReady                              = "DBReady"
+	RestartedPods                        = "RestartedPods"
+	ScaleUpReplicas                      = "ScaleUpReplicas"
+	ScaleDownReplicas                    = "ScaleDownReplicas"
+	ScaleUpSentinel                      = "ScaleUpSentinel"
+	ScaleDownSentinel                    = "ScaleDownSentinel"
+	UpdateRedisImage                     = "UpdateRedisImage"
+	RestartPodWithResources              = "RestartedPodsWithResources"
+	ReplaceSentinel                      = "ReplaceSentinel"
+	ScaleUpRedisReplicasInSentinelMode   = "ScaleUpRedisReplicasInSentinelMode"
+	ScaleDownRedisReplicasInSentinelMode = "ScaleDownRedisReplicasInSentinelMode"
 
 	// Stash Constants
 	PauseBackupConfiguration  = "PauseBackupConfiguration"
@@ -244,30 +257,6 @@ const (
 	OpsRequestDenied OpsRequestPhase = "Denied"
 )
 
-// +kubebuilder:validation:Enum=Upgrade;UpdateVersion;HorizontalScaling;VerticalScaling;VolumeExpansion;Restart;Reconfigure;ReconfigureTLS;Reprovision
-type OpsRequestType string
-
-const (
-	// Deprecated. Use UpdateVersion
-	OpsRequestTypeUpgrade OpsRequestType = "Upgrade"
-	// used for UpdateVersion operation
-	OpsRequestTypeUpdateVersion OpsRequestType = "UpdateVersion"
-	// used for HorizontalScaling operation
-	OpsRequestTypeHorizontalScaling OpsRequestType = "HorizontalScaling"
-	// used for VerticalScaling operation
-	OpsRequestTypeVerticalScaling OpsRequestType = "VerticalScaling"
-	// used for VolumeExpansion operation
-	OpsRequestTypeVolumeExpansion OpsRequestType = "VolumeExpansion"
-	// used for Restart operation
-	OpsRequestTypeRestart OpsRequestType = "Restart"
-	// used for Reconfigure operation
-	OpsRequestTypeReconfigure OpsRequestType = "Reconfigure"
-	// used for ReconfigureTLS operation
-	OpsRequestTypeReconfigureTLSs OpsRequestType = "ReconfigureTLS"
-	// used for Reprovision operation
-	OpsRequestTypeReprovision OpsRequestType = "Reprovision"
-)
-
 // +kubebuilder:validation:Enum=Offline;Online
 type VolumeExpansionMode string
 
@@ -306,7 +295,7 @@ const (
 
 type Accessor interface {
 	GetObjectMeta() metav1.ObjectMeta
-	GetRequestType() OpsRequestType
+	GetRequestType() string
 	GetDBRefName() string
 	GetStatus() OpsRequestStatus
 	SetStatus(_ OpsRequestStatus)

@@ -77,7 +77,7 @@ type ElasticsearchSpec struct {
 
 	// Database authentication secret
 	// +optional
-	AuthSecret *core.LocalObjectReference `json:"authSecret,omitempty"`
+	AuthSecret *SecretReference `json:"authSecret,omitempty"`
 
 	// StorageType can be durable (default) or ephemeral
 	StorageType StorageType `json:"storageType,omitempty"`
@@ -174,7 +174,7 @@ type ElasticsearchSpec struct {
 	// HealthChecker defines attributes of the health checker
 	// +optional
 	// +kubebuilder:default={periodSeconds: 10, timeoutSeconds: 10, failureThreshold: 1}
-	HealthChecker HealthCheckSpec `json:"healthChecker"`
+	HealthChecker kmapi.HealthCheckSpec `json:"healthChecker"`
 }
 
 type ElasticsearchClusterTopology struct {
@@ -364,6 +364,8 @@ type ElasticsearchStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+	// +optional
+	AuthSecret *Age `json:"authSecret,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

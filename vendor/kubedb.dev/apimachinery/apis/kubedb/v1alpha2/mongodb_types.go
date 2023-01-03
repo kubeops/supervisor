@@ -77,7 +77,8 @@ type MongoDBSpec struct {
 	EphemeralStorage *core.EmptyDirVolumeSource `json:"ephemeralStorage,omitempty"`
 
 	// Database authentication secret
-	AuthSecret *core.LocalObjectReference `json:"authSecret,omitempty"`
+	// +optional
+	AuthSecret *SecretReference `json:"authSecret,omitempty"`
 
 	// ClusterAuthMode for replicaset or sharding. (default will be x509 if sslmode is not `disabled`.)
 	// See available ClusterAuthMode: https://docs.mongodb.com/manual/reference/program/mongod/#cmdoption-mongod-clusterauthmode
@@ -142,12 +143,18 @@ type MongoDBSpec struct {
 	// More info: https://docs.mongodb.com/manual/core/replica-set-arbiter/
 	// +optional
 	// +nullable
-	Arbiter *MongoArbiterNode `json:"arbiter"`
+	Arbiter *MongoArbiterNode `json:"arbiter,omitempty"`
+
+	// Hidden component of mongodb which is invisible to client applications
+	// More info: https://www.mongodb.com/docs/manual/core/replica-set-hidden-member/
+	// +optional
+	// +nullable
+	Hidden *MongoHiddenNode `json:"hidden,omitempty"`
 
 	// HealthChecker defines attributes of the health checker
 	// +optional
 	// +kubebuilder:default={periodSeconds: 10, timeoutSeconds: 10, failureThreshold: 1}
-	HealthChecker HealthCheckSpec `json:"healthChecker"`
+	HealthChecker kmapi.HealthCheckSpec `json:"healthChecker"`
 }
 
 // +kubebuilder:validation:Enum=server;client;metrics-exporter
@@ -275,6 +282,23 @@ type MongoArbiterNode struct {
 	PodTemplate ofst.PodTemplateSpec `json:"podTemplate,omitempty"`
 }
 
+type MongoHiddenNode struct {
+	// ConfigSecret is an optional field to provide custom configuration file for database (i.e mongod.cnf).
+	// If specified, this file will be used as configuration file otherwise default configuration file will be used.
+	ConfigSecret *core.LocalObjectReference `json:"configSecret,omitempty"`
+
+	// PodTemplate is an optional configuration for pods used to expose database
+	// +optional
+	PodTemplate ofst.PodTemplateSpec `json:"podTemplate,omitempty"`
+
+	// Replicas represents number of replicas of this specific node.
+	// If current node has replicaset enabled, then replicas is the amount of replicaset nodes.
+	Replicas int32 `json:"replicas"`
+
+	// Storage to specify how storage shall be used.
+	Storage core.PersistentVolumeClaimSpec `json:"storage"`
+}
+
 type MongoDBNode struct {
 	// Replicas represents number of replicas of this specific node.
 	// If current node has replicaset enabled, then replicas is the amount of replicaset nodes.
@@ -303,6 +327,8 @@ type MongoDBStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+	// +optional
+	AuthSecret *Age `json:"authSecret,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

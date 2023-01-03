@@ -111,7 +111,28 @@ func (p PerconaXtraDB) PeerName(idx int) string {
 }
 
 func (p PerconaXtraDB) GetAuthSecretName() string {
-	return p.Spec.AuthSecret.Name
+	if p.Spec.AuthSecret != nil && p.Spec.AuthSecret.Name != "" {
+		return p.Spec.AuthSecret.Name
+	}
+	return meta_util.NameWithSuffix(p.OffshootName(), "auth")
+}
+
+func (p PerconaXtraDB) GetReplicationSecretName() string {
+	if p.Spec.SystemUserSecrets != nil &&
+		p.Spec.SystemUserSecrets.ReplicationUserSecret != nil &&
+		p.Spec.SystemUserSecrets.ReplicationUserSecret.Name != "" {
+		return p.Spec.SystemUserSecrets.ReplicationUserSecret.Name
+	}
+	return meta_util.NameWithSuffix(p.OffshootName(), "replication")
+}
+
+func (p PerconaXtraDB) GetMonitorSecretName() string {
+	if p.Spec.SystemUserSecrets != nil &&
+		p.Spec.SystemUserSecrets.MonitorUserSecret != nil &&
+		p.Spec.SystemUserSecrets.MonitorUserSecret.Name != "" {
+		return p.Spec.SystemUserSecrets.MonitorUserSecret.Name
+	}
+	return meta_util.NameWithSuffix(p.OffshootName(), "monitor")
 }
 
 func (p PerconaXtraDB) ClusterName() string {
@@ -289,6 +310,12 @@ func (p *PerconaXtraDBSpec) GetPersistentSecrets() []string {
 	if p.AuthSecret != nil {
 		secrets = append(secrets, p.AuthSecret.Name)
 	}
+	if p.SystemUserSecrets != nil && p.SystemUserSecrets.ReplicationUserSecret != nil {
+		secrets = append(secrets, p.SystemUserSecrets.ReplicationUserSecret.Name)
+	}
+	if p.SystemUserSecrets != nil && p.SystemUserSecrets.MonitorUserSecret != nil {
+		secrets = append(secrets, p.SystemUserSecrets.MonitorUserSecret.Name)
+	}
 	return secrets
 }
 
@@ -307,18 +334,6 @@ func (p *PerconaXtraDB) GetCertSecretName(alias PerconaXtraDBCertificateAlias) s
 		}
 	}
 	return p.CertificateName(alias)
-}
-
-func (p *PerconaXtraDB) AuthSecretName() string {
-	return meta_util.NameWithSuffix(p.Name, "auth")
-}
-
-func (p *PerconaXtraDB) ReplicationSecretName() string {
-	return meta_util.NameWithSuffix(p.Name, "replication")
-}
-
-func (p *PerconaXtraDB) MonitorSecretName() string {
-	return meta_util.NameWithSuffix(p.Name, "monitor")
 }
 
 func (p *PerconaXtraDB) ReplicasAreReady(lister appslister.StatefulSetLister) (bool, string, error) {
