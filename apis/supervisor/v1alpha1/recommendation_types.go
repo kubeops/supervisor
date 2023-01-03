@@ -38,6 +38,9 @@ type RecommendationSpec struct {
 	// +optional
 	Description string `json:"description,omitempty"`
 
+	// VulnerabilityReport specifies any kind vulnerability report like cve fixed information
+	VulnerabilityReport *VulnerabilityReport `json:"vulnerabilityReport,omitempty"`
+
 	// Target specifies the APIGroup, Kind & Name of the target resource for which the recommendation is generated
 	Target core.TypedLocalObjectReference `json:"target"`
 
@@ -76,6 +79,33 @@ type RecommendationSpec struct {
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=10
 	BackoffLimit *int32 `json:"backoffLimit,omitempty"`
+}
+
+type ReportGenerationStatus string
+
+const (
+	ReportGenerationStatusSuccess ReportGenerationStatus = "Success"
+	ReportGenerationStatusFailure ReportGenerationStatus = "Failure"
+)
+
+type VulnerabilityReport struct {
+	Status  ReportGenerationStatus `json:"status,omitempty"`
+	Message string                 `json:"message,omitempty"`
+	// Fixed represents the list of CVEs fixed if the recommendation is applied
+	Fixed *CVEReport `json:"fixed,omitempty"`
+	// Known represents the list of CVEs known to exist after the recommendation is applied
+	Known *CVEReport `json:"known,omitempty"`
+}
+
+type Vulnerability struct {
+	VulnerabilityID string `json:"vulnerabilityID,omitempty"`
+	PrimaryURL      string `json:"primaryURL,omitempty"`
+	Severity        string `json:"severity,omitempty"`
+}
+
+type CVEReport struct {
+	Count           map[string]int  `json:"count,omitempty"`
+	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
 }
 
 // OperationPhaseRules defines three identification rules of successful execution of the operation,
