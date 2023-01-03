@@ -91,10 +91,10 @@ const (
 type VulnerabilityReport struct {
 	Status  ReportGenerationStatus `json:"status,omitempty"`
 	Message string                 `json:"message,omitempty"`
-	// CVEFixed represents the list of fixed CVE report
-	CVEFixed *CVEReport `json:"CVEFixed,omitempty"`
-	// KnownVulnerabilities represents the list of existing CVE report
-	KnownVulnerabilities *CVEReport `json:"knownVulnerabilities,omitempty"`
+	// Fixed represents the list of CVEs fixed if the recommendation is applied
+	Fixed *CVEReport `json:"fixed,omitempty"`
+	// Known represents the list of CVEs known to exist after the recommendation is applied
+	Known *CVEReport `json:"known,omitempty"`
 }
 
 type Vulnerability struct {

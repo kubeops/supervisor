@@ -150,8 +150,9 @@ spec:
                 description: VulnerabilityReport specifies any kind vulnerability
                   report like cve fixed information
                 properties:
-                  CVEFixed:
-                    description: CVEFixed represents the list of fixed CVE report
+                  fixed:
+                    description: Fixed represents the list of CVEs fixed if the recommendation
+                      is applied
                     properties:
                       count:
                         additionalProperties:
@@ -169,9 +170,9 @@ spec:
                           type: object
                         type: array
                     type: object
-                  knownVulnerabilities:
-                    description: KnownVulnerabilities represents the list of existing
-                      CVE report
+                  known:
+                    description: Known represents the list of CVEs known to exist
+                      after the recommendation is applied
                     properties:
                       count:
                         additionalProperties:
