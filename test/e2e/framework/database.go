@@ -66,7 +66,11 @@ func (f *Framework) newPostgresStandaloneDatabase(customAuthName string) *kubedb
 		Spec: kubedbapi.PostgresSpec{
 			Version:     "13.2",
 			StorageType: kubedbapi.StorageTypeDurable,
-			AuthSecret:  &core.LocalObjectReference{Name: customAuthName},
+			AuthSecret: &kubedbapi.SecretReference{
+				LocalObjectReference: core.LocalObjectReference{
+					Name: customAuthName,
+				},
+			},
 			Storage: &core.PersistentVolumeClaimSpec{
 				AccessModes: []core.PersistentVolumeAccessMode{core.ReadWriteOnce},
 				Resources: core.ResourceRequirements{

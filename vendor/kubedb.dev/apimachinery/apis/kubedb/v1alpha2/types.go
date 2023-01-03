@@ -18,6 +18,7 @@ package v1alpha2
 
 import (
 	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -140,30 +141,6 @@ type CoordinatorSpec struct {
 	SecurityContext *core.SecurityContext `json:"securityContext,omitempty"`
 }
 
-// HealthCheckSpec defines attributes of the health check
-type HealthCheckSpec struct {
-	// How often (in seconds) to perform the health check.
-	// Default to 10 seconds. Minimum value is 1.
-	// +optional
-	// +kubebuilder:default=10
-	PeriodSeconds *int32 `json:"periodSeconds,omitempty"`
-	// Number of seconds after which the probe times out.
-	// Defaults to 10 second. Minimum value is 1.
-	// It should be less than the periodSeconds.
-	// +optional
-	// +kubebuilder:default=10
-	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
-	// Minimum consecutive failures for the health check to be considered failed after having succeeded.
-	// Defaults to 1. Minimum value is 1.
-	// +optional
-	// +kubebuilder:default=1
-	FailureThreshold *int32 `json:"failureThreshold,omitempty"`
-	// Whether to disable write check on database.
-	// Defaults to false.
-	// +optional
-	DisableWriteCheck bool `json:"disableWriteCheck,omitempty"`
-}
-
 // AutoOpsSpec defines the specifications of automatic ops-request recommendation generation
 type AutoOpsSpec struct {
 	// Disabled specifies whether the ops-request recommendation generation will be disabled or not.
@@ -174,9 +151,19 @@ type AutoOpsSpec struct {
 type SystemUserSecretsSpec struct {
 	// ReplicationUserSecret contains replication system user credentials
 	// +optional
-	ReplicationUserSecret *core.LocalObjectReference `json:"replicationUserSecret,omitempty"`
+	ReplicationUserSecret *SecretReference `json:"replicationUserSecret,omitempty"`
 
 	// MonitorUserSecret contains monitor system user credentials
 	// +optional
-	MonitorUserSecret *core.LocalObjectReference `json:"monitorUserSecret,omitempty"`
+	MonitorUserSecret *SecretReference `json:"monitorUserSecret,omitempty"`
+}
+
+type SecretReference struct {
+	core.LocalObjectReference `json:",inline,omitempty"`
+	ExternallyManaged         bool `json:"externallyManaged,omitempty"`
+}
+
+type Age struct {
+	// Populated by Provisioner when authSecret is created or Ops Manager when authSecret is updated.
+	LastUpdateTimestamp metav1.Time `json:"lastUpdateTimestamp,omitempty"`
 }

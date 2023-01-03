@@ -53,7 +53,7 @@ type MongoDBOpsRequestSpec struct {
 	// Specifies the MongoDB reference
 	DatabaseRef core.LocalObjectReference `json:"databaseRef"`
 	// Specifies the ops request type: Upgrade, HorizontalScaling, VerticalScaling etc.
-	Type OpsRequestType `json:"type"`
+	Type MongoDBOpsRequestType `json:"type"`
 	// Specifies information necessary for upgrading mongodb
 	Upgrade *MongoDBUpgradeSpec `json:"upgrade,omitempty"`
 	// Specifies information necessary for horizontal scaling
@@ -79,6 +79,30 @@ type MongoDBOpsRequestSpec struct {
 	// +kubebuilder:default="IfReady"
 	Apply ApplyOption `json:"apply,omitempty"`
 }
+
+// +kubebuilder:validation:Enum=Upgrade;UpdateVersion;HorizontalScaling;VerticalScaling;VolumeExpansion;Restart;Reconfigure;ReconfigureTLS;Reprovision
+type MongoDBOpsRequestType string
+
+const (
+	// Deprecated. Use UpdateVersion
+	MongoDBOpsRequestTypeUpgrade MongoDBOpsRequestType = "Upgrade"
+	// used for UpdateVersion operation
+	MongoDBOpsRequestTypeUpdateVersion MongoDBOpsRequestType = "UpdateVersion"
+	// used for HorizontalScaling operation
+	MongoDBOpsRequestTypeHorizontalScaling MongoDBOpsRequestType = "HorizontalScaling"
+	// used for VerticalScaling operation
+	MongoDBOpsRequestTypeVerticalScaling MongoDBOpsRequestType = "VerticalScaling"
+	// used for VolumeExpansion operation
+	MongoDBOpsRequestTypeVolumeExpansion MongoDBOpsRequestType = "VolumeExpansion"
+	// used for Restart operation
+	MongoDBOpsRequestTypeRestart MongoDBOpsRequestType = "Restart"
+	// used for Reconfigure operation
+	MongoDBOpsRequestTypeReconfigure MongoDBOpsRequestType = "Reconfigure"
+	// used for ReconfigureTLS operation
+	MongoDBOpsRequestTypeReconfigureTLSs MongoDBOpsRequestType = "ReconfigureTLS"
+	// used for Reprovision operation
+	MongoDBOpsRequestTypeReprovision MongoDBOpsRequestType = "Reprovision"
+)
 
 // MongoDBReplicaReadinessCriteria is the criteria for checking readiness of a MongoDB pod
 // after restarting the pod
@@ -111,11 +135,16 @@ type MongosNode struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
+type HiddenNode struct {
+	Replicas int32 `json:"replicas,omitempty"`
+}
+
 // HorizontalScaling is the spec for mongodb horizontal scaling
 type MongoDBHorizontalScalingSpec struct {
 	Shard        *MongoDBShardNode `json:"shard,omitempty"`
 	ConfigServer *ConfigNode       `json:"configServer,omitempty"`
 	Mongos       *MongosNode       `json:"mongos,omitempty"`
+	Hidden       *HiddenNode       `json:"hidden,omitempty"`
 	Replicas     *int32            `json:"replicas,omitempty"`
 }
 
@@ -127,6 +156,7 @@ type MongoDBVerticalScalingSpec struct {
 	ConfigServer *core.ResourceRequirements `json:"configServer,omitempty"`
 	Shard        *core.ResourceRequirements `json:"shard,omitempty"`
 	Arbiter      *core.ResourceRequirements `json:"arbiter,omitempty"`
+	Hidden       *core.ResourceRequirements `json:"hidden,omitempty"`
 	Exporter     *core.ResourceRequirements `json:"exporter,omitempty"`
 	Coordinator  *core.ResourceRequirements `json:"coordinator,omitempty"`
 }
@@ -139,6 +169,7 @@ type MongoDBVolumeExpansionSpec struct {
 	ReplicaSet   *resource.Quantity   `json:"replicaSet,omitempty"`
 	ConfigServer *resource.Quantity   `json:"configServer,omitempty"`
 	Shard        *resource.Quantity   `json:"shard,omitempty"`
+	Hidden       *resource.Quantity   `json:"hidden,omitempty"`
 }
 
 type MongoDBCustomConfigurationSpec struct {
@@ -148,6 +179,7 @@ type MongoDBCustomConfigurationSpec struct {
 	ConfigServer *MongoDBCustomConfiguration `json:"configServer,omitempty"`
 	Shard        *MongoDBCustomConfiguration `json:"shard,omitempty"`
 	Arbiter      *MongoDBCustomConfiguration `json:"arbiter,omitempty"`
+	Hidden       *MongoDBCustomConfiguration `json:"hidden,omitempty"`
 }
 
 type MongoDBCustomConfiguration struct {
