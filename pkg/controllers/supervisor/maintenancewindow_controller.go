@@ -58,7 +58,7 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	if mw.Spec.IsDefault {
 		if _, ok := mw.Annotations[api.DefaultMaintenanceWindowKey]; !ok {
-			_, _, err := kmc.CreateOrPatch(ctx, r.Client, mw, func(obj client.Object, createOp bool) client.Object {
+			_, err := kmc.CreateOrPatch(ctx, r.Client, mw, func(obj client.Object, createOp bool) client.Object {
 				in := obj.(*api.MaintenanceWindow)
 				if in.Annotations == nil {
 					in.Annotations = make(map[string]string)

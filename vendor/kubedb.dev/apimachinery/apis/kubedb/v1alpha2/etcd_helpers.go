@@ -23,7 +23,9 @@ import (
 	"kubedb.dev/apimachinery/apis/kubedb"
 	"kubedb.dev/apimachinery/crds"
 
+	promapi "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/pointer"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	appslister "k8s.io/client-go/listers/apps/v1"
 	"kmodules.xyz/client-go/apiextensions"
@@ -34,6 +36,10 @@ import (
 
 func (_ Etcd) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralEtcd))
+}
+
+func (e *Etcd) AsOwner() *metav1.OwnerReference {
+	return metav1.NewControllerRef(e, SchemeGroupVersion.WithKind(ResourceKindEtcd))
 }
 
 var _ apis.ResourceInfo = &Etcd{}
@@ -149,6 +155,10 @@ func (e etcdStatsService) Path() string {
 
 func (e etcdStatsService) Scheme() string {
 	return ""
+}
+
+func (e etcdStatsService) TLSConfig() *promapi.TLSConfig {
+	return nil
 }
 
 func (e Etcd) StatsService() mona.StatsAccessor {

@@ -913,6 +913,11 @@ func (in *KafkaSpec) DeepCopyInto(out *KafkaSpec) {
 		*out = new(SecretReference)
 		**out = **in
 	}
+	if in.ConfigSecret != nil {
+		in, out := &in.ConfigSecret, &out.ConfigSecret
+		*out = new(corev1.LocalObjectReference)
+		**out = **in
+	}
 	if in.KeystoreCredSecret != nil {
 		in, out := &in.KeystoreCredSecret, &out.KeystoreCredSecret
 		*out = new(SecretReference)
@@ -932,6 +937,11 @@ func (in *KafkaSpec) DeepCopyInto(out *KafkaSpec) {
 		}
 	}
 	in.HealthChecker.DeepCopyInto(&out.HealthChecker)
+	if in.Monitor != nil {
+		in, out := &in.Monitor, &out.Monitor
+		*out = new(apiv1.AgentSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
@@ -2631,11 +2641,6 @@ func (in *ProxySQLSpec) DeepCopyInto(out *ProxySQLSpec) {
 	if in.Replicas != nil {
 		in, out := &in.Replicas, &out.Replicas
 		*out = new(int32)
-		**out = **in
-	}
-	if in.Mode != nil {
-		in, out := &in.Mode, &out.Mode
-		*out = new(LoadBalanceMode)
 		**out = **in
 	}
 	if in.Backend != nil {

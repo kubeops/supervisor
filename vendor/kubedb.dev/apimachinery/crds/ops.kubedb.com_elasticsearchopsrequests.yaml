@@ -239,6 +239,11 @@ spec:
                 - Reconfigure
                 - ReconfigureTLS
                 type: string
+              updateVersion:
+                properties:
+                  targetVersion:
+                    type: string
+                type: object
               upgrade:
                 properties:
                   targetVersion:
@@ -600,14 +605,14 @@ spec:
                       type: integer
                     reason:
                       type: string
+                    severity:
+                      type: string
                     status:
                       type: string
                     type:
                       type: string
                   required:
                   - lastTransitionTime
-                  - message
-                  - reason
                   - status
                   - type
                   type: object

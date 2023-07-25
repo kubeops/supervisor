@@ -23,6 +23,7 @@ import (
 	"kubedb.dev/apimachinery/apis/kubedb"
 	"kubedb.dev/apimachinery/crds"
 
+	promapi "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/pointer"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +40,10 @@ import (
 
 func (rs RedisSentinel) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralRedisSentinel))
+}
+
+func (rs *RedisSentinel) AsOwner() *metav1.OwnerReference {
+	return metav1.NewControllerRef(rs, SchemeGroupVersion.WithKind(ResourceKindRedisSentinel))
 }
 
 var _ apis.ResourceInfo = &RedisSentinel{}
@@ -158,6 +163,10 @@ func (rs redisSentinelStatsService) Path() string {
 
 func (r redisSentinelStatsService) Scheme() string {
 	return ""
+}
+
+func (r redisSentinelStatsService) TLSConfig() *promapi.TLSConfig {
+	return nil
 }
 
 func (rs RedisSentinel) StatsService() mona.StatsAccessor {
