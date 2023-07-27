@@ -58,7 +58,7 @@ func (r *ClusterMaintenanceWindowReconciler) Reconcile(ctx context.Context, req 
 
 	if clusterMW.Spec.IsDefault {
 		if _, ok := clusterMW.Annotations[api.DefaultClusterMaintenanceWindowKey]; !ok {
-			_, _, err := kmc.CreateOrPatch(ctx, r.Client, clusterMW, func(obj client.Object, createOp bool) client.Object {
+			_, err := kmc.CreateOrPatch(ctx, r.Client, clusterMW, func(obj client.Object, createOp bool) client.Object {
 				in := obj.(*api.ClusterMaintenanceWindow)
 				if in.Annotations == nil {
 					in.Annotations = make(map[string]string)

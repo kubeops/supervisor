@@ -24,6 +24,7 @@ import (
 	"kubedb.dev/apimachinery/apis/kubedb"
 	"kubedb.dev/apimachinery/crds"
 
+	promapi "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +41,10 @@ import (
 
 func (_ PerconaXtraDB) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralPerconaXtraDB))
+}
+
+func (p *PerconaXtraDB) AsOwner() *metav1.OwnerReference {
+	return metav1.NewControllerRef(p, SchemeGroupVersion.WithKind(ResourceKindPerconaXtraDB))
 }
 
 var _ apis.ResourceInfo = &PerconaXtraDB{}
@@ -181,6 +186,10 @@ func (p perconaXtraDBStatsService) Path() string {
 
 func (p perconaXtraDBStatsService) Scheme() string {
 	return ""
+}
+
+func (p perconaXtraDBStatsService) TLSConfig() *promapi.TLSConfig {
+	return nil
 }
 
 func (p PerconaXtraDB) StatsService() mona.StatsAccessor {

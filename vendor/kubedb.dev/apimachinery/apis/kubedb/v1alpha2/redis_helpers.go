@@ -23,6 +23,7 @@ import (
 	"kubedb.dev/apimachinery/apis/kubedb"
 	"kubedb.dev/apimachinery/crds"
 
+	promapi "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/pointer"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +44,10 @@ const (
 
 func (r Redis) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralRedis))
+}
+
+func (r *Redis) AsOwner() *metav1.OwnerReference {
+	return metav1.NewControllerRef(r, SchemeGroupVersion.WithKind(ResourceKindRedis))
 }
 
 var _ apis.ResourceInfo = &Redis{}
@@ -183,6 +188,10 @@ func (r redisStatsService) Path() string {
 
 func (r redisStatsService) Scheme() string {
 	return ""
+}
+
+func (r redisStatsService) TLSConfig() *promapi.TLSConfig {
+	return nil
 }
 
 func (r Redis) StatsService() mona.StatsAccessor {

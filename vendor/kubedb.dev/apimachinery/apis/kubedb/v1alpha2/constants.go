@@ -86,6 +86,7 @@ const (
 	ElasticsearchTempDir                         = "/tmp"
 	ElasticsearchOpendistroSecurityConfigDir     = "/usr/share/elasticsearch/plugins/opendistro_security/securityconfig"
 	ElasticsearchOpenSearchSecurityConfigDir     = "/usr/share/opensearch/plugins/opensearch-security/securityconfig"
+	ElasticsearchOpenSearchSecurityConfigDirV2   = "/usr/share/opensearch/config/opensearch-security"
 	ElasticsearchSearchGuardSecurityConfigDir    = "/usr/share/elasticsearch/plugins/search-guard-%v/sgconfig"
 	ElasticsearchOpendistroReadallMonitorRole    = "readall_and_monitor"
 	ElasticsearchOpenSearchReadallMonitorRole    = "readall_and_monitor"
@@ -378,8 +379,9 @@ const (
 	SharedBuffersMbAsKiloByte = 1024
 
 	// =========================== ProxySQL Constants ============================
-	LabelProxySQLName        = ProxySQLKey + "/name"
-	LabelProxySQLLoadBalance = ProxySQLKey + "/load-balance"
+	LabelProxySQLName                  = ProxySQLKey + "/name"
+	LabelProxySQLLoadBalance           = ProxySQLKey + "/load-balance"
+	LabelProxySQLLoadBalanceStandalone = "Standalone"
 
 	ProxySQLContainerName          = ResourceSingularProxySQL
 	ProxySQLDatabasePort           = 6033
@@ -532,14 +534,18 @@ const (
 	KafkaBrokerListener     = "KafkaBrokerListener"
 	KafkaControllerListener = "KafkaControllerListener"
 
-	KafkaDataDir                  = "/var/log/kafka"
-	KafkaMetaDataDir              = "/var/log/kafka/metadata"
-	KafkaCertDir                  = "/var/private/ssl"
-	KafkaConfigDir                = "/opt/kafka/config/kafkaconfig"
-	KafkaTempConfigDir            = "/opt/kafka/config/temp-config"
-	KafkaConfigFileName           = "config.properties"
-	KafkaSSLPropertiesFileName    = "ssl.properties"
-	KafkaClientAuthConfigFileName = "clientauth.properties"
+	KafkaDataDir                        = "/var/log/kafka"
+	KafkaMetaDataDir                    = "/var/log/kafka/metadata"
+	KafkaCertDir                        = "/var/private/ssl"
+	KafkaConfigDir                      = "/opt/kafka/config/kafkaconfig"
+	KafkaTempConfigDir                  = "/opt/kafka/config/temp-config"
+	KafkaCustomConfigDir                = "/opt/kafka/config/custom-config"
+	KafkaConfigFileName                 = "config.properties"
+	KafkaServerCustomConfigFileName     = "server.properties"
+	KafkaBrokerCustomConfigFileName     = "broker.properties"
+	KafkaControllerCustomConfigFileName = "controller.properties"
+	KafkaSSLPropertiesFileName          = "ssl.properties"
+	KafkaClientAuthConfigFileName       = "clientauth.properties"
 
 	KafkaListeners                   = "listeners"
 	KafkaAdvertisedListeners         = "advertised.listeners"
@@ -577,9 +583,10 @@ const (
 	KafkaServiceName                 = "serviceName"
 	KafkaSASLPlainMechanism          = "PLAIN"
 
-	KafkaVolumeData       = "data"
-	KafkaVolumeConfig     = "kafkaconfig"
-	KafkaVolumeTempConfig = "temp-config"
+	KafkaVolumeData         = "data"
+	KafkaVolumeConfig       = "kafkaconfig"
+	KafkaVolumeTempConfig   = "temp-config"
+	KafkaVolumeCustomConfig = "custom-config"
 
 	EnvKafkaUser     = "KAFKA_USER"
 	EnvKafkaPassword = "KAFKA_PASSWORD"

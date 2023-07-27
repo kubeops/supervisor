@@ -26,6 +26,7 @@ import (
 	"kubedb.dev/apimachinery/apis/kubedb"
 	"kubedb.dev/apimachinery/crds"
 
+	promapi "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -43,6 +44,10 @@ import (
 
 func (_ Postgres) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralPostgres))
+}
+
+func (p *Postgres) AsOwner() *metav1.OwnerReference {
+	return metav1.NewControllerRef(p, SchemeGroupVersion.WithKind(ResourceKindPostgres))
 }
 
 var _ apis.ResourceInfo = &Postgres{}
@@ -164,6 +169,10 @@ func (p postgresStatsService) Scheme() string {
 	return ""
 }
 
+func (p postgresStatsService) TLSConfig() *promapi.TLSConfig {
+	return nil
+}
+
 func (p Postgres) StatsService() mona.StatsAccessor {
 	return &postgresStatsService{&p}
 }
@@ -207,7 +216,7 @@ func (p *Postgres) SetDefaults(postgresVersion *catalog.PostgresVersion, topolog
 		p.Spec.LeaderElection.TransferLeadershipInterval = &metav1.Duration{Duration: 1 * time.Second}
 	}
 	if p.Spec.LeaderElection.TransferLeadershipTimeout == nil {
-		p.Spec.LeaderElection.TransferLeadershipTimeout = &metav1.Duration{Duration: 120 * time.Second}
+		p.Spec.LeaderElection.TransferLeadershipTimeout = &metav1.Duration{Duration: 60 * time.Second}
 	}
 	apis.SetDefaultResourceLimits(&p.Spec.Coordinator.Resources, CoordinatorDefaultResources)
 

@@ -42,6 +42,13 @@ spec:
             type: object
           spec:
             properties:
+              UpdateVersion:
+                properties:
+                  readinessCriteria:
+                    type: object
+                  targetVersion:
+                    type: string
+                type: object
               apply:
                 default: IfReady
                 enum:
@@ -174,13 +181,6 @@ spec:
                 - Reconfigure
                 - ReconfigureTLS
                 type: string
-              upgrade:
-                properties:
-                  readinessCriteria:
-                    type: object
-                  targetVersion:
-                    type: string
-                type: object
               verticalScaling:
                 properties:
                   readinessCriteria:
@@ -205,14 +205,14 @@ spec:
                       type: integer
                     reason:
                       type: string
+                    severity:
+                      type: string
                     status:
                       type: string
                     type:
                       type: string
                   required:
                   - lastTransitionTime
-                  - message
-                  - reason
                   - status
                   - type
                   type: object

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//go:generate go-enum --mustparse --names --values
 package v1alpha1
 
 import (
@@ -68,7 +69,10 @@ type PostgresOpsRequestSpec struct {
 	// Specifies the ops request type: Upgrade, HorizontalScaling, VerticalScaling etc.
 	Type PostgresOpsRequestType `json:"type"`
 	// Specifies information necessary for upgrading Postgres
-	Upgrade *PostgresUpgradeSpec `json:"upgrade,omitempty"`
+	UpdateVersion *PostgresUpdateVersionSpec `json:"updateVersion,omitempty"`
+	// Specifies information necessary for upgrading Postgres
+	// Deprecated: use UpdateVersion
+	Upgrade *PostgresUpdateVersionSpec `json:"upgrade,omitempty"`
 	// Specifies information necessary for horizontal scaling
 	HorizontalScaling *PostgresHorizontalScalingSpec `json:"horizontalScaling,omitempty"`
 	// Specifies information necessary for vertical scaling
@@ -89,35 +93,40 @@ type PostgresOpsRequestSpec struct {
 }
 
 // +kubebuilder:validation:Enum=Upgrade;UpdateVersion;HorizontalScaling;VerticalScaling;VolumeExpansion;Restart;Reconfigure;ReconfigureTLS
+// ENUM(Upgrade, UpdateVersion, HorizontalScaling, VerticalScaling, VolumeExpansion, Restart, Reconfigure, ReconfigureTLS)
 type PostgresOpsRequestType string
 
-const (
-	// Deprecated. Use UpdateVersion
-	PostgresOpsRequestTypeUpgrade PostgresOpsRequestType = "Upgrade"
-	// used for UpdateVersion operation
-	PostgresOpsRequestTypeUpdateVersion PostgresOpsRequestType = "UpdateVersion"
-	// used for HorizontalScaling operation
-	PostgresOpsRequestTypeHorizontalScaling PostgresOpsRequestType = "HorizontalScaling"
-	// used for VerticalScaling operation
-	PostgresOpsRequestTypeVerticalScaling PostgresOpsRequestType = "VerticalScaling"
-	// used for VolumeExpansion operation
-	PostgresOpsRequestTypeVolumeExpansion PostgresOpsRequestType = "VolumeExpansion"
-	// used for Restart operation
-	PostgresOpsRequestTypeRestart PostgresOpsRequestType = "Restart"
-	// used for Reconfigure operation
-	PostgresOpsRequestTypeReconfigure PostgresOpsRequestType = "Reconfigure"
-	// used for ReconfigureTLS operation
-	PostgresOpsRequestTypeReconfigureTLSs PostgresOpsRequestType = "ReconfigureTLS"
-)
-
-type PostgresUpgradeSpec struct {
+type PostgresUpdateVersionSpec struct {
 	// Specifies the target version name from catalog
 	TargetVersion string `json:"targetVersion,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=Synchronous;Asynchronous
+type PostgresStreamingMode string
+
+const (
+	SynchronousPostgresStreamingMode  PostgresStreamingMode = "Synchronous"
+	AsynchronousPostgresStreamingMode PostgresStreamingMode = "Asynchronous"
+)
+
+// +kubebuilder:validation:Enum=Hot;Warm
+type PostgresStandbyMode string
+
+const (
+	HotPostgresStandbyMode  PostgresStandbyMode = "Hot"
+	WarmPostgresStandbyMode PostgresStandbyMode = "Warm"
+)
+
 // HorizontalScaling is the spec for Postgres horizontal scaling
 type PostgresHorizontalScalingSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Standby mode
+	// +kubebuilder:default="Warm"
+	StandbyMode *PostgresStandbyMode `json:"standbyMode,omitempty"`
+
+	// Streaming mode
+	// +kubebuilder:default="Asynchronous"
+	StreamingMode *PostgresStreamingMode `json:"streamingMode,omitempty"`
 }
 
 // PostgresVerticalScalingSpec is the spec for Postgres vertical scaling

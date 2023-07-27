@@ -72,6 +72,18 @@ spec:
                   replicas:
                     format: int32
                     type: integer
+                  standbyMode:
+                    default: Warm
+                    enum:
+                    - Hot
+                    - Warm
+                    type: string
+                  streamingMode:
+                    default: Asynchronous
+                    enum:
+                    - Synchronous
+                    - Asynchronous
+                    type: string
                 type: object
               restart:
                 type: object
@@ -208,6 +220,11 @@ spec:
                 - Reconfigure
                 - ReconfigureTLS
                 type: string
+              updateVersion:
+                properties:
+                  targetVersion:
+                    type: string
+                type: object
               upgrade:
                 properties:
                   targetVersion:
@@ -306,14 +323,14 @@ spec:
                       type: integer
                     reason:
                       type: string
+                    severity:
+                      type: string
                     status:
                       type: string
                     type:
                       type: string
                   required:
                   - lastTransitionTime
-                  - message
-                  - reason
                   - status
                   - type
                   type: object

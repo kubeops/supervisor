@@ -23,7 +23,9 @@ import (
 	"kubedb.dev/apimachinery/apis/kubedb"
 	"kubedb.dev/apimachinery/crds"
 
+	promapi "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/pointer"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	appslister "k8s.io/client-go/listers/apps/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
@@ -37,6 +39,10 @@ func (_ ProxySQL) CustomResourceDefinition() *apiextensions.CustomResourceDefini
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralProxySQL))
 }
 
+func (p *ProxySQL) AsOwner() *metav1.OwnerReference {
+	return metav1.NewControllerRef(p, SchemeGroupVersion.WithKind(ResourceKindProxySQL))
+}
+
 var _ apis.ResourceInfo = &ProxySQL{}
 
 func (p ProxySQL) OffshootName() string {
@@ -48,7 +54,6 @@ func (p ProxySQL) OffshootSelectors() map[string]string {
 		meta_util.NameLabelKey:      p.ResourceFQN(),
 		meta_util.InstanceLabelKey:  p.Name,
 		meta_util.ManagedByLabelKey: kubedb.GroupName,
-		LabelProxySQLLoadBalance:    string(*p.Spec.Mode),
 	}
 }
 
@@ -153,6 +158,10 @@ func (p proxysqlStatsService) Scheme() string {
 	return ""
 }
 
+func (p proxysqlStatsService) TLSConfig() *promapi.TLSConfig {
+	return nil
+}
+
 func (p ProxySQL) StatsService() mona.StatsAccessor {
 	return &proxysqlStatsService{&p}
 }
@@ -161,12 +170,12 @@ func (p ProxySQL) StatsServiceLabels() map[string]string {
 	return p.ServiceLabels(StatsServiceAlias, map[string]string{LabelRole: RoleStats})
 }
 
-func (p *ProxySQL) SetDefaults() {
+func (p *ProxySQL) SetDefaults(usesAcme bool) {
 	if p == nil {
 		return
 	}
 
-	if p == nil || p.Spec.Mode == nil || p.Spec.Backend == nil {
+	if p == nil || p.Spec.Backend == nil {
 		return
 	}
 
@@ -175,7 +184,7 @@ func (p *ProxySQL) SetDefaults() {
 	}
 
 	p.Spec.Monitor.SetDefaults()
-	p.SetTLSDefaults()
+	p.SetTLSDefaults(usesAcme)
 	p.SetHealthCheckerDefaults()
 	apis.SetDefaultResourceLimits(&p.Spec.PodTemplate.Spec.Resources, DefaultResources)
 }
@@ -192,13 +201,16 @@ func (p *ProxySQL) SetHealthCheckerDefaults() {
 	}
 }
 
-func (m *ProxySQL) SetTLSDefaults() {
+func (m *ProxySQL) SetTLSDefaults(usesAcme bool) {
 	if m.Spec.TLS == nil || m.Spec.TLS.IssuerRef == nil {
 		return
 	}
+
 	m.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(m.Spec.TLS.Certificates, string(ProxySQLServerCert), m.CertificateName(ProxySQLServerCert))
-	m.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(m.Spec.TLS.Certificates, string(ProxySQLClientCert), m.CertificateName(ProxySQLClientCert))
-	m.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(m.Spec.TLS.Certificates, string(ProxySQLMetricsExporterCert), m.CertificateName(ProxySQLMetricsExporterCert))
+	if !usesAcme {
+		m.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(m.Spec.TLS.Certificates, string(ProxySQLClientCert), m.CertificateName(ProxySQLClientCert))
+		m.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(m.Spec.TLS.Certificates, string(ProxySQLMetricsExporterCert), m.CertificateName(ProxySQLMetricsExporterCert))
+	}
 }
 
 func (p *ProxySQLSpec) GetPersistentSecrets() []string {
