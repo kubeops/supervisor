@@ -57,9 +57,6 @@ type MongoDBOpsRequestSpec struct {
 	Type MongoDBOpsRequestType `json:"type"`
 	// Specifies information necessary for upgrading MongoDB
 	UpdateVersion *MongoDBUpdateVersionSpec `json:"updateVersion,omitempty"`
-	// Specifies information necessary for upgrading MongoDB
-	// Deprecated: use UpdateVersion
-	Upgrade *MongoDBUpdateVersionSpec `json:"upgrade,omitempty"`
 	// Specifies information necessary for horizontal scaling
 	HorizontalScaling *MongoDBHorizontalScalingSpec `json:"horizontalScaling,omitempty"`
 	// Specifies information necessary for vertical scaling
@@ -74,6 +71,8 @@ type MongoDBOpsRequestSpec struct {
 	Restart *RestartSpec `json:"restart,omitempty"`
 	// Specifies information necessary for reprovisioning database
 	Reprovision *Reprovision `json:"reprovision,omitempty"`
+	// Specifies information necessary for setting up Archiver for database
+	Archiver *ArchiverOptions `json:"archiver,omitempty"`
 
 	// Specifies the Readiness Criteria
 	ReadinessCriteria *MongoDBReplicaReadinessCriteria `json:"readinessCriteria,omitempty"`
@@ -85,7 +84,7 @@ type MongoDBOpsRequestSpec struct {
 }
 
 // +kubebuilder:validation:Enum=Upgrade;UpdateVersion;HorizontalScaling;VerticalScaling;VolumeExpansion;Restart;Reconfigure;ReconfigureTLS;Reprovision
-// ENUM(Upgrade, UpdateVersion, HorizontalScaling, VerticalScaling, VolumeExpansion, Restart, Reconfigure, ReconfigureTLS, Reprovision)
+// ENUM(UpdateVersion, HorizontalScaling, VerticalScaling, VolumeExpansion, Restart, Reconfigure, ReconfigureTLS, Reprovision)
 type MongoDBOpsRequestType string
 
 // MongoDBReplicaReadinessCriteria is the criteria for checking readiness of a MongoDB pod
@@ -134,15 +133,15 @@ type MongoDBHorizontalScalingSpec struct {
 
 // MongoDBVerticalScalingSpec is the spec for mongodb vertical scaling
 type MongoDBVerticalScalingSpec struct {
-	Standalone   *core.ResourceRequirements `json:"standalone,omitempty"`
-	ReplicaSet   *core.ResourceRequirements `json:"replicaSet,omitempty"`
-	Mongos       *core.ResourceRequirements `json:"mongos,omitempty"`
-	ConfigServer *core.ResourceRequirements `json:"configServer,omitempty"`
-	Shard        *core.ResourceRequirements `json:"shard,omitempty"`
-	Arbiter      *core.ResourceRequirements `json:"arbiter,omitempty"`
-	Hidden       *core.ResourceRequirements `json:"hidden,omitempty"`
-	Exporter     *core.ResourceRequirements `json:"exporter,omitempty"`
-	Coordinator  *core.ResourceRequirements `json:"coordinator,omitempty"`
+	Standalone   *PodResources       `json:"standalone,omitempty"`
+	ReplicaSet   *PodResources       `json:"replicaSet,omitempty"`
+	Mongos       *PodResources       `json:"mongos,omitempty"`
+	ConfigServer *PodResources       `json:"configServer,omitempty"`
+	Shard        *PodResources       `json:"shard,omitempty"`
+	Arbiter      *PodResources       `json:"arbiter,omitempty"`
+	Hidden       *PodResources       `json:"hidden,omitempty"`
+	Exporter     *ContainerResources `json:"exporter,omitempty"`
+	Coordinator  *ContainerResources `json:"coordinator,omitempty"`
 }
 
 // MongoDBVolumeExpansionSpec is the spec for mongodb volume expansion

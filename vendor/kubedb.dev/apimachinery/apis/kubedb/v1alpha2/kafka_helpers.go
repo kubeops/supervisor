@@ -17,22 +17,29 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
 
 	"kubedb.dev/apimachinery/apis"
+	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 	"kubedb.dev/apimachinery/apis/kubedb"
 	"kubedb.dev/apimachinery/crds"
 
 	promapi "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gomodules.xyz/pointer"
+	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/apiextensions"
 	meta_util "kmodules.xyz/client-go/meta"
+	"kmodules.xyz/client-go/policy/secomp"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 func (k *Kafka) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
@@ -80,12 +87,8 @@ func (k *Kafka) GoverningServiceName() string {
 	return meta_util.NameWithSuffix(k.ServiceName(), "pods")
 }
 
-func (k *Kafka) GoverningServiceNameController() string {
-	return meta_util.NameWithSuffix(k.ServiceName(), KafkaNodeRolesController)
-}
-
-func (k *Kafka) GoverningServiceNameBroker() string {
-	return meta_util.NameWithSuffix(k.ServiceName(), KafkaNodeRolesBrokers)
+func (k *Kafka) GoverningServiceNameCruiseControl() string {
+	return meta_util.NameWithSuffix(k.ServiceName(), KafkaNodeRolesCruiseControl)
 }
 
 func (k *Kafka) StandbyServiceName() string {
@@ -218,6 +221,10 @@ func (k *Kafka) ConfigSecretName(role KafkaNodeRoleType) string {
 	return meta_util.NameWithSuffix(k.OffshootName(), "config")
 }
 
+func (k *Kafka) CruiseControlConfigSecretName() string {
+	return meta_util.NameWithSuffix(k.OffshootName(), "cruise-control-config")
+}
+
 func (k *Kafka) DefaultUserCredSecretName(username string) string {
 	return meta_util.NameWithSuffix(k.Name, strings.ReplaceAll(fmt.Sprintf("%s-cred", username), "_", "-"))
 }
@@ -312,10 +319,67 @@ func (k *Kafka) SetDefaults() {
 			k.Spec.Replicas = pointer.Int32P(1)
 		}
 	}
+
+	var kfVersion catalog.KafkaVersion
+	err := DefaultClient.Get(context.TODO(), types.NamespacedName{Name: k.Spec.Version}, &kfVersion)
+	if err != nil {
+		klog.Errorf("can't get the kafka version object %s for %s \n", err.Error(), k.Spec.Version)
+		return
+	}
+
+	k.setDefaultContainerSecurityContext(&kfVersion, &k.Spec.PodTemplate)
+	if k.Spec.CruiseControl != nil {
+		k.setDefaultContainerSecurityContext(&kfVersion, &k.Spec.CruiseControl.PodTemplate)
+	}
+
+	k.Spec.Monitor.SetDefaults()
+	if k.Spec.Monitor != nil && k.Spec.Monitor.Prometheus != nil && k.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser == nil {
+		k.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser = kfVersion.Spec.SecurityContext.RunAsUser
+	}
+
 	if k.Spec.EnableSSL {
 		k.SetTLSDefaults()
 	}
 	k.SetHealthCheckerDefaults()
+}
+
+func (k *Kafka) setDefaultContainerSecurityContext(kfVersion *catalog.KafkaVersion, podTemplate *ofst.PodTemplateSpec) {
+	if podTemplate == nil {
+		return
+	}
+	if podTemplate.Spec.ContainerSecurityContext == nil {
+		podTemplate.Spec.ContainerSecurityContext = &core.SecurityContext{}
+	}
+	if podTemplate.Spec.SecurityContext == nil {
+		podTemplate.Spec.SecurityContext = &core.PodSecurityContext{}
+	}
+	if podTemplate.Spec.SecurityContext.FSGroup == nil {
+		podTemplate.Spec.SecurityContext.FSGroup = kfVersion.Spec.SecurityContext.RunAsUser
+	}
+	k.assignDefaultContainerSecurityContext(kfVersion, podTemplate.Spec.ContainerSecurityContext)
+}
+
+func (k *Kafka) assignDefaultContainerSecurityContext(kfVersion *catalog.KafkaVersion, sc *core.SecurityContext) {
+	if sc.AllowPrivilegeEscalation == nil {
+		sc.AllowPrivilegeEscalation = pointer.BoolP(false)
+	}
+	if sc.Capabilities == nil {
+		sc.Capabilities = &core.Capabilities{
+			Drop: []core.Capability{"ALL"},
+		}
+	}
+	if sc.RunAsNonRoot == nil {
+		sc.RunAsNonRoot = pointer.BoolP(true)
+	}
+	if sc.RunAsUser == nil {
+		sc.RunAsUser = kfVersion.Spec.SecurityContext.RunAsUser
+	}
+	if sc.RunAsGroup == nil {
+		sc.RunAsGroup = kfVersion.Spec.SecurityContext.RunAsUser
+	}
+	if sc.SeccompProfile == nil {
+		sc.SeccompProfile = secomp.DefaultSeccompProfile()
+	}
 }
 
 func (k *Kafka) SetTLSDefaults() {
@@ -361,4 +425,8 @@ func (k *Kafka) GetConnectionScheme() string {
 		scheme = "https"
 	}
 	return scheme
+}
+
+func (k *Kafka) GetCruiseControlClientID() string {
+	return meta_util.NameWithSuffix(k.Name, "cruise-control")
 }

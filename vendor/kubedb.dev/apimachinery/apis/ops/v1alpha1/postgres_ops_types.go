@@ -70,9 +70,6 @@ type PostgresOpsRequestSpec struct {
 	Type PostgresOpsRequestType `json:"type"`
 	// Specifies information necessary for upgrading Postgres
 	UpdateVersion *PostgresUpdateVersionSpec `json:"updateVersion,omitempty"`
-	// Specifies information necessary for upgrading Postgres
-	// Deprecated: use UpdateVersion
-	Upgrade *PostgresUpdateVersionSpec `json:"upgrade,omitempty"`
 	// Specifies information necessary for horizontal scaling
 	HorizontalScaling *PostgresHorizontalScalingSpec `json:"horizontalScaling,omitempty"`
 	// Specifies information necessary for vertical scaling
@@ -93,7 +90,7 @@ type PostgresOpsRequestSpec struct {
 }
 
 // +kubebuilder:validation:Enum=Upgrade;UpdateVersion;HorizontalScaling;VerticalScaling;VolumeExpansion;Restart;Reconfigure;ReconfigureTLS
-// ENUM(Upgrade, UpdateVersion, HorizontalScaling, VerticalScaling, VolumeExpansion, Restart, Reconfigure, ReconfigureTLS)
+// ENUM(UpdateVersion, HorizontalScaling, VerticalScaling, VolumeExpansion, Restart, Reconfigure, ReconfigureTLS)
 type PostgresOpsRequestType string
 
 type PostgresUpdateVersionSpec struct {
@@ -131,15 +128,17 @@ type PostgresHorizontalScalingSpec struct {
 
 // PostgresVerticalScalingSpec is the spec for Postgres vertical scaling
 type PostgresVerticalScalingSpec struct {
-	Postgres    *core.ResourceRequirements `json:"postgres,omitempty"`
-	Exporter    *core.ResourceRequirements `json:"exporter,omitempty"`
-	Coordinator *core.ResourceRequirements `json:"coordinator,omitempty"`
+	Postgres    *PodResources       `json:"postgres,omitempty"`
+	Exporter    *ContainerResources `json:"exporter,omitempty"`
+	Coordinator *ContainerResources `json:"coordinator,omitempty"`
+	Arbiter     *PodResources       `json:"arbiter,omitempty"`
 }
 
 // PostgresVolumeExpansionSpec is the spec for Postgres volume expansion
 type PostgresVolumeExpansionSpec struct {
 	// volume specification for Postgres
 	Postgres *resource.Quantity   `json:"postgres,omitempty"`
+	Arbiter  *resource.Quantity   `json:"arbiter,omitempty"`
 	Mode     *VolumeExpansionMode `json:"mode,omitempty"`
 }
 

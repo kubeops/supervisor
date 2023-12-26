@@ -21,13 +21,8 @@ import (
 	"reflect"
 	"strings"
 
-	kmapi "kmodules.xyz/client-go/api/v1"
-	"kmodules.xyz/client-go/tools/clusterid"
-
 	"github.com/pkg/errors"
-	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -41,7 +36,11 @@ import (
 )
 
 func NewUncachedClient(cfg *rest.Config, funcs ...func(*runtime.Scheme) error) (client.Client, error) {
-	mapper, err := apiutil.NewDynamicRESTMapper(cfg)
+	hc, err := rest.HTTPClientFor(cfg)
+	if err != nil {
+		return nil, err
+	}
+	mapper, err := apiutil.NewDynamicRESTMapper(cfg, hc)
 	if err != nil {
 		return nil, err
 	}
@@ -70,14 +69,19 @@ type (
 )
 
 func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object, transform TransformFunc, opts ...client.PatchOption) (kutil.VerbType, error) {
+	gvk, err := apiutil.GVKForObject(obj, c.Scheme())
+	if err != nil {
+		return kutil.VerbUnchanged, errors.Wrapf(err, "failed to get GVK for object %T", obj)
+	}
+
 	cur := obj.DeepCopyObject().(client.Object)
 	key := types.NamespacedName{
 		Namespace: cur.GetNamespace(),
 		Name:      cur.GetName(),
 	}
-	err := c.Get(ctx, key, cur)
+	err = c.Get(ctx, key, cur)
 	if kerr.IsNotFound(err) {
-		klog.V(3).Infof("Creating %+v %s/%s.", obj.GetObjectKind().GroupVersionKind(), key.Namespace, key.Name)
+		klog.V(3).Infof("Creating %+v %s/%s.", gvk, key.Namespace, key.Name)
 
 		createOpts := make([]client.CreateOption, 0, len(opts))
 		for i := range opts {
@@ -95,11 +99,6 @@ func CreateOrPatch(ctx context.Context, c client.Client, obj client.Object, tran
 		return kutil.VerbCreated, err
 	} else if err != nil {
 		return kutil.VerbUnchanged, err
-	}
-
-	gvk, err := apiutil.GVKForObject(obj, c.Scheme())
-	if err != nil {
-		return kutil.VerbUnchanged, errors.Wrapf(err, "failed to get GVK for object %T", obj)
 	}
 
 	_, unstructuredObj := obj.(*unstructured.Unstructured)
@@ -128,7 +127,7 @@ func assign(target, src any) {
 	reflect.ValueOf(target).Elem().Set(srcValue)
 }
 
-func PatchStatus(ctx context.Context, c client.Client, obj client.Object, transform TransformStatusFunc, opts ...client.PatchOption) (kutil.VerbType, error) {
+func PatchStatus(ctx context.Context, c client.Client, obj client.Object, transform TransformStatusFunc, opts ...client.SubResourcePatchOption) (kutil.VerbType, error) {
 	cur := obj.DeepCopyObject().(client.Object)
 	key := types.NamespacedName{
 		Namespace: cur.GetNamespace(),
@@ -187,22 +186,4 @@ func GetForGVK(ctx context.Context, c client.Client, gvk schema.GroupVersionKind
 	obj := o.(client.Object)
 	err = c.Get(ctx, ref, obj)
 	return obj, err
-}
-
-func ClusterUID(c client.Reader) (string, error) {
-	var ns core.Namespace
-	err := c.Get(context.TODO(), client.ObjectKey{Name: metav1.NamespaceSystem}, &ns)
-	if err != nil {
-		return "", err
-	}
-	return string(ns.UID), nil
-}
-
-func ClusterMetadata(c client.Reader) (*kmapi.ClusterMetadata, error) {
-	var ns core.Namespace
-	err := c.Get(context.TODO(), client.ObjectKey{Name: metav1.NamespaceSystem}, &ns)
-	if err != nil {
-		return nil, err
-	}
-	return clusterid.ClusterMetadataForNamespace(&ns)
 }

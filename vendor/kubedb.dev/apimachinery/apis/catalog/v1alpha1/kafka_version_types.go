@@ -57,6 +57,8 @@ type KafkaVersionSpec struct {
 	// Deprecated versions usable but regarded as obsolete and best avoided, typically due to having been superseded.
 	// +optional
 	Deprecated bool `json:"deprecated,omitempty"`
+	// Database Image
+	CruiseControl CruiseControlVersionDatabase `json:"cruiseControl"`
 	// PSP names
 	// +optional
 	PodSecurityPolicies KafkaVersionPodSecurityPolicy `json:"podSecurityPolicies"`
@@ -65,10 +67,18 @@ type KafkaVersionSpec struct {
 	Stash appcat.StashAddonSpec `json:"stash,omitempty"`
 	// update constraints
 	UpdateConstraints UpdateConstraints `json:"updateConstraints,omitempty"`
+	// SecurityContext is for the additional config for the DB container
+	// +optional
+	SecurityContext SecurityContext `json:"securityContext"`
 }
 
 // KafkaVersionDatabase is the Kafka Database image
 type KafkaVersionDatabase struct {
+	Image string `json:"image"`
+}
+
+// KafkaVersionDatabase is the Kafka Database image
+type CruiseControlVersionDatabase struct {
 	Image string `json:"image"`
 }
 

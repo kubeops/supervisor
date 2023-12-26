@@ -39,7 +39,7 @@ func (k *Kafka) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-kafka-kubedb-com-v1alpha1-kafka,mutating=true,failurePolicy=fail,sideEffects=None,groups=kubedb.com,resources=kafkas,verbs=create,versions=v1alpha1,name=mkafka.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:path=/mutate-kafka-kubedb-com-v1alpha1-kafka,mutating=true,failurePolicy=fail,sideEffects=None,groups=kubedb.com,resources=kafkas,verbs=create;update,versions=v1alpha1,name=mkafka.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &Kafka{}
 
@@ -86,6 +86,19 @@ func (k *Kafka) ValidateDelete() error {
 func (k *Kafka) ValidateCreateOrUpdate() error {
 	var allErr field.ErrorList
 	// TODO(user): fill in your validation logic upon object creation.
+	if k.Spec.EnableSSL {
+		if k.Spec.TLS == nil {
+			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("enableSSL"),
+				k.Name,
+				".spec.tls can't be nil, if .spec.enableSSL is true"))
+		}
+	} else {
+		if k.Spec.TLS != nil {
+			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("enableSSL"),
+				k.Name,
+				".spec.tls must be nil, if .spec.enableSSL is disabled"))
+		}
+	}
 	if k.Spec.Topology != nil {
 		if k.Spec.Topology.Controller == nil {
 			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("controller"),
@@ -193,6 +206,9 @@ var availableVersions = []string{
 	"3.3.0",
 	"3.3.2",
 	"3.4.0",
+	"3.4.1",
+	"3.5.1",
+	"3.6.0",
 }
 
 func validateVersion(db *Kafka) error {

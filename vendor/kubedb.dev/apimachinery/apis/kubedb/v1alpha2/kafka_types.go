@@ -113,6 +113,10 @@ type KafkaSpec struct {
 	// +kubebuilder:default={periodSeconds: 20, timeoutSeconds: 10, failureThreshold: 3}
 	HealthChecker kmapi.HealthCheckSpec `json:"healthChecker"`
 
+	// CruiseControl is used to re-balance Kafka cluster
+	// +optional
+	CruiseControl *KafkaCruiseControl `json:"cruiseControl,omitempty"`
+
 	// Monitor is used monitor database instance
 	// +optional
 	Monitor *mona.AgentSpec `json:"monitor,omitempty"`
@@ -142,6 +146,16 @@ type KafkaNode struct {
 	// Compute Resources required by the sidecar container.
 	// +optional
 	Resources core.ResourceRequirements `json:"resources,omitempty"`
+
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	// +optional
+	// +mapType=atomic
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []core.Toleration `json:"tolerations,omitempty"`
 }
 
 // KafkaStatus defines the observed state of Kafka
@@ -156,6 +170,37 @@ type KafkaStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+}
+
+type KafkaCruiseControl struct {
+	// Configuration for cruise-control
+	// +optional
+	ConfigSecret *SecretReference `json:"configSecret,omitempty"`
+
+	// Replicas represents number of replica for this specific type of node
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
+
+	// Suffix to append with node name
+	// +optional
+	Suffix string `json:"suffix,omitempty"`
+
+	// Compute Resources required by the sidecar container.
+	// +optional
+	Resources core.ResourceRequirements `json:"resources,omitempty"`
+
+	// PodTemplate is an optional configuration for pods used to expose database
+	// +optional
+	PodTemplate ofst.PodTemplateSpec `json:"podTemplate,omitempty"`
+
+	// PodTemplate is an optional configuration for pods used to expose database
+	// +optional
+	BrokerCapacity *KafkaBrokerCapacity `json:"brokerCapacity,omitempty"`
+}
+
+type KafkaBrokerCapacity struct {
+	InBoundNetwork  string `json:"inBoundNetwork,omitempty"`
+	OutBoundNetwork string `json:"outBoundNetwork,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Provisioning;Ready;NotReady;Critical
@@ -177,13 +222,14 @@ const (
 	KafkaNodeRoleCombined   KafkaNodeRoleType = "combined"
 )
 
-// +kubebuilder:validation:Enum=BROKER;CONTROLLER;INTERNAL
+// +kubebuilder:validation:Enum=BROKER;CONTROLLER;INTERNAL;CC
 type KafkaListenerType string
 
 const (
 	KafkaListenerBroker     KafkaListenerType = "BROKER"
 	KafkaListenerController KafkaListenerType = "CONTROLLER"
-	KafkaListenerInternal   KafkaListenerType = "INTERNAL"
+	KafkaListenerLocal      KafkaListenerType = "LOCAL"
+	KafkaListenerCC         KafkaListenerType = "CC"
 )
 
 // +kubebuilder:validation:Enum=ca;transport;http;client;server

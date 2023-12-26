@@ -82,6 +82,14 @@ type MySQLVersionSpec struct {
 	Router MySQLVersionRouter `json:"router,omitempty"`
 	// +optional
 	RouterInitContainer MySQLVersionRouterInitContainer `json:"routerInitContainer,omitempty"`
+	// +optional
+	GitSyncer GitSyncer `json:"gitSyncer,omitempty"`
+	// SecurityContext is for the additional config for the DB container
+	// +optional
+	SecurityContext SecurityContext `json:"securityContext"`
+
+	// Archiver defines the walg & kube-stash-addon related specifications
+	Archiver ArchiverSpec `json:"archiver,omitempty"`
 }
 
 // MySQLVersionDatabase is the MySQL Database image
