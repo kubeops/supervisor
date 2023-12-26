@@ -57,9 +57,6 @@ type MariaDBOpsRequestSpec struct {
 	Type MariaDBOpsRequestType `json:"type"`
 	// Specifies information necessary for upgrading MariaDB
 	UpdateVersion *MariaDBUpdateVersionSpec `json:"updateVersion,omitempty"`
-	// Specifies information necessary for upgrading MariaDB
-	// Deprecated: use UpdateVersion
-	Upgrade *MariaDBUpdateVersionSpec `json:"upgrade,omitempty"`
 	// Specifies information necessary for horizontal scaling
 	HorizontalScaling *MariaDBHorizontalScalingSpec `json:"horizontalScaling,omitempty"`
 	// Specifies information necessary for vertical scaling
@@ -80,7 +77,7 @@ type MariaDBOpsRequestSpec struct {
 }
 
 // +kubebuilder:validation:Enum=Upgrade;UpdateVersion;HorizontalScaling;VerticalScaling;VolumeExpansion;Restart;Reconfigure;ReconfigureTLS
-// ENUM(Upgrade, UpdateVersion, HorizontalScaling, VerticalScaling, VolumeExpansion, Restart, Reconfigure, ReconfigureTLS)
+// ENUM(UpdateVersion, HorizontalScaling, VerticalScaling, VolumeExpansion, Restart, Reconfigure, ReconfigureTLS)
 type MariaDBOpsRequestType string
 
 // MariaDBReplicaReadinessCriteria is the criteria for checking readiness of an MariaDB database
@@ -94,14 +91,14 @@ type MariaDBUpdateVersionSpec struct {
 type MariaDBHorizontalScalingSpec struct {
 	// Number of nodes/members of the group
 	Member *int32 `json:"member,omitempty"`
-	// specifies the weight of the current member/Node
+	// specifies the weight of the current member/PodResources
 	MemberWeight int32 `json:"memberWeight,omitempty"`
 }
 
 type MariaDBVerticalScalingSpec struct {
-	MariaDB     *core.ResourceRequirements `json:"mariadb,omitempty"`
-	Exporter    *core.ResourceRequirements `json:"exporter,omitempty"`
-	Coordinator *core.ResourceRequirements `json:"coordinator,omitempty"`
+	MariaDB     *PodResources       `json:"mariadb,omitempty"`
+	Exporter    *ContainerResources `json:"exporter,omitempty"`
+	Coordinator *ContainerResources `json:"coordinator,omitempty"`
 }
 
 // MariaDBVolumeExpansionSpec is the spec for MariaDB volume expansion

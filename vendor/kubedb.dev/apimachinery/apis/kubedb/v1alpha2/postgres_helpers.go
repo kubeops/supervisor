@@ -37,6 +37,7 @@ import (
 	"kmodules.xyz/client-go/apiextensions"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
+	"kmodules.xyz/client-go/policy/secomp"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
@@ -240,24 +241,9 @@ func (p *Postgres) SetDefaults(postgresVersion *catalog.PostgresVersion, topolog
 		}
 	}
 
-	if p.Spec.PodTemplate.Spec.ContainerSecurityContext == nil {
-		p.Spec.PodTemplate.Spec.ContainerSecurityContext = &core.SecurityContext{
-			RunAsUser:  postgresVersion.Spec.SecurityContext.RunAsUser,
-			RunAsGroup: postgresVersion.Spec.SecurityContext.RunAsUser,
-			Privileged: pointer.BoolP(false),
-			Capabilities: &core.Capabilities{
-				Add: []core.Capability{"IPC_LOCK", "SYS_RESOURCE"},
-			},
-		}
-	} else {
-		if p.Spec.PodTemplate.Spec.ContainerSecurityContext.RunAsUser == nil {
-			p.Spec.PodTemplate.Spec.ContainerSecurityContext.RunAsUser = postgresVersion.Spec.SecurityContext.RunAsUser
-		}
-		if p.Spec.PodTemplate.Spec.ContainerSecurityContext.RunAsGroup == nil {
-			p.Spec.PodTemplate.Spec.ContainerSecurityContext.RunAsGroup = p.Spec.PodTemplate.Spec.ContainerSecurityContext.RunAsUser
-		}
-	}
-
+	p.setDefaultContainerSecurityContext(&p.Spec.PodTemplate, postgresVersion)
+	p.setDefaultCoordinatorSecurityContext(&p.Spec.Coordinator, postgresVersion)
+	p.setDefaultInitContainerSecurityContext(&p.Spec.PodTemplate, postgresVersion)
 	if p.Spec.PodTemplate.Spec.SecurityContext == nil {
 		p.Spec.PodTemplate.Spec.SecurityContext = &core.PodSecurityContext{
 			RunAsUser:  p.Spec.PodTemplate.Spec.ContainerSecurityContext.RunAsUser,
@@ -275,12 +261,127 @@ func (p *Postgres) SetDefaults(postgresVersion *catalog.PostgresVersion, topolog
 	// So that /var/pv directory have the group permission for the RunAsGroup user GID.
 	// Otherwise, We will get write permission denied.
 	p.Spec.PodTemplate.Spec.SecurityContext.FSGroup = p.Spec.PodTemplate.Spec.ContainerSecurityContext.RunAsGroup
-
+	p.SetArbiterDefault()
 	p.Spec.Monitor.SetDefaults()
 	p.SetTLSDefaults()
 	p.SetHealthCheckerDefaults()
 	apis.SetDefaultResourceLimits(&p.Spec.PodTemplate.Spec.Resources, DefaultResources)
 	p.setDefaultAffinity(&p.Spec.PodTemplate, p.OffshootSelectors(), topology)
+	if p.Spec.Monitor != nil && p.Spec.Monitor.Prometheus != nil && p.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser == nil {
+		p.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser = postgresVersion.Spec.SecurityContext.RunAsUser
+	}
+}
+
+func (p *Postgres) SetArbiterDefault() {
+	if p.Spec.Arbiter == nil {
+		p.Spec.Arbiter = &ArbiterSpec{
+			Resources: core.ResourceRequirements{},
+		}
+	}
+	apis.SetDefaultResourceLimits(&p.Spec.Arbiter.Resources, DefaultArbiter(false))
+}
+
+func (p *Postgres) setDefaultInitContainerSecurityContext(podTemplate *ofst.PodTemplateSpec, pgVersion *catalog.PostgresVersion) {
+	if podTemplate == nil {
+		return
+	}
+	container := core_util.GetContainerByName(p.Spec.PodTemplate.Spec.InitContainers, PostgresInitContainerName)
+	if container == nil {
+		container = &core.Container{
+			Name:            PostgresInitContainerName,
+			SecurityContext: &core.SecurityContext{},
+			Resources: core.ResourceRequirements{
+				Limits: core.ResourceList{
+					core.ResourceCPU:    resource.MustParse(".200"),
+					core.ResourceMemory: resource.MustParse("128Mi"),
+				},
+				Requests: core.ResourceList{
+					core.ResourceCPU:    resource.MustParse(".200"),
+					core.ResourceMemory: resource.MustParse("128Mi"),
+				},
+			},
+		}
+	} else if container.SecurityContext == nil {
+		container.SecurityContext = &core.SecurityContext{}
+	}
+	p.assignDefaultContainerSecurityContext(container.SecurityContext, pgVersion)
+	podTemplate.Spec.InitContainers = core_util.UpsertContainer(podTemplate.Spec.InitContainers, *container)
+}
+
+func (p *Postgres) setDefaultCoordinatorSecurityContext(coordinatorTemplate *CoordinatorSpec, pgVersion *catalog.PostgresVersion) {
+	if coordinatorTemplate == nil {
+		return
+	}
+	if coordinatorTemplate.SecurityContext == nil {
+		coordinatorTemplate.SecurityContext = &core.SecurityContext{}
+	}
+	p.assignDefaultContainerSecurityContext(coordinatorTemplate.SecurityContext, pgVersion)
+}
+
+func (p *Postgres) setDefaultContainerSecurityContext(podTemplate *ofst.PodTemplateSpec, pgVersion *catalog.PostgresVersion) {
+	if podTemplate == nil {
+		return
+	}
+	if podTemplate.Spec.ContainerSecurityContext == nil {
+		podTemplate.Spec.ContainerSecurityContext = &core.SecurityContext{}
+	}
+	if podTemplate.Spec.SecurityContext == nil {
+		podTemplate.Spec.SecurityContext = &core.PodSecurityContext{}
+	}
+	if podTemplate.Spec.SecurityContext.FSGroup == nil {
+		podTemplate.Spec.SecurityContext.FSGroup = pgVersion.Spec.SecurityContext.RunAsUser
+	}
+	p.setDefaultCapabilitiesForPostgres(podTemplate.Spec.ContainerSecurityContext)
+	p.assignDefaultContainerSecurityContext(podTemplate.Spec.ContainerSecurityContext, pgVersion)
+}
+
+func (p *Postgres) setDefaultCapabilitiesForPostgres(sc *core.SecurityContext) {
+	if sc.Capabilities == nil {
+		sc.Capabilities = &core.Capabilities{
+			Add: []core.Capability{IPS_LOCK, SYS_RESOURCE},
+		}
+	} else {
+		newCapabilities := &core.Capabilities{}
+		caps := []core.Capability{IPS_LOCK, SYS_RESOURCE}
+		if sc.Capabilities.Add == nil {
+			newCapabilities.Add = caps
+		} else {
+			newCapabilities.Add = sc.Capabilities.Add
+			for i := range caps {
+				found := false
+				for _, capability := range sc.Capabilities.Add {
+					if caps[i] == capability {
+						found = true
+					}
+				}
+				if !found {
+					newCapabilities.Add = append(newCapabilities.Add, caps[i])
+				}
+			}
+		}
+		sc.Capabilities = newCapabilities
+	}
+}
+
+func (p *Postgres) assignDefaultContainerSecurityContext(sc *core.SecurityContext, pgVersion *catalog.PostgresVersion) {
+	if sc.AllowPrivilegeEscalation == nil {
+		sc.AllowPrivilegeEscalation = pointer.BoolP(false)
+	}
+	if sc.Capabilities == nil {
+		sc.Capabilities = &core.Capabilities{}
+	}
+	if sc.RunAsNonRoot == nil {
+		sc.RunAsNonRoot = pointer.BoolP(true)
+	}
+	if sc.RunAsUser == nil {
+		sc.RunAsUser = pgVersion.Spec.SecurityContext.RunAsUser
+	}
+	if sc.RunAsGroup == nil {
+		sc.RunAsGroup = pgVersion.Spec.SecurityContext.RunAsUser
+	}
+	if sc.SeccompProfile == nil {
+		sc.SeccompProfile = secomp.DefaultSeccompProfile()
+	}
 }
 
 // setDefaultAffinity
@@ -406,4 +507,8 @@ func (m *Postgres) SetHealthCheckerDefaults() {
 	if m.Spec.HealthChecker.FailureThreshold == nil {
 		m.Spec.HealthChecker.FailureThreshold = pointer.Int32P(1)
 	}
+}
+
+func (m *Postgres) IsRemoteReplica() bool {
+	return m.Spec.RemoteReplica != nil
 }

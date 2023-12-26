@@ -322,20 +322,20 @@ const (
 	MariaDBDataVolumeName                = "data"
 
 	// =========================== PostgreSQL Constants ============================
-	PostgresDatabasePortName         = "db"
-	PostgresPrimaryServicePortName   = "primary"
-	PostgresStandbyServicePortName   = "standby"
-	PostgresDatabasePort             = 5432
-	PostgresPodPrimary               = "primary"
-	PostgresPodStandby               = "standby"
-	EnvPostgresUser                  = "POSTGRES_USER"
-	EnvPostgresPassword              = "POSTGRES_PASSWORD"
-	PostgresRootUser                 = "postgres"
-	PostgresCoordinatorContainerName = "pg-coordinator"
-	PostgresCoordinatorPort          = 2380
-	PostgresCoordinatorPortName      = "coordinator"
-	PostgresContainerName            = ResourceSingularPostgres
-
+	PostgresDatabasePortName          = "db"
+	PostgresPrimaryServicePortName    = "primary"
+	PostgresStandbyServicePortName    = "standby"
+	PostgresDatabasePort              = 5432
+	PostgresPodPrimary                = "primary"
+	PostgresPodStandby                = "standby"
+	EnvPostgresUser                   = "POSTGRES_USER"
+	EnvPostgresPassword               = "POSTGRES_PASSWORD"
+	PostgresRootUser                  = "postgres"
+	PostgresCoordinatorContainerName  = "pg-coordinator"
+	PostgresCoordinatorPort           = 2380
+	PostgresCoordinatorPortName       = "coordinator"
+	PostgresContainerName             = ResourceSingularPostgres
+	PostgresInitContainerName         = "postgres-init-container"
 	PostgresCoordinatorClientPort     = 2379
 	PostgresCoordinatorClientPortName = "coordinatclient"
 
@@ -377,6 +377,9 @@ const (
 
 	SharedBuffersGbAsKiloByte = 1024 * 1024
 	SharedBuffersMbAsKiloByte = 1024
+	IPS_LOCK                  = "IPC_LOCK"
+	SYS_RESOURCE              = "SYS_RESOURCE"
+	DropCapabilityALL         = "ALL"
 
 	// =========================== ProxySQL Constants ============================
 	LabelProxySQLName                  = ProxySQLKey + "/name"
@@ -512,58 +515,85 @@ const (
 )
 
 const (
-	KafkaPortNameREST                 = "http"
-	KafkaPortNameController           = "controller"
-	KafkaBrokerClientPortName         = "broker"
-	KafkaControllerClientPortName     = "controller"
-	KafkaPortNameInternal             = "internal"
-	KafkaTopicNameHealth              = "kafka-health"
-	KafkaTopicDeletionThresholdOffset = 1000
-	KafkaRESTPort                     = 9092
-	KafkaControllerRESTPort           = 9093
-	KafkaInternalRESTPort             = 29092
+	KafkaPortNameREST                  = "http"
+	KafkaPortNameController            = "controller"
+	KafkaPortNameCruiseControlListener = "cc-listener"
+	KafkaPortNameCruiseControlREST     = "cc-rest"
+	KafkaBrokerClientPortName          = "broker"
+	KafkaControllerClientPortName      = "controller"
+	KafkaPortNameLocal                 = "local"
+	KafkaTopicNameHealth               = "kafka-health"
+	KafkaTopicDeletionThresholdOffset  = 1000
+	KafkaBrokerMaxID                   = 1000
+	KafkaRESTPort                      = 9092
+	KafkaControllerRESTPort            = 9093
+	KafkaLocalRESTPort                 = 29092
+	KafkaCruiseControlRESTPort         = 9090
+	KafkaCruiseControlListenerPort     = 9094
+	KafkaCCDefaultInNetwork            = 500000
+	KafkaCCDefaultOutNetwork           = 500000
 
-	KafkaContainerName        = "kafka"
-	KafkaUserAdmin            = "admin"
-	KafkaNodeRoleSet          = "set"
-	KafkaNodeRolesCombined    = "controller,broker"
-	KafkaNodeRolesController  = "controller"
-	KafkaNodeRolesBrokers     = "broker"
-	KafkaStandbyServiceSuffix = "standby"
+	KafkaContainerName          = "kafka"
+	KafkaUserAdmin              = "admin"
+	KafkaNodeRoleSet            = "set"
+	KafkaNodeRolesCombined      = "controller,broker"
+	KafkaNodeRolesController    = "controller"
+	KafkaNodeRolesBrokers       = "broker"
+	KafkaNodeRolesCruiseControl = "cruise-control"
+	KafkaStandbyServiceSuffix   = "standby"
 
 	KafkaBrokerListener     = "KafkaBrokerListener"
 	KafkaControllerListener = "KafkaControllerListener"
 
-	KafkaDataDir                        = "/var/log/kafka"
-	KafkaMetaDataDir                    = "/var/log/kafka/metadata"
-	KafkaCertDir                        = "/var/private/ssl"
-	KafkaConfigDir                      = "/opt/kafka/config/kafkaconfig"
-	KafkaTempConfigDir                  = "/opt/kafka/config/temp-config"
-	KafkaCustomConfigDir                = "/opt/kafka/config/custom-config"
-	KafkaConfigFileName                 = "config.properties"
-	KafkaServerCustomConfigFileName     = "server.properties"
-	KafkaBrokerCustomConfigFileName     = "broker.properties"
-	KafkaControllerCustomConfigFileName = "controller.properties"
-	KafkaSSLPropertiesFileName          = "ssl.properties"
-	KafkaClientAuthConfigFileName       = "clientauth.properties"
+	KafkaDataDir                              = "/var/log/kafka"
+	KafkaMetaDataDir                          = "/var/log/kafka/metadata"
+	KafkaCertDir                              = "/var/private/ssl"
+	KafkaConfigDir                            = "/opt/kafka/config/kafkaconfig"
+	KafkaTempConfigDir                        = "/opt/kafka/config/temp-config"
+	KafkaCustomConfigDir                      = "/opt/kafka/config/custom-config"
+	KafkaCCTempConfigDir                      = "/opt/cruise-control/temp-config"
+	KafkaCCCustomConfigDir                    = "/opt/cruise-control/custom-config"
+	KafkaCapacityConfigPath                   = "config/capacity.json"
+	KafkaConfigFileName                       = "config.properties"
+	KafkaServerCustomConfigFileName           = "server.properties"
+	KafkaBrokerCustomConfigFileName           = "broker.properties"
+	KafkaControllerCustomConfigFileName       = "controller.properties"
+	KafkaSSLPropertiesFileName                = "ssl.properties"
+	KafkaClientAuthConfigFileName             = "clientauth.properties"
+	KafkaCruiseControlConfigFileName          = "cruisecontrol.properties"
+	KafkaCruiseControlCapacityConfigFileName  = "capacity.json"
+	KafkaCruiseControlBrokerSetConfigFileName = "brokerSets.json"
+	KafkaCruiseControlClusterConfigFileName   = "clusterConfigs.json"
+	KafkaCruiseControlLog4jConfigFileName     = "log4j.properties"
+	KafkaCruiseControlUIConfigFileName        = "config.csv"
 
-	KafkaListeners                   = "listeners"
-	KafkaAdvertisedListeners         = "advertised.listeners"
-	KafkaListenerSecurityProtocolMap = "listener.security.protocol.map"
-	KafkaControllerNodeCount         = "controller.count"
-	KafkaControllerQuorumVoters      = "controller.quorum.voters"
-	KafkaControllerListenersName     = "controller.listener.names"
-	KafkaInterBrokerListener         = "inter.broker.listener.name"
-	KafkaNodeRole                    = "process.roles"
-	KafkaClusterID                   = "cluster.id"
-	KafkaDataDirName                 = "log.dirs"
-	KafkaMetadataDirName             = "metadata.log.dir"
-	KafkaKeystorePasswordKey         = "keystore_password"
-	KafkaTruststorePasswordKey       = "truststore_password"
-	KafkaServerKeystoreKey           = "server.keystore.jks"
-	KafkaServerTruststoreKey         = "server.truststore.jks"
-	KafkaSecurityProtocol            = "security.protocol"
-	KafkaGracefulShutdownTimeout     = "task.shutdown.graceful.timeout.ms"
+	KafkaListeners                         = "listeners"
+	KafkaAdvertisedListeners               = "advertised.listeners"
+	KafkaBootstrapServers                  = "bootstrap.servers"
+	KafkaListenerSecurityProtocolMap       = "listener.security.protocol.map"
+	KafkaControllerNodeCount               = "controller.count"
+	KafkaControllerQuorumVoters            = "controller.quorum.voters"
+	KafkaControllerListenersName           = "controller.listener.names"
+	KafkaInterBrokerListener               = "inter.broker.listener.name"
+	KafkaNodeRole                          = "process.roles"
+	KafkaClusterID                         = "cluster.id"
+	KafkaClientID                          = "client.id"
+	KafkaDataDirName                       = "log.dirs"
+	KafkaMetadataDirName                   = "metadata.log.dir"
+	KafkaKeystorePasswordKey               = "keystore_password"
+	KafkaTruststorePasswordKey             = "truststore_password"
+	KafkaServerKeystoreKey                 = "server.keystore.jks"
+	KafkaServerTruststoreKey               = "server.truststore.jks"
+	KafkaSecurityProtocol                  = "security.protocol"
+	KafkaGracefulShutdownTimeout           = "task.shutdown.graceful.timeout.ms"
+	KafkaTopicConfigProviderClass          = "topic.config.provider.class"
+	KafkaCapacityConfigFile                = "capacity.config.file"
+	KafkaTwoStepVerification               = "two.step.verification.enabled"
+	KafkaBrokerFailureDetection            = "kafka.broker.failure.detection.enable"
+	KafkaMetricSamplingInterval            = "metric.sampling.interval.ms"
+	KafkaPartitionMetricsWindow            = "partition.metrics.window.ms"
+	KafkaPartitionMetricsWindowNum         = "num.partition.metrics.windows"
+	KafkaSampleStoreTopicReplicationFactor = "sample.store.topic.replication.factor"
 
 	KafkaEndpointVerifyAlgo  = "ssl.endpoint.identification.algorithm"
 	KafkaKeystoreLocation    = "ssl.keystore.location"
@@ -572,6 +602,9 @@ const (
 	KafkaTruststorePassword  = "ssl.truststore.password"
 	KafkaKeyPassword         = "ssl.key.password"
 	KafkaKeystoreDefaultPass = "changeit"
+
+	KafkaMetricReporters       = "metric.reporters"
+	KafkaAutoCreateTopicEnable = "auto.create.topics.enable"
 
 	KafkaEnabledSASLMechanisms       = "sasl.enabled.mechanisms"
 	KafkaSASLMechanism               = "sasl.mechanism"
@@ -582,6 +615,26 @@ const (
 	KafkaSASLJAASConfig              = "sasl.jaas.config"
 	KafkaServiceName                 = "serviceName"
 	KafkaSASLPlainMechanism          = "PLAIN"
+
+	KafkaCCMetricSamplerClass            = "metric.sampler.class"
+	KafkaCCCapacityConfig                = "capacity.config.file"
+	KafkaCCTwoStepVerificationEnabled    = "two.step.verification.enabled"
+	KafkaCCBrokerFailureDetectionEnabled = "kafka.broker.failure.detection.enable"
+	KafkaOffSetTopicReplica              = "offsets.topic.replication.factor"
+	KafkaTransactionStateLogReplica      = "transaction.state.log.replication.factor"
+	KafkaTransactionSateLogMinISR        = "transaction.state.log.min.isr"
+	KafkaLogCleanerMinLagSec             = "log.cleaner.min.compaction.lag.ms"
+	KafkaLogCleanerBackoffMS             = "log.cleaner.backoff.ms"
+
+	KafkaCCKubernetesMode                 = "cruise.control.metrics.reporter.kubernetes.mode"
+	KafkaCCBootstrapServers               = "cruise.control.metrics.reporter.bootstrap.servers"
+	KafkaCCMetricTopicAutoCreate          = "cruise.control.metrics.topic.auto.create"
+	KafkaCCMetricTopicNumPartition        = "cruise.control.metrics.topic.num.partitions"
+	KafkaCCMetricTopicReplica             = "cruise.control.metrics.topic.replication.factor"
+	KafkaCCMetricReporterSecurityProtocol = "cruise.control.metrics.reporter.security.protocol"
+	KafkaCCMetricReporterSaslMechanism    = "cruise.control.metrics.reporter.sasl.mechanism"
+	KafkaCCSampleLoadingThreadsNum        = "num.sample.loading.threads"
+	KafkaCCMinSamplesPerBrokerWindow      = "min.samples.per.broker.metrics.window"
 
 	KafkaVolumeData         = "data"
 	KafkaVolumeConfig       = "kafkaconfig"
@@ -594,6 +647,11 @@ const (
 	KafkaListenerPLAINTEXTProtocol = "PLAINTEXT"
 	KafkaListenerSASLProtocol      = "SASL_PLAINTEXT"
 	KafkaListenerSASLSSLProtocol   = "SASL_SSL"
+
+	KafkaCCMetricsSampler         = "com.linkedin.kafka.cruisecontrol.monitor.sampling.CruiseControlMetricsReporterSampler"
+	KafkaAdminTopicConfigProvider = "com.linkedin.kafka.cruisecontrol.config.KafkaAdminTopicConfigProvider"
+	KafkaCCMetricReporter         = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"
+	KafkaJMXMetricReporter        = "org.apache.kafka.common.metrics.JmxReporter"
 )
 
 // Resource kind related constants
@@ -602,6 +660,15 @@ const (
 )
 
 var (
+	DefaultInitContainerResource = core.ResourceRequirements{
+		Requests: core.ResourceList{
+			core.ResourceCPU:    resource.MustParse(".200"),
+			core.ResourceMemory: resource.MustParse("256Mi"),
+		},
+		Limits: core.ResourceList{
+			core.ResourceMemory: resource.MustParse("512Mi"),
+		},
+	}
 	DefaultResources = core.ResourceRequirements{
 		Requests: core.ResourceList{
 			core.ResourceCPU:    resource.MustParse(".500"),
@@ -621,6 +688,17 @@ var (
 			core.ResourceMemory: resource.MustParse("256Mi"),
 		},
 	}
+	defaultArbiter = core.ResourceRequirements{
+		Requests: core.ResourceList{
+			core.ResourceStorage: resource.MustParse("2Gi"),
+			// these are the default cpu & memory for a coordinator container
+			core.ResourceCPU:    resource.MustParse(".200"),
+			core.ResourceMemory: resource.MustParse("256Mi"),
+		},
+		Limits: core.ResourceList{
+			core.ResourceMemory: resource.MustParse("256Mi"),
+		},
+	}
 
 	// DefaultResourcesElasticSearch must be used for elasticsearch
 	// to avoid OOMKILLED while deploying ES V8
@@ -633,4 +711,20 @@ var (
 			core.ResourceMemory: resource.MustParse("1.5Gi"),
 		},
 	}
+)
+
+func DefaultArbiter(computeOnly bool) core.ResourceRequirements {
+	cp := defaultArbiter.DeepCopy()
+	if computeOnly {
+		delete(cp.Requests, core.ResourceStorage)
+	}
+	return *cp
+}
+
+const (
+	InitFromGit          = "init-from-git"
+	InitFromGitMountPath = "/git"
+	GitSecretVolume      = "git-secret"
+	GitSecretMountPath   = "/etc/git-secret"
+	GitSyncContainerName = "git-sync"
 )

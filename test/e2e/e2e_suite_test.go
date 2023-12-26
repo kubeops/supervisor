@@ -22,22 +22,22 @@ import (
 	"path/filepath"
 	"testing"
 
-	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
-
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/test/e2e/framework"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -61,9 +61,11 @@ func init() {
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	reporterConfig := types.NewDefaultReporterConfig()
+	reporterConfig.JUnitReport = "junit.xml"
+	reporterConfig.JSONReport = "report.json"
+	reporterConfig.Verbose = true
+	RunSpecs(t, "Controller Suite", Label("Supervisor"), reporterConfig)
 }
 
 var _ = BeforeSuite(func() {
@@ -80,8 +82,7 @@ var _ = BeforeSuite(func() {
 
 	mgr, err := ctrl.NewManager(clientConfig, ctrl.Options{
 		Scheme:                 scheme,
-		MetricsBindAddress:     "0",
-		Port:                   0,
+		Metrics:                metricsserver.Options{BindAddress: ""},
 		HealthProbeBindAddress: "0",
 	})
 	Expect(err).NotTo(HaveOccurred())

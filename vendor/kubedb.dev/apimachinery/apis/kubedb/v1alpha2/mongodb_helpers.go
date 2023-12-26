@@ -37,6 +37,7 @@ import (
 	"kmodules.xyz/client-go/apiextensions"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
+	"kmodules.xyz/client-go/policy/secomp"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
@@ -602,7 +603,7 @@ func (m MongoDB) StatsServiceLabels() map[string]string {
 //
 // podTemplate.Spec.ServiceAccountName = DB_NAME
 // set mongos lifecycle command, to shut down the db before stopping
-// it sets default ReadinessProbe, livelinessProbe, affinity & ResourceLimits
+// it sets default ReadinessProbe, livelinessProbe, affinity, ResourceLimits & securityContext
 // then set TLSDefaults & monitor Defaults
 
 func (m *MongoDB) SetDefaults(mgVersion *v1alpha1.MongoDBVersion, topology *core_util.Topology) {
@@ -683,6 +684,16 @@ func (m *MongoDB) SetDefaults(mgVersion *v1alpha1.MongoDBVersion, topology *core
 		mongosLabels := m.OffshootSelectors()
 		mongosLabels[MongoDBMongosLabelKey] = m.MongosNodeName()
 		m.setDefaultAffinity(&m.Spec.ShardTopology.Mongos.PodTemplate, mongosLabels, topology)
+
+		m.setDefaultSecurityContext(mgVersion, &m.Spec.ShardTopology.Shard.PodTemplate)
+		m.setDefaultSecurityContext(mgVersion, &m.Spec.ShardTopology.Mongos.PodTemplate)
+		m.setDefaultSecurityContext(mgVersion, &m.Spec.ShardTopology.ConfigServer.PodTemplate)
+		if m.Spec.Arbiter != nil {
+			m.setDefaultSecurityContext(mgVersion, &m.Spec.Arbiter.PodTemplate)
+		}
+		if m.Spec.Hidden != nil {
+			m.setDefaultSecurityContext(mgVersion, &m.Spec.Hidden.PodTemplate)
+		}
 	} else {
 		if m.Spec.Replicas == nil {
 			m.Spec.Replicas = pointer.Int32P(1)
@@ -701,22 +712,73 @@ func (m *MongoDB) SetDefaults(mgVersion *v1alpha1.MongoDBVersion, topology *core
 		m.setDefaultAffinity(m.Spec.PodTemplate, m.OffshootSelectors(), topology)
 
 		apis.SetDefaultResourceLimits(&m.Spec.PodTemplate.Spec.Resources, DefaultResources)
+		m.setDefaultSecurityContext(mgVersion, m.Spec.PodTemplate)
 
 		if m.Spec.Arbiter != nil {
 			m.setDefaultProbes(&m.Spec.Arbiter.PodTemplate, mgVersion, true)
 			m.setDefaultAffinity(&m.Spec.Arbiter.PodTemplate, m.OffshootSelectors(), topology)
 			apis.SetDefaultResourceLimits(&m.Spec.Arbiter.PodTemplate.Spec.Resources, DefaultResources)
+			m.setDefaultSecurityContext(mgVersion, &m.Spec.Arbiter.PodTemplate)
 		}
 		if m.Spec.Hidden != nil {
 			m.setDefaultProbes(&m.Spec.Hidden.PodTemplate, mgVersion)
 			m.setDefaultAffinity(&m.Spec.Hidden.PodTemplate, m.OffshootSelectors(), topology)
 			apis.SetDefaultResourceLimits(&m.Spec.Hidden.PodTemplate.Spec.Resources, DefaultResources)
+			m.setDefaultSecurityContext(mgVersion, &m.Spec.Hidden.PodTemplate)
+		}
+		if m.Spec.ReplicaSet != nil {
+			if m.Spec.Coordinator.SecurityContext == nil {
+				m.Spec.Coordinator.SecurityContext = &core.SecurityContext{}
+			}
+			m.assignDefaultContainerSecurityContext(mgVersion, m.Spec.Coordinator.SecurityContext) // modeDetector container
 		}
 	}
 
 	m.SetTLSDefaults()
 	m.SetHealthCheckerDefaults()
 	m.Spec.Monitor.SetDefaults()
+	if m.Spec.Monitor != nil && m.Spec.Monitor.Prometheus != nil && m.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser == nil {
+		m.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser = mgVersion.Spec.SecurityContext.RunAsUser
+	}
+}
+
+func (m *MongoDB) setDefaultSecurityContext(mgVersion *v1alpha1.MongoDBVersion, podTemplate *ofst.PodTemplateSpec) {
+	if podTemplate == nil {
+		return
+	}
+	if podTemplate.Spec.ContainerSecurityContext == nil {
+		podTemplate.Spec.ContainerSecurityContext = &core.SecurityContext{}
+	}
+	if podTemplate.Spec.SecurityContext == nil {
+		podTemplate.Spec.SecurityContext = &core.PodSecurityContext{}
+	}
+	if podTemplate.Spec.SecurityContext.FSGroup == nil {
+		podTemplate.Spec.SecurityContext.FSGroup = mgVersion.Spec.SecurityContext.RunAsUser
+	}
+	m.assignDefaultContainerSecurityContext(mgVersion, podTemplate.Spec.ContainerSecurityContext)
+}
+
+func (m *MongoDB) assignDefaultContainerSecurityContext(mgVersion *v1alpha1.MongoDBVersion, sc *core.SecurityContext) {
+	if sc.AllowPrivilegeEscalation == nil {
+		sc.AllowPrivilegeEscalation = pointer.BoolP(false)
+	}
+	if sc.Capabilities == nil {
+		sc.Capabilities = &core.Capabilities{
+			Drop: []core.Capability{"ALL"},
+		}
+	}
+	if sc.RunAsNonRoot == nil {
+		sc.RunAsNonRoot = pointer.BoolP(true)
+	}
+	if sc.RunAsUser == nil {
+		sc.RunAsUser = mgVersion.Spec.SecurityContext.RunAsUser
+	}
+	if sc.RunAsGroup == nil {
+		sc.RunAsGroup = mgVersion.Spec.SecurityContext.RunAsUser
+	}
+	if sc.SeccompProfile == nil {
+		sc.SeccompProfile = secomp.DefaultSeccompProfile()
+	}
 }
 
 func (m *MongoDB) SetHealthCheckerDefaults() {
@@ -945,28 +1007,6 @@ func (m *MongoDB) setDefaultAffinity(podTemplate *ofst.PodTemplateSpec, labels m
 				},
 			},
 		},
-	}
-}
-
-// setSecurityContext will set default PodSecurityContext.
-// These values will be applied only to newly created objects.
-// These defaultings should not be applied to DBs or dormantDBs,
-// that is managed by previous operators,
-func (m *MongoDBSpec) SetSecurityContext(podTemplate *ofst.PodTemplateSpec) {
-	if podTemplate == nil {
-		return
-	}
-	if podTemplate.Spec.SecurityContext == nil {
-		podTemplate.Spec.SecurityContext = new(core.PodSecurityContext)
-	}
-	if podTemplate.Spec.SecurityContext.FSGroup == nil {
-		podTemplate.Spec.SecurityContext.FSGroup = pointer.Int64P(999)
-	}
-	if podTemplate.Spec.SecurityContext.RunAsNonRoot == nil {
-		podTemplate.Spec.SecurityContext.RunAsNonRoot = pointer.BoolP(true)
-	}
-	if podTemplate.Spec.SecurityContext.RunAsUser == nil {
-		podTemplate.Spec.SecurityContext.RunAsUser = pointer.Int64P(999)
 	}
 }
 
