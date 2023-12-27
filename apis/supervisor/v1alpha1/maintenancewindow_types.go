@@ -101,6 +101,7 @@ type MaintenanceWindowStatus struct {
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
 }
 
+//+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Default",type="boolean",JSONPath=".spec.isDefault"
@@ -115,6 +116,7 @@ type MaintenanceWindow struct {
 	Status MaintenanceWindowStatus `json:"status,omitempty"`
 }
 
+//+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 //+kubebuilder:object:root=true
 
 // MaintenanceWindowList contains a list of MaintenanceWindow

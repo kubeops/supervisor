@@ -28,14 +28,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
 var (
 	maintenancewindowlog = logf.Log.WithName("maintenancewindow-resource")
 )
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 //+kubebuilder:webhook:path=/mutate-supervisor-appscode-com-v1alpha1-maintenancewindow,mutating=true,failurePolicy=fail,sideEffects=None,groups=supervisor.appscode.com,resources=maintenancewindows,verbs=create;update,versions=v1alpha1,name=mmaintenancewindow.kb.io,admissionReviewVersions={v1,v1beta1}
 
@@ -54,24 +53,24 @@ func (r *MaintenanceWindow) Default() {
 var _ webhook.Validator = &MaintenanceWindow{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *MaintenanceWindow) ValidateCreate() error {
+func (r *MaintenanceWindow) ValidateCreate() (admission.Warnings, error) {
 	maintenancewindowlog.Info("validate create", "name", r.Name)
 
-	return r.validateMaintenanceWindow(context.TODO())
+	return nil, r.validateMaintenanceWindow(context.TODO())
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *MaintenanceWindow) ValidateUpdate(old runtime.Object) error {
+func (r *MaintenanceWindow) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	maintenancewindowlog.Info("validate update", "name", r.Name)
 
-	return r.validateMaintenanceWindow(context.TODO())
+	return nil, r.validateMaintenanceWindow(context.TODO())
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *MaintenanceWindow) ValidateDelete() error {
+func (r *MaintenanceWindow) ValidateDelete() (admission.Warnings, error) {
 	maintenancewindowlog.Info("validate delete", "name", r.Name)
 
-	return nil
+	return nil, nil
 }
 
 func (r *MaintenanceWindow) validateMaintenanceWindow(ctx context.Context) error {

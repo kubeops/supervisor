@@ -44,10 +44,12 @@ import (
 	cu "kmodules.xyz/client-go/client"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1"
 	admissionreview "kmodules.xyz/webhook-runtime/registry/admissionreview/v1"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var (
@@ -124,7 +126,7 @@ func (c completedConfig) New() (*SupervisorOperator, error) {
 	}
 
 	// ctrl.SetLogger(...)
-	log.SetLogger(klogr.New())
+	log.SetLogger(klogr.New()) // nolint:staticcheck
 	setupLog := log.Log.WithName("setup")
 
 	cfg := c.ExtraConfig.ClientConfig
@@ -142,13 +144,14 @@ func (c completedConfig) New() (*SupervisorOperator, error) {
 
 	mgr, err := manager.New(cfg, manager.Options{
 		Scheme:                 Scheme,
-		MetricsBindAddress:     "0",
-		Port:                   0,
+		Metrics:                metricsserver.Options{BindAddress: ""},
 		HealthProbeBindAddress: "0",
 		LeaderElection:         false,
 		LeaderElectionID:       "3a57c480.supervisor.appscode.com",
-		SyncPeriod:             &c.ExtraConfig.ResyncPeriod,
-		NewClient:              cu.NewClient,
+		Cache: cache.Options{
+			SyncPeriod: &c.ExtraConfig.ResyncPeriod,
+		},
+		NewClient: cu.NewClient,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

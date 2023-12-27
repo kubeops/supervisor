@@ -25,6 +25,7 @@ import (
 	"k8s.io/klog/v2"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
@@ -46,29 +47,29 @@ func (r *Recommendation) Default() {
 var _ webhook.Validator = &Recommendation{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Recommendation) ValidateCreate() error {
+func (r *Recommendation) ValidateCreate() (admission.Warnings, error) {
 	recommendationlog.Info("validate create", "name", r.Name)
 
-	return r.validateRecommendation()
+	return nil, r.validateRecommendation()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Recommendation) ValidateUpdate(old runtime.Object) error {
+func (r *Recommendation) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	recommendationlog.Info("validate update", "name", r.Name)
 
 	obj := old.(*Recommendation)
 
 	if !reflect.DeepEqual(obj.Spec.Operation, r.Spec.Operation) || !reflect.DeepEqual(obj.Spec.Target, r.Spec.Target) {
-		return errors.New("can't update operation or target field. fields are immutable")
+		return nil, errors.New("can't update operation or target field. fields are immutable")
 	}
-	return r.validateRecommendation()
+	return nil, r.validateRecommendation()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Recommendation) ValidateDelete() error {
+func (r *Recommendation) ValidateDelete() (admission.Warnings, error) {
 	recommendationlog.Info("validate delete", "name", r.Name)
 
-	return nil
+	return nil, nil
 }
 
 func (r *Recommendation) validateRecommendation() error {

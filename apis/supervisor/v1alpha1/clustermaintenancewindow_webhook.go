@@ -26,14 +26,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
 var (
 	clustermaintenancewindowlog = logf.Log.WithName("clustermaintenancewindow-resource")
 )
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 //+kubebuilder:webhook:path=/mutate-supervisor-appscode-com-v1alpha1-clustermaintenancewindow,mutating=true,failurePolicy=fail,sideEffects=None,groups=supervisor.appscode.com,resources=clustermaintenancewindows,verbs=create;update,versions=v1alpha1,name=mclustermaintenancewindow.kb.io,admissionReviewVersions={v1,v1beta1}
 
@@ -52,24 +51,24 @@ func (r *ClusterMaintenanceWindow) Default() {
 var _ webhook.Validator = &ClusterMaintenanceWindow{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *ClusterMaintenanceWindow) ValidateCreate() error {
+func (r *ClusterMaintenanceWindow) ValidateCreate() (admission.Warnings, error) {
 	clustermaintenancewindowlog.Info("validate create", "name", r.Name)
 
-	return r.validateClusterMaintenanceWindow(context.TODO())
+	return nil, r.validateClusterMaintenanceWindow(context.TODO())
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *ClusterMaintenanceWindow) ValidateUpdate(old runtime.Object) error {
+func (r *ClusterMaintenanceWindow) ValidateUpdate(_ runtime.Object) (admission.Warnings, error) {
 	clustermaintenancewindowlog.Info("validate update", "name", r.Name)
 
-	return r.validateClusterMaintenanceWindow(context.TODO())
+	return nil, r.validateClusterMaintenanceWindow(context.TODO())
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *ClusterMaintenanceWindow) ValidateDelete() error {
+func (r *ClusterMaintenanceWindow) ValidateDelete() (admission.Warnings, error) {
 	clustermaintenancewindowlog.Info("validate delete", "name", r.Name)
 
-	return nil
+	return nil, nil
 }
 
 func (r *ClusterMaintenanceWindow) validateClusterMaintenanceWindow(ctx context.Context) error {

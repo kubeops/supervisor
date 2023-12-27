@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,7 +46,7 @@ func (f *Framework) newMongoDBStandaloneDatabase() *kubedbapi.MongoDB {
 			StorageType: kubedbapi.StorageTypeDurable,
 			Storage: &core.PersistentVolumeClaimSpec{
 				AccessModes: []core.PersistentVolumeAccessMode{core.ReadWriteOnce},
-				Resources: core.ResourceRequirements{
+				Resources: core.VolumeResourceRequirements{
 					Requests: core.ResourceList{
 						core.ResourceStorage: resource.MustParse("1Gi"),
 					},
@@ -73,7 +74,7 @@ func (f *Framework) newPostgresStandaloneDatabase(customAuthName string) *kubedb
 			},
 			Storage: &core.PersistentVolumeClaimSpec{
 				AccessModes: []core.PersistentVolumeAccessMode{core.ReadWriteOnce},
-				Resources: core.ResourceRequirements{
+				Resources: core.VolumeResourceRequirements{
 					Requests: core.ResourceList{
 						core.ResourceStorage: resource.MustParse("1Gi"),
 					},
@@ -91,7 +92,7 @@ func (f *Framework) CreateNewStandaloneMongoDB() (*kubedbapi.MongoDB, error) {
 		return nil, err
 	}
 
-	err := wait.PollImmediate(time.Second, time.Minute*10, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute*10, true, func(ctx context.Context) (bool, error) {
 		mg := &kubedbapi.MongoDB{}
 		key := client.ObjectKey{Namespace: mongoDB.Namespace, Name: mongoDB.Name}
 		if err := f.kc.Get(f.ctx, key, mg); err != nil {
@@ -119,7 +120,7 @@ func (f *Framework) CreateNewStandalonePostgres() (*kubedbapi.Postgres, error) {
 		return nil, err
 	}
 
-	err = wait.PollImmediate(time.Second, time.Minute*10, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute*10, true, func(ctx context.Context) (bool, error) {
 		mg := &kubedbapi.Postgres{}
 		key := client.ObjectKey{Namespace: pg.Namespace, Name: pg.Name}
 		if err := f.kc.Get(f.ctx, key, mg); err != nil {
@@ -175,7 +176,7 @@ func (f *Framework) createPostgresCustomAuthSecret() (*core.Secret, error) {
 		return nil, err
 	}
 
-	err := wait.PollImmediate(time.Second, time.Minute*5, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute*5, true, func(ctx context.Context) (bool, error) {
 		createdAuth := &core.Secret{}
 		key := client.ObjectKey{Name: auth.Name, Namespace: auth.Namespace}
 		if err := f.kc.Get(f.ctx, key, createdAuth); err != nil {
