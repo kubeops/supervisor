@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"time"
@@ -147,7 +148,7 @@ func (f *Framework) createRecommendation(rcmd *api.Recommendation) (*api.Recomme
 		return nil, err
 	}
 
-	err := wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
 		obj := &api.Recommendation{}
 		key := client.ObjectKey{Name: rcmd.Name, Namespace: rcmd.Namespace}
 		if err := f.kc.Get(f.ctx, key, obj); err != nil {
@@ -197,7 +198,7 @@ func (f *Framework) getRecommendationNamespace() string {
 }
 
 func (f *Framework) WaitForRecommendationToBeSucceeded(key client.ObjectKey) error {
-	return wait.PollImmediate(time.Second*5, time.Minute*30, func() (bool, error) {
+	return wait.PollUntilContextTimeout(context.Background(), time.Second*5, time.Minute*30, true, func(ctx context.Context) (bool, error) {
 		rcmd := &api.Recommendation{}
 		if err := f.kc.Get(f.ctx, key, rcmd); err != nil {
 			return false, err
@@ -228,7 +229,7 @@ func (f *Framework) ApproveRecommendation(key client.ObjectKey) error {
 		return err
 	}
 
-	return wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+	return wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
 		obj := &api.Recommendation{}
 		if err := f.kc.Get(f.ctx, key, obj); err != nil {
 			return false, err
@@ -267,7 +268,7 @@ func (f *Framework) UpdateRecommendationApprovedWindow(key client.ObjectKey, aw 
 }
 
 func (f *Framework) CheckRecommendationExecution(key client.ObjectKey, timeout time.Duration, interval time.Duration) error {
-	return wait.PollImmediate(interval, timeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(context.Background(), interval, timeout, true, func(ctx context.Context) (bool, error) {
 		rcmd := &api.Recommendation{}
 		if err := f.kc.Get(f.ctx, key, rcmd); err != nil {
 			return false, err

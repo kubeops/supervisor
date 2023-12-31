@@ -66,8 +66,8 @@ BIN_PLATFORMS    := $(DOCKER_PLATFORMS)
 OS   := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
-BASEIMAGE_PROD   ?= gcr.io/distroless/static-debian11
-BASEIMAGE_DBG    ?= debian:bullseye
+BASEIMAGE_PROD   ?= gcr.io/distroless/static-debian12
+BASEIMAGE_DBG    ?= debian:bookworm
 
 IMAGE            := $(REGISTRY)/$(BIN)
 VERSION_PROD     := $(VERSION)
@@ -151,7 +151,7 @@ clientset:
 		--env HTTPS_PROXY=$(HTTPS_PROXY)                          \
 		$(CODE_GENERATOR_IMAGE)                                   \
 		/go/src/k8s.io/code-generator/generate-groups.sh          \
-			"deepcopy,defaulter"                                    \
+			deepcopy                                                \
 			$(GO_PKG)/$(REPO)/client                                \
 			$(GO_PKG)/$(REPO)/apis                                  \
 			"$(API_GROUPS)"                                         \
@@ -398,7 +398,7 @@ e2e-tests: $(BUILD_DIRS)
 e2e-parallel:
 	@$(MAKE) e2e-tests GINKGO_ARGS="-p -stream --flakeAttempts=2" --no-print-directory
 
-ADDTL_LINTERS   := goconst,gofmt,goimports,unparam
+ADDTL_LINTERS   := gofmt,goimports,unparam
 
 .PHONY: lint
 lint: $(BUILD_DIRS)

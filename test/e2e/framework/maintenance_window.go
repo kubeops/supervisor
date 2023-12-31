@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"time"
 
 	"gomodules.xyz/x/crypto/rand"
@@ -48,7 +49,7 @@ func (f *Framework) CreateDefaultMaintenanceWindow() error {
 		return err
 	}
 
-	return wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+	return wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
 		mwObj := &api.MaintenanceWindow{}
 		key := client.ObjectKey{Namespace: mw.Namespace, Name: mw.Name}
 
@@ -76,7 +77,7 @@ func (f *Framework) CreateMaintenanceWindow(days map[api.DayOfWeek][]api.TimeWin
 		return nil, err
 	}
 
-	err = wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
 		mwObj := &api.MaintenanceWindow{}
 		key := client.ObjectKey{Namespace: mw.Namespace, Name: mw.Name}
 

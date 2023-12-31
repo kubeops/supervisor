@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"time"
 
 	"gomodules.xyz/x/crypto/rand"
@@ -43,7 +44,7 @@ func (f *Framework) CreateNewApprovalPolicy(target []api.TargetRef, mwRef client
 		return nil, err
 	}
 
-	err := wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
 		createdAp := &api.ApprovalPolicy{}
 		key := client.ObjectKey{Namespace: ap.Namespace, Name: ap.Name}
 		if err := f.kc.Get(f.ctx, key, createdAp); err != nil {

@@ -29,6 +29,7 @@ const (
 	ResourceClusterMaintenanceWindows    = "clustermaintenancewindows"
 )
 
+//+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
@@ -44,6 +45,7 @@ type ClusterMaintenanceWindow struct {
 	Status MaintenanceWindowStatus `json:"status,omitempty"`
 }
 
+//+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 //+kubebuilder:object:root=true
 
 // ClusterMaintenanceWindowList contains a list of ClusterMaintenanceWindow

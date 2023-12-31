@@ -320,6 +320,7 @@ const (
 	QueuePerTargetAndNamespace Parallelism = "TargetAndNamespace"
 )
 
+//+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
@@ -335,6 +336,7 @@ type Recommendation struct {
 	Status RecommendationStatus `json:"status,omitempty"`
 }
 
+//+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 //+kubebuilder:object:root=true
 
 // RecommendationList contains a list of Recommendation

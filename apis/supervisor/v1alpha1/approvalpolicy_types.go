@@ -30,6 +30,7 @@ const (
 	ResourceApprovalPolicies   = "approvalpolicies"
 )
 
+//+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
@@ -57,6 +58,7 @@ type TargetRef struct {
 	Operations []Operation `json:"operations,omitempty"`
 }
 
+//+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 //+kubebuilder:object:root=true
 
 // ApprovalPolicyList contains a list of ApprovalPolicy

@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +47,7 @@ func (f *Framework) CreateDefaultClusterMaintenanceWindow(days map[api.DayOfWeek
 		return err
 	}
 
-	return wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+	return wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
 		cmwObj := &api.ClusterMaintenanceWindow{}
 		key := client.ObjectKey{Name: clsMW.Name}
 
