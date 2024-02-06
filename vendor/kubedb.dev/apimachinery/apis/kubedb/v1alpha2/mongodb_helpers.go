@@ -633,15 +633,20 @@ func (m *MongoDB) SetDefaults(mgVersion *v1alpha1.MongoDBVersion, topology *core
 		}
 	}
 
+	defaultResource := DefaultResources
+	if m.isVersion6OrLater(mgVersion) {
+		defaultResource = DefaultResourcesCPUIntensive
+	}
+
 	if m.Spec.ShardTopology != nil {
-		apis.SetDefaultResourceLimits(&m.Spec.ShardTopology.Mongos.PodTemplate.Spec.Resources, DefaultResources)
-		apis.SetDefaultResourceLimits(&m.Spec.ShardTopology.Shard.PodTemplate.Spec.Resources, DefaultResources)
-		apis.SetDefaultResourceLimits(&m.Spec.ShardTopology.ConfigServer.PodTemplate.Spec.Resources, DefaultResources)
+		apis.SetDefaultResourceLimits(&m.Spec.ShardTopology.Mongos.PodTemplate.Spec.Resources, defaultResource)
+		apis.SetDefaultResourceLimits(&m.Spec.ShardTopology.Shard.PodTemplate.Spec.Resources, defaultResource)
+		apis.SetDefaultResourceLimits(&m.Spec.ShardTopology.ConfigServer.PodTemplate.Spec.Resources, defaultResource)
 		if m.Spec.Arbiter != nil {
-			apis.SetDefaultResourceLimits(&m.Spec.Arbiter.PodTemplate.Spec.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&m.Spec.Arbiter.PodTemplate.Spec.Resources, defaultResource)
 		}
 		if m.Spec.Hidden != nil {
-			apis.SetDefaultResourceLimits(&m.Spec.Hidden.PodTemplate.Spec.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&m.Spec.Hidden.PodTemplate.Spec.Resources, defaultResource)
 		}
 
 		if m.Spec.ShardTopology.ConfigServer.PodTemplate.Spec.ServiceAccountName == "" {
@@ -711,19 +716,19 @@ func (m *MongoDB) SetDefaults(mgVersion *v1alpha1.MongoDBVersion, topology *core
 		// set default affinity (PodAntiAffinity)
 		m.setDefaultAffinity(m.Spec.PodTemplate, m.OffshootSelectors(), topology)
 
-		apis.SetDefaultResourceLimits(&m.Spec.PodTemplate.Spec.Resources, DefaultResources)
+		apis.SetDefaultResourceLimits(&m.Spec.PodTemplate.Spec.Resources, defaultResource)
 		m.setDefaultSecurityContext(mgVersion, m.Spec.PodTemplate)
 
 		if m.Spec.Arbiter != nil {
 			m.setDefaultProbes(&m.Spec.Arbiter.PodTemplate, mgVersion, true)
 			m.setDefaultAffinity(&m.Spec.Arbiter.PodTemplate, m.OffshootSelectors(), topology)
-			apis.SetDefaultResourceLimits(&m.Spec.Arbiter.PodTemplate.Spec.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&m.Spec.Arbiter.PodTemplate.Spec.Resources, defaultResource)
 			m.setDefaultSecurityContext(mgVersion, &m.Spec.Arbiter.PodTemplate)
 		}
 		if m.Spec.Hidden != nil {
 			m.setDefaultProbes(&m.Spec.Hidden.PodTemplate, mgVersion)
 			m.setDefaultAffinity(&m.Spec.Hidden.PodTemplate, m.OffshootSelectors(), topology)
-			apis.SetDefaultResourceLimits(&m.Spec.Hidden.PodTemplate.Spec.Resources, DefaultResources)
+			apis.SetDefaultResourceLimits(&m.Spec.Hidden.PodTemplate.Spec.Resources, defaultResource)
 			m.setDefaultSecurityContext(mgVersion, &m.Spec.Hidden.PodTemplate)
 		}
 		if m.Spec.ReplicaSet != nil {
@@ -737,8 +742,13 @@ func (m *MongoDB) SetDefaults(mgVersion *v1alpha1.MongoDBVersion, topology *core
 	m.SetTLSDefaults()
 	m.SetHealthCheckerDefaults()
 	m.Spec.Monitor.SetDefaults()
-	if m.Spec.Monitor != nil && m.Spec.Monitor.Prometheus != nil && m.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser == nil {
-		m.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser = mgVersion.Spec.SecurityContext.RunAsUser
+	if m.Spec.Monitor != nil && m.Spec.Monitor.Prometheus != nil {
+		if m.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser == nil {
+			m.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser = mgVersion.Spec.SecurityContext.RunAsUser
+		}
+		if m.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup == nil {
+			m.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup = mgVersion.Spec.SecurityContext.RunAsGroup
+		}
 	}
 }
 
@@ -753,7 +763,7 @@ func (m *MongoDB) setDefaultSecurityContext(mgVersion *v1alpha1.MongoDBVersion, 
 		podTemplate.Spec.SecurityContext = &core.PodSecurityContext{}
 	}
 	if podTemplate.Spec.SecurityContext.FSGroup == nil {
-		podTemplate.Spec.SecurityContext.FSGroup = mgVersion.Spec.SecurityContext.RunAsUser
+		podTemplate.Spec.SecurityContext.FSGroup = mgVersion.Spec.SecurityContext.RunAsGroup
 	}
 	m.assignDefaultContainerSecurityContext(mgVersion, podTemplate.Spec.ContainerSecurityContext)
 }
@@ -774,7 +784,7 @@ func (m *MongoDB) assignDefaultContainerSecurityContext(mgVersion *v1alpha1.Mong
 		sc.RunAsUser = mgVersion.Spec.SecurityContext.RunAsUser
 	}
 	if sc.RunAsGroup == nil {
-		sc.RunAsGroup = mgVersion.Spec.SecurityContext.RunAsUser
+		sc.RunAsGroup = mgVersion.Spec.SecurityContext.RunAsGroup
 	}
 	if sc.SeccompProfile == nil {
 		sc.SeccompProfile = secomp.DefaultSeccompProfile()
@@ -1072,6 +1082,12 @@ func (m *MongoDB) ReplicasAreReady(lister appslister.StatefulSetLister) (bool, s
 	expectedItems := 1
 	if m.Spec.ShardTopology != nil {
 		expectedItems = 2 + int(m.Spec.ShardTopology.Shard.Shards)
+	}
+	if m.Spec.Arbiter != nil {
+		expectedItems++
+	}
+	if m.Spec.Hidden != nil {
+		expectedItems++
 	}
 	return checkReplicas(lister.StatefulSets(m.Namespace), labels.SelectorFromSet(m.OffshootLabels()), expectedItems)
 }

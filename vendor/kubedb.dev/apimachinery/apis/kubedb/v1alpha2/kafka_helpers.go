@@ -31,15 +31,18 @@ import (
 	"gomodules.xyz/pointer"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	appslister "k8s.io/client-go/listers/apps/v1"
 	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/apiextensions"
+	coreutil "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/policy/secomp"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
-	ofst "kmodules.xyz/offshoot-api/api/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v2"
 )
 
 func (k *Kafka) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
@@ -221,6 +224,17 @@ func (k *Kafka) ConfigSecretName(role KafkaNodeRoleType) string {
 	return meta_util.NameWithSuffix(k.OffshootName(), "config")
 }
 
+func (k *Kafka) GetPersistentSecrets() []string {
+	var secrets []string
+	if k.Spec.AuthSecret != nil {
+		secrets = append(secrets, k.Spec.AuthSecret.Name)
+	}
+	if k.Spec.KeystoreCredSecret != nil {
+		secrets = append(secrets, k.Spec.KeystoreCredSecret.Name)
+	}
+	return secrets
+}
+
 func (k *Kafka) CruiseControlConfigSecretName() string {
 	return meta_util.NameWithSuffix(k.OffshootName(), "cruise-control-config")
 }
@@ -274,7 +288,7 @@ func (k *Kafka) PVCName(alias string) string {
 
 func (k *Kafka) SetHealthCheckerDefaults() {
 	if k.Spec.HealthChecker.PeriodSeconds == nil {
-		k.Spec.HealthChecker.PeriodSeconds = pointer.Int32P(20)
+		k.Spec.HealthChecker.PeriodSeconds = pointer.Int32P(10)
 	}
 	if k.Spec.HealthChecker.TimeoutSeconds == nil {
 		k.Spec.HealthChecker.TimeoutSeconds = pointer.Int32P(10)
@@ -291,6 +305,28 @@ func (k *Kafka) SetDefaults() {
 
 	if k.Spec.StorageType == "" {
 		k.Spec.StorageType = StorageTypeDurable
+	}
+
+	var kfVersion catalog.KafkaVersion
+	err := DefaultClient.Get(context.TODO(), types.NamespacedName{Name: k.Spec.Version}, &kfVersion)
+	if err != nil {
+		klog.Errorf("can't get the kafka version object %s for %s \n", err.Error(), k.Spec.Version)
+		return
+	}
+
+	k.setDefaultContainerSecurityContext(&kfVersion, &k.Spec.PodTemplate)
+	if k.Spec.CruiseControl != nil {
+		k.setDefaultContainerSecurityContext(&kfVersion, &k.Spec.CruiseControl.PodTemplate)
+	}
+
+	k.Spec.Monitor.SetDefaults()
+	if k.Spec.Monitor != nil && k.Spec.Monitor.Prometheus != nil {
+		if k.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser == nil {
+			k.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser = kfVersion.Spec.SecurityContext.RunAsUser
+		}
+		if k.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup == nil {
+			k.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup = kfVersion.Spec.SecurityContext.RunAsUser
+		}
 	}
 
 	if k.Spec.Topology != nil {
@@ -314,27 +350,13 @@ func (k *Kafka) SetDefaults() {
 			apis.SetDefaultResourceLimits(&k.Spec.Topology.Broker.Resources, DefaultResources)
 		}
 	} else {
-		apis.SetDefaultResourceLimits(&k.Spec.PodTemplate.Spec.Resources, DefaultResources)
+		dbContainer := coreutil.GetContainerByName(k.Spec.PodTemplate.Spec.Containers, KafkaContainerName)
+		if dbContainer != nil {
+			apis.SetDefaultResourceLimits(&dbContainer.Resources, DefaultResources)
+		}
 		if k.Spec.Replicas == nil {
 			k.Spec.Replicas = pointer.Int32P(1)
 		}
-	}
-
-	var kfVersion catalog.KafkaVersion
-	err := DefaultClient.Get(context.TODO(), types.NamespacedName{Name: k.Spec.Version}, &kfVersion)
-	if err != nil {
-		klog.Errorf("can't get the kafka version object %s for %s \n", err.Error(), k.Spec.Version)
-		return
-	}
-
-	k.setDefaultContainerSecurityContext(&kfVersion, &k.Spec.PodTemplate)
-	if k.Spec.CruiseControl != nil {
-		k.setDefaultContainerSecurityContext(&kfVersion, &k.Spec.CruiseControl.PodTemplate)
-	}
-
-	k.Spec.Monitor.SetDefaults()
-	if k.Spec.Monitor != nil && k.Spec.Monitor.Prometheus != nil && k.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser == nil {
-		k.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser = kfVersion.Spec.SecurityContext.RunAsUser
 	}
 
 	if k.Spec.EnableSSL {
@@ -347,16 +369,24 @@ func (k *Kafka) setDefaultContainerSecurityContext(kfVersion *catalog.KafkaVersi
 	if podTemplate == nil {
 		return
 	}
-	if podTemplate.Spec.ContainerSecurityContext == nil {
-		podTemplate.Spec.ContainerSecurityContext = &core.SecurityContext{}
-	}
+
 	if podTemplate.Spec.SecurityContext == nil {
 		podTemplate.Spec.SecurityContext = &core.PodSecurityContext{}
 	}
 	if podTemplate.Spec.SecurityContext.FSGroup == nil {
 		podTemplate.Spec.SecurityContext.FSGroup = kfVersion.Spec.SecurityContext.RunAsUser
 	}
-	k.assignDefaultContainerSecurityContext(kfVersion, podTemplate.Spec.ContainerSecurityContext)
+	dbContainer := coreutil.GetContainerByName(podTemplate.Spec.Containers, KafkaContainerName)
+	if dbContainer == nil {
+		dbContainer = &core.Container{
+			Name: KafkaContainerName,
+		}
+		podTemplate.Spec.Containers = append(podTemplate.Spec.Containers, *dbContainer)
+	}
+	if dbContainer.SecurityContext == nil {
+		dbContainer.SecurityContext = &core.SecurityContext{}
+	}
+	k.assignDefaultContainerSecurityContext(kfVersion, dbContainer.SecurityContext)
 }
 
 func (k *Kafka) assignDefaultContainerSecurityContext(kfVersion *catalog.KafkaVersion, sc *core.SecurityContext) {
@@ -429,4 +459,13 @@ func (k *Kafka) GetConnectionScheme() string {
 
 func (k *Kafka) GetCruiseControlClientID() string {
 	return meta_util.NameWithSuffix(k.Name, "cruise-control")
+}
+
+func (k *Kafka) ReplicasAreReady(lister appslister.StatefulSetLister) (bool, string, error) {
+	// Desire number of statefulSets
+	expectedItems := 1
+	if k.Spec.Topology != nil {
+		expectedItems = 2
+	}
+	return checkReplicas(lister.StatefulSets(k.Namespace), labels.SelectorFromSet(k.OffshootLabels()), expectedItems)
 }
