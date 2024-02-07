@@ -27,10 +27,12 @@ import (
 	"kubeops.dev/supervisor/pkg/server"
 
 	"github.com/spf13/pflag"
+	v "gomodules.xyz/x/version"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	reg "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apiserver/pkg/endpoints/openapi"
 	"k8s.io/apiserver/pkg/features"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
@@ -103,6 +105,31 @@ func (o SupervisorOperatorOptions) Config() (*server.SupervisorOperatorConfig, e
 	}
 	// Fixes https://github.com/Azure/AKS/issues/522
 	clientcmd.Fix(serverConfig.ClientConfig)
+
+	ignorePrefixes := []string{
+		"/swaggerapi",
+
+		"/apis/mutators.supervisor.appscode.com/v1alpha1",
+		"/apis/mutators.supervisor.appscode.com/v1alpha1/recommendationwebhooks",
+
+		"/apis/validators.supervisor.appscode.com/v1alpha1",
+		"/apis/validators.supervisor.appscode.com/v1alpha1/clustermaintenancewindowwebhooks",
+		"/apis/validators.supervisor.appscode.com/v1alpha1/maintenancewindowwebhooks",
+		"/apis/validators.supervisor.appscode.com/v1alpha1/recommendationwebhooks",
+	}
+	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(
+		api.GetOpenAPIDefinitions,
+		openapi.NewDefinitionNamer(server.Scheme))
+	serverConfig.OpenAPIConfig.Info.Title = "supervisor"
+	serverConfig.OpenAPIConfig.Info.Version = v.Version.Version
+	serverConfig.OpenAPIConfig.IgnorePrefixes = ignorePrefixes
+
+	serverConfig.OpenAPIV3Config = genericapiserver.DefaultOpenAPIV3Config(
+		api.GetOpenAPIDefinitions,
+		openapi.NewDefinitionNamer(server.Scheme))
+	serverConfig.OpenAPIV3Config.Info.Title = "supervisor"
+	serverConfig.OpenAPIV3Config.Info.Version = v.Version.Version
+	serverConfig.OpenAPIV3Config.IgnorePrefixes = ignorePrefixes
 
 	extraConfig := controllers.NewConfig(serverConfig.ClientConfig)
 	if err := o.ExtraOptions.ApplyTo(extraConfig); err != nil {
