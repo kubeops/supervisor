@@ -247,10 +247,12 @@ github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7V
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
+github.com/klauspost/cpuid/v2 v2.0.9 h1:lgaqFMSdTdQYdZ04uHyN2d/eKdOMyi2YLSvlQIBFYa4=
+github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=
 github.com/kmodules/apiserver v0.29.1-0.20240104121741-1fb217d4a573 h1:6v7bTFGH/Ha1idq1sLX9px2KJhcx6cpuMowuYRyCht4=
 github.com/kmodules/apiserver v0.29.1-0.20240104121741-1fb217d4a573/go.mod h1:31n78PsRKPmfpee7/l9NYEv67u6hOL6AfcE761HapDM=
-github.com/kmodules/controller-runtime v0.16.1-0.20240128092212-43c4e15c56b1 h1:Pq/2P0Wp7HANIM6vd6YqQxZTEqlqifAzfw1Bz/CR0zo=
-github.com/kmodules/controller-runtime v0.16.1-0.20240128092212-43c4e15c56b1/go.mod h1:+MngTvIQQQhfXtwfdGw/UOQ/aIaqsYywfCINOtwMO/s=
+github.com/kmodules/controller-runtime v0.17.2-0.20240213085617-b6aac9684c00 h1:+2add9izgyGZb+ZOkMwPH/fswvgfIxWilUatbp2nPo8=
+github.com/kmodules/controller-runtime v0.17.2-0.20240213085617-b6aac9684c00/go.mod h1:+MngTvIQQQhfXtwfdGw/UOQ/aIaqsYywfCINOtwMO/s=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
@@ -414,6 +416,10 @@ github.com/yudai/pp v2.0.1+incompatible/go.mod h1:PuxR/8QJ7cyCkFp/aUDS+JY727OFEZ
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
+github.com/zeebo/assert v1.3.0 h1:g7C04CbJuIDKNPFHmsk4hwZDO5O+kntRxzaUoNXj+IQ=
+github.com/zeebo/assert v1.3.0/go.mod h1:Pq9JiuJQpG8JLJdtkwrJESF0Foym2/D9XMU5ciN/wJ0=
+github.com/zeebo/xxh3 v1.0.2 h1:xZmwmqxHZA8AI603jOQ0tMqmBr9lPeFwGg6d+xy9DC0=
+github.com/zeebo/xxh3 v1.0.2/go.mod h1:5NWz9Sef7zIDm2JHfFlcQvNekmcEl9ekUZQQKCYaDcA=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.8 h1:xs88BrvEv273UsB79e0hcVrlUWmS0a8upikMFhSyAtA=
 go.etcd.io/bbolt v1.3.8/go.mod h1:N9Mkw9X8x5fupy0IKsmuqVtoGDyxsaDlbk4Rd05IAQw=
@@ -734,8 +740,8 @@ k8s.io/utils v0.0.0-20240102154912-e7106e64919e h1:eQ/4ljkx21sObifjzXwlPKpdGLrCf
 k8s.io/utils v0.0.0-20240102154912-e7106e64919e/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 kmodules.xyz/apiversion v0.2.0 h1:vAQYqZFm4xu4pbB1cAdHbFEPES6EQkcR4wc06xdTOWk=
 kmodules.xyz/apiversion v0.2.0/go.mod h1:oPX8g8LvlPdPX3Yc5YvCzJHQnw3YF/X4/jdW0b1am80=
-kmodules.xyz/client-go v0.29.6 h1:xTVq5LZvsPBUTLY7PORq7zveLOj/vpuTDvkpHWOk3RM=
-kmodules.xyz/client-go v0.29.6/go.mod h1:pHuzpwzEcDUIGjVVvwz9N8lY+6A7HXwvs2d7NtK7Hho=
+kmodules.xyz/client-go v0.29.8 h1:8Uw7zoaye0ZaY47fBVTLjDOOn6cXzLPYBNnzHj7pgH4=
+kmodules.xyz/client-go v0.29.8/go.mod h1:WYM/ZC3I5/AUGHYyYYEzYHFhnSwK+tEZyGld6KpLoxI=
 kmodules.xyz/crd-schema-fuzz v0.29.1 h1:zJTlWYOrT5dsVVHW8HGcnR/vaWfxQfNh11QwTtkYpcs=
 kmodules.xyz/crd-schema-fuzz v0.29.1/go.mod h1:n708z9YQqLMP2KNLQVgBcRJw1QpSWLvpNCEi+KJDOYE=
 kmodules.xyz/custom-resources v0.29.1 h1:xiNylhs3ILRbcUhxxy306AOy9GMA4Mq7xFIptZKgal4=
@@ -748,8 +754,8 @@ kmodules.xyz/resource-metadata v0.18.2-0.20240105072614-e92a8a48d400 h1:bmd9/fvb
 kmodules.xyz/resource-metadata v0.18.2-0.20240105072614-e92a8a48d400/go.mod h1:XsCdEKjfoulX29tMGviDhjT/jLl158uvMvXlKOhK1as=
 kmodules.xyz/webhook-runtime v0.29.1 h1:SQ8NvwJpxv5CUuXIubSg9g0Bk8BBnj4dhCWEk6Ou8g8=
 kmodules.xyz/webhook-runtime v0.29.1/go.mod h1:WVgNO4NqFdYwYZ82L6QIycN1Ax47y+yXi7XIHekYylo=
-kubedb.dev/apimachinery v0.41.0 h1:VbGQnH3YL7ICFvnCjAumlnL3HeZzg5F4F+flpjOSnG4=
-kubedb.dev/apimachinery v0.41.0/go.mod h1:rNWsbBzdnZA8G2FE8igi+nsGnlWqYurC+i3RFFDwluc=
+kubedb.dev/apimachinery v0.42.0 h1:i+Lq2LIrdGOqBNizP83YYhLO8YvGCx4e1chKQwMG78E=
+kubedb.dev/apimachinery v0.42.0/go.mod h1:SAqjTUSzUBFedESPe0HJmV+pElaCPA7tyg4OUFyWi1c=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.29.0 h1:/U5vjBbQn3RChhv7P11uhYvCSm5G2GaIi5AIGBS6r4c=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.29.0/go.mod h1:z7+wmGM2dfIiLRfrC6jb5kV2Mq/sK1ZP303cxzkV5Y4=

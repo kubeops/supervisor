@@ -194,6 +194,9 @@ github.com/josharian/intern
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
+# github.com/klauspost/cpuid/v2 v2.0.9
+## explicit; go 1.13
+github.com/klauspost/cpuid/v2
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 ## explicit
 github.com/liggitt/tabwriter
@@ -344,6 +347,9 @@ github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 ## explicit
 github.com/yudai/golcs
+# github.com/zeebo/xxh3 v1.0.2
+## explicit; go 1.17
+github.com/zeebo/xxh3
 # go.etcd.io/etcd/api/v3 v3.5.11
 ## explicit; go 1.20
 go.etcd.io/etcd/api/v3/authpb
@@ -1329,7 +1335,7 @@ k8s.io/utils/trace
 # kmodules.xyz/apiversion v0.2.0
 ## explicit; go 1.14
 kmodules.xyz/apiversion
-# kmodules.xyz/client-go v0.29.6
+# kmodules.xyz/client-go v0.29.8
 ## explicit; go 1.21.5
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration
@@ -1374,7 +1380,7 @@ kmodules.xyz/resource-metadata/crds
 kmodules.xyz/webhook-runtime/admission/v1
 kmodules.xyz/webhook-runtime/builder
 kmodules.xyz/webhook-runtime/registry/admissionreview/v1
-# kubedb.dev/apimachinery v0.41.0
+# kubedb.dev/apimachinery v0.42.0
 ## explicit; go 1.21.5
 kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/catalog
@@ -1390,7 +1396,7 @@ sigs.k8s.io/apiserver-network-proxy/konnectivity-client/pkg/client
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client/pkg/client/metrics
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client/pkg/common/metrics
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client/proto/client
-# sigs.k8s.io/controller-runtime v0.17.0 => github.com/kmodules/controller-runtime v0.16.1-0.20240128092212-43c4e15c56b1
+# sigs.k8s.io/controller-runtime v0.17.0 => github.com/kmodules/controller-runtime v0.17.2-0.20240213085617-b6aac9684c00
 ## explicit; go 1.21
 sigs.k8s.io/controller-runtime
 sigs.k8s.io/controller-runtime/pkg/builder
@@ -1537,7 +1543,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/goyaml.v2
 # github.com/Masterminds/sprig/v3 => github.com/gomodules/sprig/v3 v3.2.3-0.20220405051441-0a8a99bac1b8
-# sigs.k8s.io/controller-runtime => github.com/kmodules/controller-runtime v0.16.1-0.20240128092212-43c4e15c56b1
+# sigs.k8s.io/controller-runtime => github.com/kmodules/controller-runtime v0.17.2-0.20240213085617-b6aac9684c00
 # github.com/imdario/mergo => github.com/imdario/mergo v0.3.6
 # k8s.io/apiserver => github.com/kmodules/apiserver v0.29.1-0.20240104121741-1fb217d4a573
 # k8s.io/kubernetes => github.com/kmodules/kubernetes v1.30.0-alpha.0.0.20231224075822-3bd9a13c86db
