@@ -20,6 +20,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v2"
 )
 
@@ -69,7 +70,8 @@ type SolrSpec struct {
 	// Storage to specify how storage shall be used
 	Storage *core.PersistentVolumeClaimSpec `json:"storage,omitempty"`
 
-	ZookeeperRef *core.LocalObjectReference `json:"zookeeperRef"`
+	// 	// ZooKeeper contains information for Solr to store configurations for collections
+	ZookeeperRef *kmapi.ObjectReference `json:"zookeeperRef,omitempty"`
 
 	// +optional
 	SolrModules []string `json:"solrModules,omitempty"`
@@ -96,6 +98,12 @@ type SolrSpec struct {
 	AuthSecret *core.LocalObjectReference `json:"authSecret,omitempty"`
 
 	// +optional
+	ZookeeperDigestSecret *core.LocalObjectReference `json:"zookeeperDigestSecret,omitempty"`
+
+	// +optional
+	ZookeeperDigestReadonlySecret *core.LocalObjectReference `json:"zookeeperDigestReadonlySecret,omitempty"`
+
+	// +optional
 	AuthConfigSecret *core.LocalObjectReference `json:"authConfigSecret,omitempty"`
 
 	// PodTemplate is an optional configuration for pods used to expose database
@@ -114,6 +122,15 @@ type SolrSpec struct {
 	// +optional
 	// +kubebuilder:default={periodSeconds: 20, timeoutSeconds: 10, failureThreshold: 3}
 	HealthChecker kmapi.HealthCheckSpec `json:"healthChecker"`
+
+	// Monitor is used monitor database instance
+	// +optional
+	Monitor *mona.AgentSpec `json:"monitor,omitempty"`
+
+	// PodPlacementPolicy is the reference of the podPlacementPolicy
+	// +kubebuilder:default={name: "default"}
+	// +optional
+	PodPlacementPolicy *core.LocalObjectReference `json:"podPlacementPolicy,omitempty"`
 }
 
 type SolrClusterTopology struct {
@@ -148,6 +165,11 @@ type SolrNode struct {
 	// If specified, the pod's tolerations.
 	// +optional
 	Tolerations []core.Toleration `json:"tolerations,omitempty"`
+
+	// PodPlacementPolicy is the reference of the podPlacementPolicy
+	// +kubebuilder:default={name: "default"}
+	// +optional
+	PodPlacementPolicy *core.LocalObjectReference `json:"podPlacementPolicy,omitempty"`
 }
 
 // SolrStatus defines the observed state of Solr
@@ -165,6 +187,8 @@ type SolrStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+	// +optional
+	Gateway *Gateway `json:"gateway,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=overseer;data;coordinator;combined

@@ -461,7 +461,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Archiver":                       schema_apimachinery_apis_kubedb_v1alpha2_Archiver(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ArchiverRecovery":               schema_apimachinery_apis_kubedb_v1alpha2_ArchiverRecovery(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.AutoOpsSpec":                    schema_apimachinery_apis_kubedb_v1alpha2_AutoOpsSpec(ref),
-		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Backend":                        schema_apimachinery_apis_kubedb_v1alpha2_Backend(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ConnectionPoolConfig":           schema_apimachinery_apis_kubedb_v1alpha2_ConnectionPoolConfig(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ConsumerNamespaces":             schema_apimachinery_apis_kubedb_v1alpha2_ConsumerNamespaces(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.CoordinatorSpec":                schema_apimachinery_apis_kubedb_v1alpha2_CoordinatorSpec(ref),
@@ -473,6 +472,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.DruidList":                      schema_apimachinery_apis_kubedb_v1alpha2_DruidList(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.DruidNode":                      schema_apimachinery_apis_kubedb_v1alpha2_DruidNode(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.DruidSpec":                      schema_apimachinery_apis_kubedb_v1alpha2_DruidSpec(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.DruidStatsService":              schema_apimachinery_apis_kubedb_v1alpha2_DruidStatsService(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.DruidStatus":                    schema_apimachinery_apis_kubedb_v1alpha2_DruidStatus(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Elasticsearch":                  schema_apimachinery_apis_kubedb_v1alpha2_Elasticsearch(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ElasticsearchClusterTopology":   schema_apimachinery_apis_kubedb_v1alpha2_ElasticsearchClusterTopology(ref),
@@ -488,10 +488,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.EtcdStatus":                     schema_apimachinery_apis_kubedb_v1alpha2_EtcdStatus(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.FerretDB":                       schema_apimachinery_apis_kubedb_v1alpha2_FerretDB(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.FerretDBApp":                    schema_apimachinery_apis_kubedb_v1alpha2_FerretDBApp(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.FerretDBBackend":                schema_apimachinery_apis_kubedb_v1alpha2_FerretDBBackend(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.FerretDBList":                   schema_apimachinery_apis_kubedb_v1alpha2_FerretDBList(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.FerretDBSpec":                   schema_apimachinery_apis_kubedb_v1alpha2_FerretDBSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.FerretDBStatsService":           schema_apimachinery_apis_kubedb_v1alpha2_FerretDBStatsService(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.FerretDBStatus":                 schema_apimachinery_apis_kubedb_v1alpha2_FerretDBStatus(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway":                        schema_apimachinery_apis_kubedb_v1alpha2_Gateway(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.GitRepo":                        schema_apimachinery_apis_kubedb_v1alpha2_GitRepo(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.InitSpec":                       schema_apimachinery_apis_kubedb_v1alpha2_InitSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Kafka":                          schema_apimachinery_apis_kubedb_v1alpha2_Kafka(ref),
@@ -535,7 +537,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.MySQLStatus":                    schema_apimachinery_apis_kubedb_v1alpha2_MySQLStatus(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.MySQLTopology":                  schema_apimachinery_apis_kubedb_v1alpha2_MySQLTopology(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.MySQLUser":                      schema_apimachinery_apis_kubedb_v1alpha2_MySQLUser(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceStatus":             schema_apimachinery_apis_kubedb_v1alpha2_NamedServiceStatus(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec":       schema_apimachinery_apis_kubedb_v1alpha2_NamedServiceTemplateSpec(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedURL":                       schema_apimachinery_apis_kubedb_v1alpha2_NamedURL(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PerconaXtraDB":                  schema_apimachinery_apis_kubedb_v1alpha2_PerconaXtraDB(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PerconaXtraDBList":              schema_apimachinery_apis_kubedb_v1alpha2_PerconaXtraDBList(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PerconaXtraDBSpec":              schema_apimachinery_apis_kubedb_v1alpha2_PerconaXtraDBSpec(ref),
@@ -548,11 +552,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PgpoolConfiguration":            schema_apimachinery_apis_kubedb_v1alpha2_PgpoolConfiguration(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PgpoolList":                     schema_apimachinery_apis_kubedb_v1alpha2_PgpoolList(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PgpoolSpec":                     schema_apimachinery_apis_kubedb_v1alpha2_PgpoolSpec(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PgpoolStatsService":             schema_apimachinery_apis_kubedb_v1alpha2_PgpoolStatsService(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PgpoolStatus":                   schema_apimachinery_apis_kubedb_v1alpha2_PgpoolStatus(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgreLeaderElectionConfig":    schema_apimachinery_apis_kubedb_v1alpha2_PostgreLeaderElectionConfig(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Postgres":                       schema_apimachinery_apis_kubedb_v1alpha2_Postgres(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresList":                   schema_apimachinery_apis_kubedb_v1alpha2_PostgresList(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresRef":                    schema_apimachinery_apis_kubedb_v1alpha2_PostgresRef(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresReplication":            schema_apimachinery_apis_kubedb_v1alpha2_PostgresReplication(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresServiceRef":             schema_apimachinery_apis_kubedb_v1alpha2_PostgresServiceRef(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresSpec":                   schema_apimachinery_apis_kubedb_v1alpha2_PostgresSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresStatus":                 schema_apimachinery_apis_kubedb_v1alpha2_PostgresStatus(ref),
@@ -600,9 +606,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZooKeeper":                      schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeper(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZooKeeperApp":                   schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperApp(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZooKeeperList":                  schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperList(ref),
-		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZooKeeperRef":                   schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperRef(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZooKeeperSpec":                  schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperSpec(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZooKeeperStatus":                schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperStatus(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZookeeperRef":                   schema_apimachinery_apis_kubedb_v1alpha2_ZookeeperRef(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.elasticsearchApp":               schema_apimachinery_apis_kubedb_v1alpha2_elasticsearchApp(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.elasticsearchStatsService":      schema_apimachinery_apis_kubedb_v1alpha2_elasticsearchStatsService(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.etcdApp":                        schema_apimachinery_apis_kubedb_v1alpha2_etcdApp(ref),
@@ -629,6 +635,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.redisSentinelStatsService":      schema_apimachinery_apis_kubedb_v1alpha2_redisSentinelStatsService(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.redisStatsService":              schema_apimachinery_apis_kubedb_v1alpha2_redisStatsService(ref),
 		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.singlestoreApp":                 schema_apimachinery_apis_kubedb_v1alpha2_singlestoreApp(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.singlestoreStatsService":        schema_apimachinery_apis_kubedb_v1alpha2_singlestoreStatsService(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.solrStatsService":               schema_apimachinery_apis_kubedb_v1alpha2_solrStatsService(ref),
+		"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.zookeeperStatsService":          schema_apimachinery_apis_kubedb_v1alpha2_zookeeperStatsService(ref),
 	}
 }
 
@@ -9944,7 +9953,7 @@ func schema_k8sio_api_core_v1_PersistentVolumeStatus(ref common.ReferenceCallbac
 					},
 					"lastPhaseTransitionTime": {
 						SchemaProps: spec.SchemaProps{
-							Description: "lastPhaseTransitionTime is the time the phase transitioned from one to another and automatically resets to current time everytime a volume phase transitions. This is an alpha field and requires enabling PersistentVolumeLastPhaseTransitionTime feature.",
+							Description: "lastPhaseTransitionTime is the time the phase transitioned from one to another and automatically resets to current time everytime a volume phase transitions. This is a beta field and requires the PersistentVolumeLastPhaseTransitionTime feature to be enabled (enabled by default).",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
@@ -22992,40 +23001,6 @@ func schema_apimachinery_apis_kubedb_v1alpha2_AutoOpsSpec(ref common.ReferenceCa
 	}
 }
 
-func schema_apimachinery_apis_kubedb_v1alpha2_Backend(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"postgres": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresRef"),
-						},
-					},
-					"linkedDB": {
-						SchemaProps: spec.SchemaProps{
-							Description: "A DB inside backend specifically made for ferretdb",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"externallyManaged": {
-						SchemaProps: spec.SchemaProps{
-							Default: false,
-							Type:    []string{"boolean"},
-							Format:  "",
-						},
-					},
-				},
-				Required: []string{"externallyManaged"},
-			},
-		},
-		Dependencies: []string{
-			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresRef"},
-	}
-}
-
 func schema_apimachinery_apis_kubedb_v1alpha2_ConnectionPoolConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -23225,6 +23200,7 @@ func schema_apimachinery_apis_kubedb_v1alpha2_DeepStorageSpec(ref common.Referen
 					"type": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Specifies the storage type to be used by druid Possible values: s3, google, azure, hdfs",
+							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -23472,11 +23448,17 @@ func schema_apimachinery_apis_kubedb_v1alpha2_DruidNode(ref common.ReferenceCall
 							},
 						},
 					},
+					"podPlacementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodPlacementPolicy is the reference of the podPlacementPolicy",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.PersistentVolumeClaimSpec", "k8s.io/api/core/v1.Toleration", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "k8s.io/api/core/v1.Toleration", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec"},
 	}
 }
 
@@ -23539,10 +23521,10 @@ func schema_apimachinery_apis_kubedb_v1alpha2_DruidSpec(ref common.ReferenceCall
 							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.DeepStorageSpec"),
 						},
 					},
-					"zooKeeper": {
+					"zookeeperRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ZooKeeper contains information for Druid to connect to external dependency metadata storage",
-							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZooKeeperRef"),
+							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZookeeperRef"),
 						},
 					},
 					"podTemplate": {
@@ -23573,6 +23555,12 @@ func schema_apimachinery_apis_kubedb_v1alpha2_DruidSpec(ref common.ReferenceCall
 							Format:      "",
 						},
 					},
+					"monitor": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Monitor is used monitor database instance",
+							Ref:         ref("kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec"),
+						},
+					},
 					"terminationPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TerminationPolicy controls the delete operation for database",
@@ -23592,7 +23580,27 @@ func schema_apimachinery_apis_kubedb_v1alpha2_DruidSpec(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.DeepStorageSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.DruidClusterTopology", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.MetadataStorage", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZooKeeperRef"},
+			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.DeepStorageSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.DruidClusterTopology", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.MetadataStorage", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZookeeperRef"},
+	}
+}
+
+func schema_apimachinery_apis_kubedb_v1alpha2_DruidStatsService(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Druid": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Druid"),
+						},
+					},
+				},
+				Required: []string{"Druid"},
+			},
+		},
+		Dependencies: []string{
+			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Druid"},
 	}
 }
 
@@ -23631,11 +23639,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_DruidStatus(ref common.ReferenceCa
 							},
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -24216,11 +24229,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ElasticsearchStatus(ref common.Ref
 							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"),
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -24606,11 +24624,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_EtcdStatus(ref common.ReferenceCal
 							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"),
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -24677,6 +24700,40 @@ func schema_apimachinery_apis_kubedb_v1alpha2_FerretDBApp(ref common.ReferenceCa
 		},
 		Dependencies: []string{
 			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.FerretDB"},
+	}
+}
+
+func schema_apimachinery_apis_kubedb_v1alpha2_FerretDBBackend(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"postgres": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresRef"),
+						},
+					},
+					"linkedDB": {
+						SchemaProps: spec.SchemaProps{
+							Description: "A DB inside backend specifically made for ferretdb",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"externallyManaged": {
+						SchemaProps: spec.SchemaProps{
+							Default: false,
+							Type:    []string{"boolean"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"externallyManaged"},
+			},
+		},
+		Dependencies: []string{
+			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresRef"},
 	}
 }
 
@@ -24830,7 +24887,13 @@ func schema_apimachinery_apis_kubedb_v1alpha2_FerretDBSpec(ref common.ReferenceC
 					},
 					"backend": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Backend"),
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.FerretDBBackend"),
+						},
+					},
+					"podPlacementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodPlacementPolicy is the reference of the podPlacementPolicy",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
 						},
 					},
 				},
@@ -24838,7 +24901,7 @@ func schema_apimachinery_apis_kubedb_v1alpha2_FerretDBSpec(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Backend", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.FerretDBBackend", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference"},
 	}
 }
 
@@ -24896,11 +24959,85 @@ func schema_apimachinery_apis_kubedb_v1alpha2_FerretDBStatus(ref common.Referenc
 							},
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
+	}
+}
+
+func schema_apimachinery_apis_kubedb_v1alpha2_Gateway(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"ip": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"hostname": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"services": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Services is an optional configuration for services used to expose database",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceStatus"),
+									},
+								},
+							},
+						},
+					},
+					"ui": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UI is an optional list of database web uis",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedURL"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name", "namespace"},
+			},
+		},
+		Dependencies: []string{
+			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceStatus", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedURL"},
 	}
 }
 
@@ -25469,11 +25606,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_KafkaStatus(ref common.ReferenceCa
 							},
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -25675,7 +25817,7 @@ func schema_apimachinery_apis_kubedb_v1alpha2_MariaDBSpec(ref common.ReferenceCa
 					},
 					"monitor": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Monitor is used monitor database instance",
+							Description: "Monitor is used to monitor database instance",
 							Ref:         ref("kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec"),
 						},
 					},
@@ -25753,12 +25895,18 @@ func schema_apimachinery_apis_kubedb_v1alpha2_MariaDBSpec(ref common.ReferenceCa
 							Ref:         ref("kmodules.xyz/client-go/api/v1.HealthCheckSpec"),
 						},
 					},
+					"archiver": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Archiver controls database backup using Archiver CR",
+							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Archiver"),
+						},
+					},
 				},
 				Required: []string{"version"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.AllowedConsumers", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.AutoOpsSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.CoordinatorSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.InitSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.AllowedConsumers", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Archiver", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.AutoOpsSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.CoordinatorSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.InitSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference"},
 	}
 }
 
@@ -25801,11 +25949,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_MariaDBStatus(ref common.Reference
 							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"),
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -26052,11 +26205,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_MemcachedStatus(ref common.Referen
 							},
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -26066,20 +26224,6 @@ func schema_apimachinery_apis_kubedb_v1alpha2_MetadataStorage(ref common.Referen
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name of the appbinding of metadata storage",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"namespace": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Namespace of the appbinding of metadata storage",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"type": {
 						SchemaProps: spec.SchemaProps{
 							Description: "If not KubeDB managed, then specify type of the metadata storage",
@@ -26718,11 +26862,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_MongoDBStatus(ref common.Reference
 							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"),
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -27148,11 +27297,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_MySQLStatus(ref common.ReferenceCa
 							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"),
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -27292,6 +27446,42 @@ func schema_apimachinery_apis_kubedb_v1alpha2_MySQLUser(ref common.ReferenceCall
 	}
 }
 
+func schema_apimachinery_apis_kubedb_v1alpha2_NamedServiceStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"alias": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Alias represents the identifier of the service.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ports": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("kmodules.xyz/offshoot-api/api/v1.ServicePort"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"alias", "ports"},
+			},
+		},
+		Dependencies: []string{
+			"kmodules.xyz/offshoot-api/api/v1.ServicePort"},
+	}
+}
+
 func schema_apimachinery_apis_kubedb_v1alpha2_NamedServiceTemplateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -27326,6 +27516,43 @@ func schema_apimachinery_apis_kubedb_v1alpha2_NamedServiceTemplateSpec(ref commo
 		},
 		Dependencies: []string{
 			"kmodules.xyz/offshoot-api/api/v1.ObjectMeta", "kmodules.xyz/offshoot-api/api/v1.ServiceSpec"},
+	}
+}
+
+func schema_apimachinery_apis_kubedb_v1alpha2_NamedURL(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"alias": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Alias represents the identifier of the service. This should match the db ui chart name",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Description: "URL of the database ui",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"helmRelease": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HelmRelease is the name of the helm release used to deploy this ui The name format is typically <alias>-<db-name>",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
+				},
+				Required: []string{"alias", "url"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 
@@ -27610,11 +27837,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_PerconaXtraDBStatus(ref common.Ref
 							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"),
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -27869,11 +28101,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_PgBouncerStatus(ref common.Referen
 							},
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -28020,10 +28257,10 @@ func schema_apimachinery_apis_kubedb_v1alpha2_PgpoolSpec(ref common.ReferenceCal
 							Format:      "int32",
 						},
 					},
-					"backend": {
+					"postgresRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Backend refers to the AppBinding of the backend PostgreSQL server",
-							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+							Description: "PostgresRef refers to the AppBinding of the backend PostgreSQL server",
+							Ref:         ref("kmodules.xyz/client-go/api/v1.ObjectReference"),
 						},
 					},
 					"authSecret": {
@@ -28071,6 +28308,12 @@ func schema_apimachinery_apis_kubedb_v1alpha2_PgpoolSpec(ref common.ReferenceCal
 							Ref:         ref("kmodules.xyz/client-go/api/v1.HealthCheckSpec"),
 						},
 					},
+					"monitor": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Monitor is used to monitor Pgpool instance",
+							Ref:         ref("kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec"),
+						},
+					},
 					"terminationPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TerminationPolicy controls the delete operation for Pgpool",
@@ -28078,12 +28321,38 @@ func schema_apimachinery_apis_kubedb_v1alpha2_PgpoolSpec(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
+					"podPlacementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodPlacementPolicy is the reference of the podPlacementPolicy",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 				},
-				Required: []string{"version", "backend"},
+				Required: []string{"version", "postgresRef"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PgpoolConfiguration", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference"},
+			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.ObjectReference", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PgpoolConfiguration", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference"},
+	}
+}
+
+func schema_apimachinery_apis_kubedb_v1alpha2_PgpoolStatsService(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Pgpool": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Pgpool"),
+						},
+					},
+				},
+				Required: []string{"Pgpool"},
+			},
+		},
+		Dependencies: []string{
+			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Pgpool"},
 	}
 }
 
@@ -28122,11 +28391,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_PgpoolStatus(ref common.ReferenceC
 							},
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -28333,6 +28607,44 @@ func schema_apimachinery_apis_kubedb_v1alpha2_PostgresRef(ref common.ReferenceCa
 		},
 		Dependencies: []string{
 			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresServiceRef"},
+	}
+}
+
+func schema_apimachinery_apis_kubedb_v1alpha2_PostgresReplication(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"walLimitPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"walKeepSize": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"walKeepSegment": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"maxSlotWALKeepSize": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+				Required: []string{"walLimitPolicy"},
+			},
+		},
 	}
 }
 
@@ -28558,12 +28870,17 @@ func schema_apimachinery_apis_kubedb_v1alpha2_PostgresSpec(ref common.ReferenceC
 							Ref:         ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ArbiterSpec"),
 						},
 					},
+					"replication": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresReplication"),
+						},
+					},
 				},
 				Required: []string{"version"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.AllowedConsumers", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ArbiterSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Archiver", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.AutoOpsSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.CoordinatorSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.InitSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgreLeaderElectionConfig", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.RemoteReplicaSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.AllowedConsumers", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ArbiterSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Archiver", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.AutoOpsSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.CoordinatorSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.InitSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgreLeaderElectionConfig", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.PostgresReplication", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.RemoteReplicaSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference"},
 	}
 }
 
@@ -28606,11 +28923,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_PostgresStatus(ref common.Referenc
 							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"),
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -28911,11 +29233,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ProxySQLStatus(ref common.Referenc
 							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"),
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -29128,6 +29455,12 @@ func schema_apimachinery_apis_kubedb_v1alpha2_RabbitMQSpec(ref common.ReferenceC
 							Ref:         ref("kmodules.xyz/client-go/api/v1.HealthCheckSpec"),
 						},
 					},
+					"podPlacementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodPlacementPolicy is the reference of the podPlacementPolicy",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 				},
 				Required: []string{"version"},
 			},
@@ -29172,11 +29505,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_RabbitMQStatus(ref common.Referenc
 							},
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -29863,11 +30201,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_RedisStatus(ref common.ReferenceCa
 							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"),
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Age", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -30278,11 +30621,17 @@ func schema_apimachinery_apis_kubedb_v1alpha2_SinglestoreNode(ref common.Referen
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec"),
 						},
 					},
+					"podPlacementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodPlacementPolicy is the reference of the podPlacementPolicy",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec"},
 	}
 }
 
@@ -30396,12 +30745,24 @@ func schema_apimachinery_apis_kubedb_v1alpha2_SinglestoreSpec(ref common.Referen
 							Ref:         ref("kmodules.xyz/client-go/api/v1.HealthCheckSpec"),
 						},
 					},
+					"monitor": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Monitor is used monitor database instance",
+							Ref:         ref("kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec"),
+						},
+					},
+					"podPlacementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodPlacementPolicy is the reference of the podPlacementPolicy",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 				},
 				Required: []string{"licenseSecret"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.InitSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SinglestoreTopology"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.InitSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SinglestoreTopology"},
 	}
 }
 
@@ -30440,11 +30801,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_SinglestoreStatus(ref common.Refer
 							},
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -30685,11 +31051,17 @@ func schema_apimachinery_apis_kubedb_v1alpha2_SolrNode(ref common.ReferenceCallb
 							},
 						},
 					},
+					"podPlacementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodPlacementPolicy is the reference of the podPlacementPolicy",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.PersistentVolumeClaimSpec", "k8s.io/api/core/v1.Toleration", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "k8s.io/api/core/v1.Toleration", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec"},
 	}
 }
 
@@ -30736,7 +31108,8 @@ func schema_apimachinery_apis_kubedb_v1alpha2_SolrSpec(ref common.ReferenceCallb
 					},
 					"zookeeperRef": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/api/core/v1.LocalObjectReference"),
+							Description: "\t// ZooKeeper contains information for Solr to store configurations for collections",
+							Ref:         ref("kmodules.xyz/client-go/api/v1.ObjectReference"),
 						},
 					},
 					"solrModules": {
@@ -30797,6 +31170,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_SolrSpec(ref common.ReferenceCallb
 							Ref: ref("k8s.io/api/core/v1.LocalObjectReference"),
 						},
 					},
+					"zookeeperDigestSecret": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
+					"zookeeperDigestReadonlySecret": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 					"authConfigSecret": {
 						SchemaProps: spec.SchemaProps{
 							Ref: ref("k8s.io/api/core/v1.LocalObjectReference"),
@@ -30837,12 +31220,24 @@ func schema_apimachinery_apis_kubedb_v1alpha2_SolrSpec(ref common.ReferenceCallb
 							Ref:         ref("kmodules.xyz/client-go/api/v1.HealthCheckSpec"),
 						},
 					},
+					"monitor": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Monitor is used monitor database instance",
+							Ref:         ref("kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec"),
+						},
+					},
+					"podPlacementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodPlacementPolicy is the reference of the podPlacementPolicy",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 				},
-				Required: []string{"version", "zookeeperRef"},
+				Required: []string{"version"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SolrClusterTopology"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/client-go/api/v1.ObjectReference", "kmodules.xyz/client-go/api/v1.TLSConfig", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SolrClusterTopology"},
 	}
 }
 
@@ -30881,11 +31276,16 @@ func schema_apimachinery_apis_kubedb_v1alpha2_SolrStatus(ref common.ReferenceCal
 							},
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
 	}
 }
 
@@ -31054,39 +31454,6 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperList(ref common.Reference
 	}
 }
 
-func schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name of the appbinding of zookeeper",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"namespace": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Namespace of the appbinding of zookeeper",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"pathsBase": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Base ZooKeeperSpec path",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 func schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -31145,7 +31512,7 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperSpec(ref common.Reference
 						SchemaProps: spec.SchemaProps{
 							Description: "PodTemplate is an optional configuration for pods used to expose database",
 							Default:     map[string]interface{}{},
-							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec"),
+							Ref:         ref("kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec"),
 						},
 					},
 					"serviceTemplates": {
@@ -31183,12 +31550,24 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperSpec(ref common.Reference
 							Ref:         ref("kmodules.xyz/client-go/api/v1.HealthCheckSpec"),
 						},
 					},
+					"monitor": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Monitor is used monitor database instance",
+							Ref:         ref("kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec"),
+						},
+					},
+					"podPlacementPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodPlacementPolicy is the reference of the podPlacementPolicy",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
 				},
 				Required: []string{"version", "adminServerPort"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/offshoot-api/api/v1.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaimSpec", "kmodules.xyz/client-go/api/v1.HealthCheckSpec", "kmodules.xyz/monitoring-agent-api/api/v1.AgentSpec", "kmodules.xyz/offshoot-api/api/v2.PodTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.NamedServiceTemplateSpec", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.SecretReference"},
 	}
 }
 
@@ -31227,11 +31606,35 @@ func schema_apimachinery_apis_kubedb_v1alpha2_ZooKeeperStatus(ref common.Referen
 							},
 						},
 					},
+					"gateway": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/client-go/api/v1.Condition"},
+			"kmodules.xyz/client-go/api/v1.Condition", "kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Gateway"},
+	}
+}
+
+func schema_apimachinery_apis_kubedb_v1alpha2_ZookeeperRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pathsBase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Base ZooKeeperSpec path",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -31752,5 +32155,65 @@ func schema_apimachinery_apis_kubedb_v1alpha2_singlestoreApp(ref common.Referenc
 		},
 		Dependencies: []string{
 			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Singlestore"},
+	}
+}
+
+func schema_apimachinery_apis_kubedb_v1alpha2_singlestoreStatsService(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Singlestore": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Singlestore"),
+						},
+					},
+				},
+				Required: []string{"Singlestore"},
+			},
+		},
+		Dependencies: []string{
+			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Singlestore"},
+	}
+}
+
+func schema_apimachinery_apis_kubedb_v1alpha2_solrStatsService(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Solr": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Solr"),
+						},
+					},
+				},
+				Required: []string{"Solr"},
+			},
+		},
+		Dependencies: []string{
+			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.Solr"},
+	}
+}
+
+func schema_apimachinery_apis_kubedb_v1alpha2_zookeeperStatsService(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ZooKeeper": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZooKeeper"),
+						},
+					},
+				},
+				Required: []string{"ZooKeeper"},
+			},
+		},
+		Dependencies: []string{
+			"kubedb.dev/apimachinery/apis/kubedb/v1alpha2.ZooKeeper"},
 	}
 }

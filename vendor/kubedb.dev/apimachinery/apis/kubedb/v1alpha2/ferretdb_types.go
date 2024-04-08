@@ -102,7 +102,12 @@ type FerretDBSpec struct {
 	// +optional
 	Monitor *mona.AgentSpec `json:"monitor,omitempty"`
 
-	Backend *Backend `json:"backend"`
+	Backend *FerretDBBackend `json:"backend"`
+
+	// PodPlacementPolicy is the reference of the podPlacementPolicy
+	// +kubebuilder:default={name: "default"}
+	// +optional
+	PodPlacementPolicy *core.LocalObjectReference `json:"podPlacementPolicy,omitempty"`
 }
 
 type FerretDBStatus struct {
@@ -116,17 +121,11 @@ type FerretDBStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+	// +optional
+	Gateway *Gateway `json:"gateway,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=server;client;
-type FerretDBCertificateAlias string
-
-const (
-	FerretDBServerCert FerretDBCertificateAlias = "server"
-	FerretDBClientCert FerretDBCertificateAlias = "client"
-)
-
-type Backend struct {
+type FerretDBBackend struct {
 	// +optional
 	Postgres *PostgresRef `json:"postgres,omitempty"`
 	// A DB inside backend specifically made for ferretdb
@@ -158,6 +157,14 @@ type PostgresServiceRef struct {
 	// +optional
 	PgPort int32 `json:"pgPort,omitempty"`
 }
+
+// +kubebuilder:validation:Enum=server;client
+type FerretDBCertificateAlias string
+
+const (
+	FerretDBServerCert FerretDBCertificateAlias = "server"
+	FerretDBClientCert FerretDBCertificateAlias = "client"
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

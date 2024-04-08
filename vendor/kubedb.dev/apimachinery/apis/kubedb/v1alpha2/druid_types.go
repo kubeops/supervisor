@@ -20,6 +20,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
+	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v2"
 )
 
@@ -66,13 +67,6 @@ type DruidSpec struct {
 	// StorageType can be durable (default) or ephemeral.
 	StorageType StorageType `json:"storageType,omitempty"`
 
-	// Storage to specify how storage shall be used.
-	// Storage *core.PersistentVolumeClaimSpec `json:"storage,omitempty"`
-
-	// To enable ssl for http layer.
-	// +optional
-	// EnableSSL bool `json:"enableSSL,omitempty"`
-
 	// disable security. It disables authentication security of user.
 	// If unset, default is false
 	// +optional
@@ -99,7 +93,7 @@ type DruidSpec struct {
 
 	// ZooKeeper contains information for Druid to connect to external dependency metadata storage
 	// +optional
-	ZooKeeper *ZooKeeperRef `json:"zooKeeper,omitempty"`
+	ZookeeperRef *ZookeeperRef `json:"zookeeperRef,omitempty"`
 
 	// PodTemplate is an optional configuration
 	// +optional
@@ -112,6 +106,10 @@ type DruidSpec struct {
 	// Indicates that the database is halted and all offshoot Kubernetes resources except PVCs are deleted.
 	// +optional
 	Halted bool `json:"halted,omitempty"`
+
+	// Monitor is used monitor database instance
+	// +optional
+	Monitor *mona.AgentSpec `json:"monitor,omitempty"`
 
 	// TerminationPolicy controls the delete operation for database
 	// +optional
@@ -163,20 +161,21 @@ type DruidNode struct {
 	// If specified, the pod's tolerations.
 	// +optional
 	Tolerations []core.Toleration `json:"tolerations,omitempty"`
+
+	// PodPlacementPolicy is the reference of the podPlacementPolicy
+	// +kubebuilder:default={name: "default"}
+	// +optional
+	PodPlacementPolicy *core.LocalObjectReference `json:"podPlacementPolicy,omitempty"`
 }
 
 type MetadataStorage struct {
-	// Name of the appbinding of metadata storage
+	// Name of the appbinding of zookeeper
 	// +optional
-	Name *string `json:"name,omitempty"`
-
-	// Namespace of the appbinding of metadata storage
-	// +optional
-	Namespace *string `json:"namespace,omitempty"`
+	*kmapi.ObjectReference `json:",omitempty"`
 
 	// If not KubeDB managed, then specify type of the metadata storage
 	// +optional
-	Type *string `json:"type,omitempty"`
+	Type DruidMetadataStorageType `json:"type,omitempty"`
 
 	// If Druid has the permission to create new tables
 	// +optional
@@ -186,22 +185,18 @@ type MetadataStorage struct {
 type DeepStorageSpec struct {
 	// Specifies the storage type to be used by druid
 	// Possible values: s3, google, azure, hdfs
-	Type *string `json:"type"`
+	Type DruidDeepStorageType `json:"type"`
 
 	// deepStorage.configSecret should contain the necessary data
 	// to connect to the deep storage
 	// +optional
-	ConfigSecret *core.LocalObjectReference `json:"configSecret"`
+	ConfigSecret *core.LocalObjectReference `json:"configSecret,omitempty"`
 }
 
-type ZooKeeperRef struct {
+type ZookeeperRef struct {
 	// Name of the appbinding of zookeeper
 	// +optional
-	Name *string `json:"name,omitempty"`
-
-	// Namespace of the appbinding of zookeeper
-	// +optional
-	Namespace string `json:"namespace,omitempty"`
+	*kmapi.ObjectReference `json:",omitempty"`
 
 	// Base ZooKeeperSpec path
 	// +optional
@@ -222,6 +217,8 @@ type DruidStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
+	// +optional
+	Gateway *Gateway `json:"gateway,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -243,6 +240,7 @@ const (
 	DruidPhaseCritical     DruidPhase = "Critical"
 )
 
+// +kubebuilder:validation:Enum=coordinators;overlords;brokers;routers;middleManagers;historicals
 type DruidNodeRoleType string
 
 const (
@@ -252,4 +250,22 @@ const (
 	DruidNodeRoleRouters        DruidNodeRoleType = "routers"
 	DruidNodeRoleMiddleManagers DruidNodeRoleType = "middleManagers"
 	DruidNodeRoleHistoricals    DruidNodeRoleType = "historicals"
+)
+
+// +kubebuilder:validation:Enum=MySQL;PostgreSQL
+type DruidMetadataStorageType string
+
+const (
+	DruidMetadataStorageMySQL      DruidMetadataStorageType = "MySQL"
+	DruidMetadataStoragePostgreSQL DruidMetadataStorageType = "PostgreSQL"
+)
+
+// +kubebuilder:validation:Enum=s3;google;azure;hdfs
+type DruidDeepStorageType string
+
+const (
+	DruidDeepStorageS3     DruidDeepStorageType = "s3"
+	DruidDeepStorageGoogle DruidDeepStorageType = "google"
+	DruidDeepStorageAzure  DruidDeepStorageType = "azure"
+	DruidDeepStorageHDFS   DruidDeepStorageType = "hdfs"
 )
