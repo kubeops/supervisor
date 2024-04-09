@@ -76,7 +76,7 @@ TAG              := $(VERSION)_$(OS)_$(ARCH)
 TAG_PROD         := $(TAG)
 TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
-GO_VERSION       ?= 1.21
+GO_VERSION       ?= 1.22
 BUILD_IMAGE      ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)
 CHART_TEST_IMAGE ?= quay.io/helmpack/chart-testing:v3.5.1
 
@@ -542,7 +542,7 @@ run:
 		--max-concurrent-reconcile=5 \
 		--requeue-after-duration=1m \
 		--retry-after-duration=1m \
-		--before-deadline-duration=24h
+		--before-timeout-duration=24h
 
 .PHONY: push-to-kind
 push-to-kind: container
