@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
-	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+	kubedbv1 "kubedb.dev/apimachinery/apis/kubedb/v1"
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -89,8 +89,8 @@ func (f *Framework) newMongoDBRecommendation(dbKey client.ObjectKey, deadline *m
 		Spec: api.RecommendationSpec{
 			Description: "MongoDB Database Restart",
 			Target: core.TypedLocalObjectReference{
-				APIGroup: pointer.StringP(kubedbapi.SchemeGroupVersion.Group),
-				Kind:     kubedbapi.ResourceKindMongoDB,
+				APIGroup: pointer.StringP(kubedbv1.SchemeGroupVersion.Group),
+				Kind:     kubedbv1.ResourceKindMongoDB,
 				Name:     dbKey.Name,
 			},
 			Operation: runtime.RawExtension{
@@ -123,8 +123,8 @@ func (f *Framework) newPostgresRecommendation(dbKey client.ObjectKey, deadline *
 		Spec: api.RecommendationSpec{
 			Description: "Postgres Database Restart",
 			Target: core.TypedLocalObjectReference{
-				APIGroup: pointer.StringP(kubedbapi.SchemeGroupVersion.String()),
-				Kind:     kubedbapi.ResourceKindPostgres,
+				APIGroup: pointer.StringP(kubedbv1.SchemeGroupVersion.String()),
+				Kind:     kubedbv1.ResourceKindPostgres,
 				Name:     dbKey.Name,
 			},
 			Operation: runtime.RawExtension{

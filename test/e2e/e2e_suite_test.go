@@ -30,7 +30,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+	kubedbv1 "kubedb.dev/apimachinery/apis/kubedb/v1"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/test/e2e/framework"
@@ -51,7 +51,7 @@ func init() {
 
 	utilruntime.Must(api.AddToScheme(scheme))
 	utilruntime.Must(opsapi.AddToScheme(scheme))
-	utilruntime.Must(kubedbapi.AddToScheme(scheme))
+	utilruntime.Must(kubedbv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

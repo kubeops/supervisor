@@ -26,7 +26,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
-	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+	kubedbv1 "kubedb.dev/apimachinery/apis/kubedb/v1"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/test/e2e/framework"
@@ -39,13 +39,13 @@ var _ = Describe("Supervisor E2E Testing", func() {
 	)
 
 	var (
-		createNewStandaloneMongoDB = func() *kubedbapi.MongoDB {
+		createNewStandaloneMongoDB = func() *kubedbv1.MongoDB {
 			By("Creating Standalone MongoDB")
 			mg, err := f.CreateNewStandaloneMongoDB()
 			Expect(err).NotTo(HaveOccurred())
 			return mg
 		}
-		createNewStandalonePostgres = func() *kubedbapi.Postgres {
+		createNewStandalonePostgres = func() *kubedbv1.Postgres {
 			By("Creating Standalone Postgres")
 			pg, err := f.CreateNewStandalonePostgres()
 			Expect(err).NotTo(HaveOccurred())
@@ -330,8 +330,8 @@ var _ = Describe("Supervisor E2E Testing", func() {
 				target := []api.TargetRef{
 					{
 						GroupKind: metav1.GroupKind{
-							Group: kubedbapi.SchemeGroupVersion.Group,
-							Kind:  kubedbapi.ResourceKindMongoDB,
+							Group: kubedbv1.SchemeGroupVersion.Group,
+							Kind:  kubedbv1.ResourceKindMongoDB,
 						},
 						Operations: []api.Operation{
 							{
@@ -486,7 +486,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 
 				stopCh := make(chan bool)
 				errCh := make(chan bool, 2)
-				target := metav1.GroupKind{Group: kubedbapi.SchemeGroupVersion.Group, Kind: kubedbapi.ResourceKindPostgres}
+				target := metav1.GroupKind{Group: kubedbv1.SchemeGroupVersion.Group, Kind: kubedbv1.ResourceKindPostgres}
 				ensureQueuePerTargetParallelism(stopCh, errCh, target, "")
 
 				waitingForRecommendationToBeSucceeded(rcmd1Key)
@@ -544,7 +544,7 @@ var _ = Describe("Supervisor E2E Testing", func() {
 
 				stopCh := make(chan bool)
 				errCh := make(chan bool, 2)
-				target := metav1.GroupKind{Group: kubedbapi.SchemeGroupVersion.Group, Kind: kubedbapi.ResourceKindMongoDB}
+				target := metav1.GroupKind{Group: kubedbv1.SchemeGroupVersion.Group, Kind: kubedbv1.ResourceKindMongoDB}
 				ensureQueuePerTargetParallelism(stopCh, errCh, target, f.Namespace())
 
 				waitingForRecommendationToBeSucceeded(rcmd1Key)
