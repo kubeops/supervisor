@@ -21,7 +21,6 @@ import (
 	core "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 const (
@@ -38,7 +37,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=redisopsrequests,singular=redisopsrequest,shortName=rdops,categories={datastore,kubedb,appscode}
+// +kubebuilder:resource:path=redisopsrequests,singular=redisopsrequest,shortName=rdops,categories={ops,kubedb,appscode}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".spec.type"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
@@ -119,9 +118,9 @@ type RedisUpdateVersionSpec struct {
 }
 
 type RedisHorizontalScalingSpec struct {
-	// Number of Masters in the cluster
-	Master *int32 `json:"master,omitempty"`
-	// specifies the number of replica for the master
+	// Number of shards in the cluster
+	Shards *int32 `json:"shards,omitempty"`
+	// specifies the number of replica of the shards
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
@@ -139,11 +138,8 @@ type RedisVolumeExpansionSpec struct {
 }
 
 type RedisCustomConfigurationSpec struct {
-	// PodTemplate is an optional configuration for pods used to expose database
-	// +optional
-	PodTemplate        ofst.PodTemplateSpec       `json:"podTemplate,omitempty"`
 	ConfigSecret       *core.LocalObjectReference `json:"configSecret,omitempty"`
-	InlineConfig       string                     `json:"inlineConfig,omitempty"`
+	ApplyConfig        map[string]string          `json:"applyConfig,omitempty"`
 	RemoveCustomConfig bool                       `json:"removeCustomConfig,omitempty"`
 }
 

@@ -40,7 +40,6 @@ import (
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/klogr"
 	cu "kmodules.xyz/client-go/client"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1"
 	admissionreview "kmodules.xyz/webhook-runtime/registry/admissionreview/v1"
@@ -125,8 +124,7 @@ func (c completedConfig) New() (*SupervisorOperator, error) {
 		return nil, err
 	}
 
-	// ctrl.SetLogger(...)
-	log.SetLogger(klogr.New()) // nolint:staticcheck
+	log.SetLogger(klog.NewKlogr())
 	setupLog := log.Log.WithName("setup")
 
 	cfg := c.ExtraConfig.ClientConfig

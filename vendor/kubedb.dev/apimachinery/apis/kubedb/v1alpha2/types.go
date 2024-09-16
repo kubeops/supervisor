@@ -124,13 +124,14 @@ const (
 	TerminationPolicyDoNotTerminate TerminationPolicy = "DoNotTerminate"
 )
 
-// +kubebuilder:validation:Enum=primary;standby;stats
+// +kubebuilder:validation:Enum=primary;standby;stats;dashboard
 type ServiceAlias string
 
 const (
-	PrimaryServiceAlias ServiceAlias = "primary"
-	StandbyServiceAlias ServiceAlias = "standby"
-	StatsServiceAlias   ServiceAlias = "stats"
+	PrimaryServiceAlias   ServiceAlias = "primary"
+	StandbyServiceAlias   ServiceAlias = "standby"
+	StatsServiceAlias     ServiceAlias = "stats"
+	DashboardServiceAlias ServiceAlias = "dashboard"
 )
 
 // +kubebuilder:validation:Enum=DNS;IP;IPv4;IPv6
@@ -230,40 +231,4 @@ type ArchiverRecovery struct {
 
 	// FullDBRepository means db restore + manifest restore
 	FullDBRepository *kmapi.ObjectReference `json:"fullDBRepository,omitempty"`
-}
-
-type Gateway struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	// +optional
-	IP string `json:"ip,omitempty"`
-	// +optional
-	Hostname string `json:"hostname,omitempty"`
-	// Services is an optional configuration for services used to expose database
-	// +optional
-	Services []NamedServiceStatus `json:"services,omitempty"`
-	// UI is an optional list of database web uis
-	// +optional
-	UI []NamedURL `json:"ui,omitempty"`
-}
-
-type NamedServiceStatus struct {
-	// Alias represents the identifier of the service.
-	Alias ServiceAlias `json:"alias"`
-
-	Ports []ofst.ServicePort `json:"ports"`
-}
-
-type NamedURL struct {
-	// Alias represents the identifier of the service.
-	// This should match the db ui chart name
-	Alias string `json:"alias"`
-
-	// URL of the database ui
-	URL string `json:"url"`
-
-	// HelmRelease is the name of the helm release used to deploy this ui
-	// The name format is typically <alias>-<db-name>
-	// +optional
-	HelmRelease *core.LocalObjectReference `json:"helmRelease,omitempty"`
 }

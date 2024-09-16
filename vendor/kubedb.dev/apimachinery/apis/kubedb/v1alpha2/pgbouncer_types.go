@@ -39,7 +39,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=pgbouncers,singular=pgbouncer,shortName=pb,categories={proxy,kubedb,appscode,all}
+// +kubebuilder:resource:path=pgbouncers,singular=pgbouncer,shortName=pb,categories={datastore,kubedb,appscode,all}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
@@ -71,9 +71,8 @@ type PgBouncerSpec struct {
 	// +optional
 	PodTemplate ofst.PodTemplateSpec `json:"podTemplate,omitempty"`
 
-	// Databases to proxy by connection pooling.
-	// +optional
-	Databases []Databases `json:"databases,omitempty"`
+	// Database to proxy by connection pooling.
+	Database Database `json:"database,omitempty"`
 
 	// ConnectionPoolConfig defines Connection pool configuration.
 	// +optional
@@ -106,6 +105,10 @@ type PgBouncerSpec struct {
 	// +optional
 	// +kubebuilder:default={periodSeconds: 10, timeoutSeconds: 10, failureThreshold: 1}
 	HealthChecker kmapi.HealthCheckSpec `json:"healthChecker"`
+
+	// Indicates that the database is halted and all offshoot Kubernetes resources are deleted.
+	// +optional
+	Halted bool `json:"halted,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=server;archiver;metrics-exporter
@@ -117,11 +120,15 @@ const (
 	PgBouncerMetricsExporterCert PgBouncerCertificateAlias = "metrics-exporter"
 )
 
-type Databases struct {
-	// Alias to uniquely identify a target database running inside a specific Postgres instance.
-	Alias string `json:"alias"`
+type Database struct {
+	// SyncUsers is a boolean type and when enabled, operator fetches users of backend server from externally managed
+	// secrets to the PgBouncer server. Secrets updation or deletion are also synced in pgBouncer when it is enabled.
+	// +optional
+	SyncUsers bool `json:"syncUsers,omitempty"`
+
 	// DatabaseRef specifies the database appbinding reference in any namespace.
 	DatabaseRef appcat.AppReference `json:"databaseRef"`
+
 	// DatabaseName is the name of the target database inside a Postgres instance.
 	DatabaseName string `json:"databaseName"`
 }
@@ -205,8 +212,6 @@ type PgBouncerStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
-	// +optional
-	Gateway *Gateway `json:"gateway,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=disable;allow;prefer;require;verify-ca;verify-full
@@ -238,8 +243,8 @@ const (
 )
 
 // PgBouncerClientAuthMode represents the ClientAuthMode of PgBouncer clusters ( replicaset )
-// We are allowing md5, scram, cert as ClientAuthMode
-// +kubebuilder:validation:Enum=md5;scram;cert;
+// We are allowing md5, scram-sha-256, cert as ClientAuthMode
+// +kubebuilder:validation:Enum=md5;scram-sha-256;cert;
 type PgBouncerClientAuthMode string
 
 const (
@@ -253,7 +258,7 @@ const (
 	// It is a challenge-response scheme that prevents password sniffing on untrusted connections
 	// and supports storing passwords on the server in a cryptographically hashed form that is thought to be secure.
 	// This is the most secure of the currently provided methods, but it is not supported by older client libraries.
-	PgBouncerClientAuthModeScram PgBouncerClientAuthMode = "scram"
+	PgBouncerClientAuthModeScram PgBouncerClientAuthMode = "scram-sha-256"
 
 	// ClientAuthModeCert represents `cert clientcert=1` auth mode where client need to provide cert and private key for authentication.
 	// When server is config with this auth method. Client can't connect with pgbouncer server with password. They need
@@ -261,10 +266,12 @@ const (
 	PgBouncerClientAuthModeCert PgBouncerClientAuthMode = "cert"
 )
 
-// +kubebuilder:validation:Enum=Delete;WipeOut;DoNotTerminate
+// +kubebuilder:validation:Enum=Halt;Delete;WipeOut;DoNotTerminate
 type PgBouncerTerminationPolicy string
 
 const (
+	// Deletes database pods, service but leave the PVCs and stash backup data intact.
+	PgBouncerDeletionPolicyHalt PgBouncerTerminationPolicy = "Halt"
 	// Deletes database pods, service, pvcs but leave the stash backup data intact.
 	PgBouncerTerminationPolicyDelete PgBouncerTerminationPolicy = "Delete"
 	// Deletes database pods, service, pvcs and stash backup data.

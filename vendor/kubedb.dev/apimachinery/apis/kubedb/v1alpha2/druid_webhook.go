@@ -19,8 +19,10 @@ package v1alpha2
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	"kubedb.dev/apimachinery/apis/kubedb"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -83,17 +85,17 @@ func (d *Druid) ValidateDelete() (admission.Warnings, error) {
 }
 
 var druidReservedVolumes = []string{
-	DruidVolumeOperatorConfig,
-	DruidVolumeMainConfig,
-	DruidVolumeCustomConfig,
-	DruidVolumeMySQLMetadataStorage,
+	kubedb.DruidVolumeOperatorConfig,
+	kubedb.DruidVolumeMainConfig,
+	kubedb.DruidVolumeCustomConfig,
+	kubedb.DruidVolumeMySQLMetadataStorage,
 }
 
 var druidReservedVolumeMountPaths = []string{
-	DruidCConfigDirMySQLMetadata,
-	DruidOperatorConfigDir,
-	DruidMainConfigDir,
-	DruidCustomConfigDir,
+	kubedb.DruidCConfigDirMySQLMetadata,
+	kubedb.DruidOperatorConfigDir,
+	kubedb.DruidMainConfigDir,
+	kubedb.DruidCustomConfigDir,
 }
 
 func (d *Druid) validateCreateOrUpdate() field.ErrorList {
@@ -112,18 +114,6 @@ func (d *Druid) validateCreateOrUpdate() field.ErrorList {
 		}
 	}
 
-	if d.Spec.StorageType == "" {
-		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("storageType"),
-			d.Name,
-			"StorageType can not be empty"))
-	} else {
-		if d.Spec.StorageType != StorageTypeDurable && d.Spec.StorageType != StorageTypeEphemeral {
-			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("storageType"),
-				d.Name,
-				"StorageType should be either durable or ephemeral"))
-		}
-	}
-
 	if d.Spec.DeepStorage == nil {
 		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("deepStorage"),
 			d.Name,
@@ -136,16 +126,26 @@ func (d *Druid) validateCreateOrUpdate() field.ErrorList {
 		}
 	}
 
-	if d.Spec.MetadataStorage == nil {
-		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("metadataStorage"),
+	if d.Spec.MetadataStorage.Name == "" {
+		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("metadataStorage").Child("name"),
 			d.Name,
-			"spec.metadataStorage is missing"))
-	} else {
-		if d.Spec.MetadataStorage.Name == "" && d.Spec.MetadataStorage.Type == "" {
-			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("metadataStorage").Child("name"),
-				d.Name,
-				"spec.metadataStorage.type and spec.metadataStorage.name both can not be empty simultaneously"))
-		}
+			"spec.metadataStorage.name can not be empty"))
+	}
+	if d.Spec.MetadataStorage.Namespace == "" {
+		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("metadataStorage").Child("namespace"),
+			d.Name,
+			"spec.metadataStorage.namespace can not be empty"))
+	}
+
+	if d.Spec.ZookeeperRef.Name == "" {
+		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("zookeeperRef").Child("name"),
+			d.Name,
+			"spec.zookeeperRef.name can not be empty"))
+	}
+	if d.Spec.ZookeeperRef.Namespace == "" {
+		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("zookeeperRef").Child("namespace"),
+			d.Name,
+			"spec.zookeeperRef.namespace can not be empty"))
 	}
 
 	if d.Spec.Topology == nil {
@@ -153,152 +153,109 @@ func (d *Druid) validateCreateOrUpdate() field.ErrorList {
 			d.Name,
 			"spec.topology can not be empty"))
 	} else {
+		// Required Nodes
 		if d.Spec.Topology.Coordinators == nil {
 			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("coordinators"),
 				d.Name,
 				"spec.topology.coordinators can not be empty"))
 		} else {
-
-			if *d.Spec.Topology.Coordinators.Replicas <= 0 {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("coordinators").Child("replicas"),
-					d.Name,
-					"number of replicas can not be 0 or less"))
-			}
-
-			err := druidValidateVolumes(&d.Spec.Topology.Coordinators.PodTemplate, DruidNodeRoleCoordinators)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("coordinators").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
-			err = druidValidateVolumesMountPaths(&d.Spec.Topology.Coordinators.PodTemplate, DruidNodeRoleCoordinators)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("coordinators").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
+			d.validateDruidNode(DruidNodeRoleCoordinators, &allErr)
 		}
 
+		if d.Spec.Topology.Brokers == nil {
+			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("brokers"),
+				d.Name,
+				"spec.topology.brokers can not be empty"))
+		} else {
+			d.validateDruidNode(DruidNodeRoleBrokers, &allErr)
+		}
+
+		// Optional Nodes
+		if d.Spec.Topology.Overlords != nil {
+			d.validateDruidNode(DruidNodeRoleOverlords, &allErr)
+		}
+		if d.Spec.Topology.Routers != nil {
+			d.validateDruidNode(DruidNodeRoleRouters, &allErr)
+		}
+
+		// Data Nodes
 		if d.Spec.Topology.MiddleManagers == nil {
 			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("middleManagers"),
 				d.Name,
 				"spec.topology.middleManagers can not be empty"))
 		} else {
-			if *d.Spec.Topology.MiddleManagers.Replicas <= 0 {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("middleManagers").Child("replicas"),
-					d.Name,
-					"number of replicas can not be 0 or less"))
-			}
-
-			err := druidValidateVolumes(&d.Spec.Topology.MiddleManagers.PodTemplate, DruidNodeRoleMiddleManagers)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("middleManagers").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
-			err = druidValidateVolumesMountPaths(&d.Spec.Topology.MiddleManagers.PodTemplate, DruidNodeRoleMiddleManagers)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("middleManagers").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
+			d.validateDruidDataNode(DruidNodeRoleMiddleManagers, &allErr)
 		}
-
 		if d.Spec.Topology.Historicals == nil {
 			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("historicals"),
 				d.Name,
 				"spec.topology.historicals can not be empty"))
 		} else {
-			if *d.Spec.Topology.Historicals.Replicas <= 0 {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("historicals").Child("replicas"),
-					d.Name,
-					"number of replicas can not be 0 or less"))
-			}
-
-			err := druidValidateVolumes(&d.Spec.Topology.Historicals.PodTemplate, DruidNodeRoleHistoricals)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("historicals").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
-			err = druidValidateVolumesMountPaths(&d.Spec.Topology.Historicals.PodTemplate, DruidNodeRoleHistoricals)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("historicals").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
-		}
-
-		if d.Spec.Topology.Brokers == nil {
-			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("brokers").Child("replicas"),
-				d.Name,
-				"spec.topology.brokers.replicas can not be empty"))
-		} else {
-			if *d.Spec.Topology.Brokers.Replicas <= 0 {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("brokers").Child("replicas"),
-					d.Name,
-					"number of replicas can not be 0 or less"))
-			}
-
-			err := druidValidateVolumes(&d.Spec.Topology.Brokers.PodTemplate, DruidNodeRoleBrokers)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("brokers").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
-			err = druidValidateVolumesMountPaths(&d.Spec.Topology.Brokers.PodTemplate, DruidNodeRoleBrokers)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("brokers").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
-		}
-
-		if d.Spec.Topology.Overlords != nil {
-			if *d.Spec.Topology.Overlords.Replicas <= 0 {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("overlords").Child("replicas"),
-					d.Name,
-					"number of replicas can not be 0 or less"))
-			}
-
-			err := druidValidateVolumes(&d.Spec.Topology.Overlords.PodTemplate, DruidNodeRoleOverlords)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("overlords").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
-			err = druidValidateVolumesMountPaths(&d.Spec.Topology.Overlords.PodTemplate, DruidNodeRoleOverlords)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("overlords").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
-		}
-		if d.Spec.Topology.Routers != nil {
-			if *d.Spec.Topology.Routers.Replicas <= 0 {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("routers").Child("replicas"),
-					d.Name,
-					"number of replicas can not be 0 or less"))
-			}
-
-			err := druidValidateVolumes(&d.Spec.Topology.Routers.PodTemplate, DruidNodeRoleRouters)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("routers").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
-			err = druidValidateVolumesMountPaths(&d.Spec.Topology.Routers.PodTemplate, DruidNodeRoleRouters)
-			if err != nil {
-				allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("topology").Child("routers").Child("podTemplate").Child("spec").Child("volumes"),
-					d.Name,
-					err.Error()))
-			}
+			d.validateDruidDataNode(DruidNodeRoleHistoricals, &allErr)
 		}
 	}
 	if len(allErr) == 0 {
 		return nil
 	}
 	return allErr
+}
+
+func (d *Druid) validateDruidNode(nodeType DruidNodeRoleType, allErr *field.ErrorList) {
+	node, dataNode := d.GetNodeSpec(nodeType)
+	if dataNode != nil {
+		node = &dataNode.DruidNode
+	}
+
+	if *node.Replicas <= 0 {
+		*allErr = append(*allErr, field.Invalid(field.NewPath("spec").Child("topology").Child(string(nodeType)).Child("replicas"),
+			d.Name,
+			"number of replicas can not be 0 or less"))
+	}
+
+	err := druidValidateVolumes(&node.PodTemplate, nodeType)
+	if err != nil {
+		*allErr = append(*allErr, field.Invalid(field.NewPath("spec").Child("topology").Child(string(nodeType)).Child("podTemplate").Child("spec").Child("volumes"),
+			d.Name,
+			err.Error()))
+	}
+	err = druidValidateVolumesMountPaths(&node.PodTemplate, nodeType)
+	if err != nil {
+		*allErr = append(*allErr, field.Invalid(field.NewPath("spec").Child("topology").Child(string(nodeType)).Child("podTemplate").Child("spec").Child("volumes"),
+			d.Name,
+			err.Error()))
+	}
+}
+
+func (d *Druid) validateDruidDataNode(nodeType DruidNodeRoleType, allErr *field.ErrorList) {
+	d.validateDruidNode(nodeType, allErr)
+
+	_, dataNode := d.GetNodeSpec(nodeType)
+	if dataNode.StorageType == "" {
+		*allErr = append(*allErr, field.Invalid(field.NewPath("spec").Child("topology").Child(string(nodeType)).Child("storageType"),
+			d.Name,
+			fmt.Sprintf("spec.topology.%s.storageType can not be empty", string(nodeType))))
+	} else {
+		if dataNode.StorageType != StorageTypeDurable && dataNode.StorageType != StorageTypeEphemeral {
+			*allErr = append(*allErr, field.Invalid(field.NewPath("spec").Child("storageType"),
+				d.Name,
+				fmt.Sprintf("spec.topology.%s.storageType should either be durable or ephemeral", string(nodeType))))
+		}
+	}
+	if dataNode.StorageType == StorageTypeEphemeral && dataNode.Storage != nil {
+		*allErr = append(*allErr, field.Invalid(field.NewPath("spec").Child("topology").Child(string(nodeType)).Child("storage"),
+			d.Name,
+			fmt.Sprintf("spec.topology.%s.storage can not be set when d.spec.topology.%s.storageType is Ephemeral", string(nodeType), string(nodeType))))
+	}
+	if dataNode.StorageType == StorageTypeDurable && dataNode.EphemeralStorage != nil {
+		*allErr = append(*allErr, field.Invalid(field.NewPath("spec").Child("topology").Child(string(nodeType)).Child("ephemeralStorage"),
+			d.Name,
+			fmt.Sprintf("spec.topology.%s.ephemeralStorage can not be set when d.spec.topology.%s.storageType is Durable", string(nodeType), string(nodeType))))
+	}
+	if dataNode.StorageType == StorageTypeDurable && dataNode.Storage == nil {
+		*allErr = append(*allErr, field.Invalid(field.NewPath("spec").Child("topology").Child(string(nodeType)).Child("storage"),
+			d.Name,
+			fmt.Sprintf("spec.topology.%s.storage needs to be set when spec.topology.%s.storageType is Durable", string(nodeType), string(nodeType))))
+	}
 }
 
 func druidValidateVersion(d *Druid) error {
@@ -321,9 +278,9 @@ func druidValidateVolumes(podTemplate *ofst.PodTemplateSpec, nodeType DruidNodeR
 	}
 
 	if nodeType == DruidNodeRoleHistoricals {
-		druidReservedVolumes = append(druidReservedVolumes, DruidVolumeHistoricalsSegmentCache)
+		druidReservedVolumes = append(druidReservedVolumes, kubedb.DruidVolumeHistoricalsSegmentCache)
 	} else if nodeType == DruidNodeRoleMiddleManagers {
-		druidReservedVolumes = append(druidReservedVolumes, DruidVolumeMiddleManagersBaseTaskDir)
+		druidReservedVolumes = append(druidReservedVolumes, kubedb.DruidVolumeMiddleManagersBaseTaskDir)
 	}
 
 	for _, rv := range druidReservedVolumes {
@@ -346,10 +303,10 @@ func druidValidateVolumesMountPaths(podTemplate *ofst.PodTemplateSpec, nodeType 
 	}
 
 	if nodeType == DruidNodeRoleHistoricals {
-		druidReservedVolumeMountPaths = append(druidReservedVolumeMountPaths, DruidHistoricalsSegmentCacheDir)
+		druidReservedVolumeMountPaths = append(druidReservedVolumeMountPaths, kubedb.DruidHistoricalsSegmentCacheDir)
 	}
 	if nodeType == DruidNodeRoleMiddleManagers {
-		druidReservedVolumeMountPaths = append(druidReservedVolumeMountPaths, DruidWorkerTaskBaseTaskDir)
+		druidReservedVolumeMountPaths = append(druidReservedVolumeMountPaths, kubedb.DruidWorkerTaskBaseTaskDir)
 	}
 
 	for _, rvmp := range druidReservedVolumeMountPaths {

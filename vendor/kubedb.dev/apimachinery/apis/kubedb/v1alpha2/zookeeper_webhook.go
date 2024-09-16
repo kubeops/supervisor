@@ -21,6 +21,7 @@ import (
 	"errors"
 
 	"kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	"kubedb.dev/apimachinery/apis/kubedb"
 
 	core "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -78,7 +79,7 @@ func (z *ZooKeeper) ValidateDelete() (admission.Warnings, error) {
 	zookeeperlog.Info("validate delete", "name", z.Name)
 
 	var allErr field.ErrorList
-	if z.Spec.TerminationPolicy == TerminationPolicyDoNotTerminate {
+	if z.Spec.DeletionPolicy == TerminationPolicyDoNotTerminate {
 		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("teminationPolicy"),
 			z.Name,
 			"Can not delete as terminationPolicy is set to \"DoNotTerminate\""))
@@ -132,9 +133,9 @@ func (z *ZooKeeper) validateVersion() error {
 }
 
 var zookeeperReservedVolumes = []string{
-	ZooKeeperDataVolumeName,
-	ZooKeeperScriptVolumeName,
-	ZooKeeperConfigVolumeName,
+	kubedb.ZooKeeperDataVolumeName,
+	kubedb.ZooKeeperScriptVolumeName,
+	kubedb.ZooKeeperConfigVolumeName,
 }
 
 func (z *ZooKeeper) validateVolumes() error {
@@ -156,9 +157,9 @@ func (z *ZooKeeper) validateVolumes() error {
 }
 
 var zookeeperReservedVolumeMountPaths = []string{
-	ZooKeeperScriptVolumePath,
-	ZooKeeperConfigVolumePath,
-	ZooKeeperDataVolumePath,
+	kubedb.ZooKeeperScriptVolumePath,
+	kubedb.ZooKeeperConfigVolumePath,
+	kubedb.ZooKeeperDataVolumePath,
 }
 
 func (z *ZooKeeper) validateVolumesMountPaths(podTemplate *ofst.PodTemplateSpec) error {

@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	apis "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+	dbapi "kubedb.dev/apimachinery/apis/kubedb/v1"
 
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -39,7 +39,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=postgresopsrequests,singular=postgresopsrequest,shortName=pgops,categories={datastore,kubedb,appscode}
+// +kubebuilder:resource:path=postgresopsrequests,singular=postgresopsrequest,shortName=pgops,categories={ops,kubedb,appscode}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".spec.type"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
@@ -55,11 +55,11 @@ type PostgresTLSSpec struct {
 
 	// SSLMode for both standalone and clusters. [disable;allow;prefer;require;verify-ca;verify-full]
 	// +optional
-	SSLMode apis.PostgresSSLMode `json:"sslMode,omitempty"`
+	SSLMode dbapi.PostgresSSLMode `json:"sslMode,omitempty"`
 
 	// ClientAuthMode for sidecar or sharding. (default will be md5. [md5;scram;cert])
 	// +optional
-	ClientAuthMode apis.PostgresClientAuthMode `json:"clientAuthMode,omitempty"`
+	ClientAuthMode dbapi.PostgresClientAuthMode `json:"clientAuthMode,omitempty"`
 }
 
 // PostgresOpsRequestSpec is the spec for PostgresOpsRequest
@@ -144,7 +144,7 @@ type PostgresVolumeExpansionSpec struct {
 
 type PostgresCustomConfigurationSpec struct {
 	ConfigSecret       *core.LocalObjectReference `json:"configSecret,omitempty"`
-	InlineConfig       string                     `json:"inlineConfig,omitempty"`
+	ApplyConfig        map[string]string          `json:"applyConfig,omitempty"`
 	RemoveCustomConfig bool                       `json:"removeCustomConfig,omitempty"`
 }
 
