@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"kubedb.dev/apimachinery/apis"
@@ -128,12 +129,12 @@ func (r *RabbitMQ) GoverningServiceName() string {
 	return meta_util.NameWithSuffix(r.ServiceName(), "pods")
 }
 
-func (r *RabbitMQ) StandbyServiceName() string {
-	return meta_util.NameWithPrefix(r.ServiceName(), KafkaStandbyServiceSuffix)
+func (r *RabbitMQ) DashboardServiceName() string {
+	return meta_util.NameWithSuffix(r.ServiceName(), "dashboard")
 }
 
 func (r *RabbitMQ) offshootLabels(selector, override map[string]string) map[string]string {
-	selector[meta_util.ComponentLabelKey] = ComponentDatabase
+	selector[meta_util.ComponentLabelKey] = kubedb.ComponentDatabase
 	return meta_util.FilterKeys(kubedb.GroupName, selector, meta_util.OverwriteKeys(nil, r.Labels, override))
 }
 
@@ -184,7 +185,7 @@ func (ks RabbitmqStatsService) ServiceMonitorAdditionalLabels() map[string]strin
 }
 
 func (ks RabbitmqStatsService) Path() string {
-	return DefaultStatsPath
+	return kubedb.DefaultStatsPath
 }
 
 func (ks RabbitmqStatsService) Scheme() string {
@@ -196,7 +197,7 @@ func (r *RabbitMQ) StatsService() mona.StatsAccessor {
 }
 
 func (r *RabbitMQ) StatsServiceLabels() map[string]string {
-	return r.ServiceLabels(StatsServiceAlias, map[string]string{LabelRole: RoleStats})
+	return r.ServiceLabels(StatsServiceAlias, map[string]string{kubedb.LabelRole: kubedb.RoleStats})
 }
 
 func (r *RabbitMQ) PodControllerLabels(extraLabels ...map[string]string) map[string]string {
@@ -279,8 +280,8 @@ func (r *RabbitMQ) SetDefaults() {
 		r.Spec.Replicas = pointer.Int32P(1)
 	}
 
-	if r.Spec.TerminationPolicy == "" {
-		r.Spec.TerminationPolicy = TerminationPolicyDelete
+	if r.Spec.DeletionPolicy == "" {
+		r.Spec.DeletionPolicy = TerminationPolicyDelete
 	}
 
 	if r.Spec.StorageType == "" {
@@ -298,10 +299,12 @@ func (r *RabbitMQ) SetDefaults() {
 
 	r.setDefaultContainerSecurityContext(&rmVersion, &r.Spec.PodTemplate)
 
-	dbContainer := coreutil.GetContainerByName(r.Spec.PodTemplate.Spec.Containers, RabbitMQContainerName)
+	dbContainer := coreutil.GetContainerByName(r.Spec.PodTemplate.Spec.Containers, kubedb.RabbitMQContainerName)
 	if dbContainer != nil && (dbContainer.Resources.Requests == nil && dbContainer.Resources.Limits == nil) {
-		apis.SetDefaultResourceLimits(&dbContainer.Resources, DefaultResources)
+		apis.SetDefaultResourceLimits(&dbContainer.Resources, kubedb.DefaultResources)
 	}
+
+	r.SetTLSDefaults()
 
 	r.SetHealthCheckerDefaults()
 	if r.Spec.Monitor != nil {
@@ -309,7 +312,7 @@ func (r *RabbitMQ) SetDefaults() {
 			r.Spec.Monitor.Prometheus = &mona.PrometheusSpec{}
 		}
 		if r.Spec.Monitor.Prometheus != nil && r.Spec.Monitor.Prometheus.Exporter.Port == 0 {
-			r.Spec.Monitor.Prometheus.Exporter.Port = RabbitMQExporterPort
+			r.Spec.Monitor.Prometheus.Exporter.Port = kubedb.RabbitMQExporterPort
 		}
 		r.Spec.Monitor.SetDefaults()
 	}
@@ -326,10 +329,10 @@ func (r *RabbitMQ) setDefaultContainerSecurityContext(rmVersion *catalog.RabbitM
 		podTemplate.Spec.SecurityContext.FSGroup = rmVersion.Spec.SecurityContext.RunAsUser
 	}
 
-	container := coreutil.GetContainerByName(podTemplate.Spec.Containers, RabbitMQContainerName)
+	container := coreutil.GetContainerByName(podTemplate.Spec.Containers, kubedb.RabbitMQContainerName)
 	if container == nil {
 		container = &core.Container{
-			Name: RabbitMQContainerName,
+			Name: kubedb.RabbitMQContainerName,
 		}
 		podTemplate.Spec.Containers = coreutil.UpsertContainer(podTemplate.Spec.Containers, *container)
 	}
@@ -338,10 +341,10 @@ func (r *RabbitMQ) setDefaultContainerSecurityContext(rmVersion *catalog.RabbitM
 	}
 	r.assignDefaultContainerSecurityContext(rmVersion, container.SecurityContext)
 
-	initContainer := coreutil.GetContainerByName(podTemplate.Spec.InitContainers, RabbitMQInitContainerName)
+	initContainer := coreutil.GetContainerByName(podTemplate.Spec.InitContainers, kubedb.RabbitMQInitContainerName)
 	if initContainer == nil {
 		initContainer = &core.Container{
-			Name: RabbitMQInitContainerName,
+			Name: kubedb.RabbitMQInitContainerName,
 		}
 		podTemplate.Spec.InitContainers = coreutil.UpsertContainer(podTemplate.Spec.InitContainers, *initContainer)
 	}
@@ -409,6 +412,10 @@ func (r *RabbitMQ) SetHealthCheckerDefaults() {
 	if r.Spec.HealthChecker.FailureThreshold == nil {
 		r.Spec.HealthChecker.FailureThreshold = pointer.Int32P(3)
 	}
+}
+
+func (r *RabbitMQ) IsProtocolDisabled(protocol RabbitMQProtocol) bool {
+	return slices.Contains(r.Spec.DisabledProtocols, protocol)
 }
 
 func (r *RabbitMQ) ReplicasAreReady(lister pslister.PetSetLister) (bool, string, error) {

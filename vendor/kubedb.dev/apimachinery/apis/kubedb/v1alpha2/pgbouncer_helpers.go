@@ -63,8 +63,10 @@ func (p PgBouncer) OffshootLabels() map[string]string {
 	return p.offshootLabels(p.OffshootSelectors(), nil)
 }
 
-func (p PgBouncer) PodLabels() map[string]string {
-	return p.offshootLabels(p.OffshootSelectors(), p.Spec.PodTemplate.Labels)
+func (p PgBouncer) PodLabels(backendSecretRV string) map[string]string {
+	podLabels := p.offshootLabels(p.OffshootSelectors(), p.Spec.PodTemplate.Labels)
+	podLabels[kubedb.BackendSecretResourceVersion] = backendSecretRV
+	return podLabels
 }
 
 func (p PgBouncer) PodControllerLabels() map[string]string {
@@ -77,7 +79,7 @@ func (p PgBouncer) ServiceLabels(alias ServiceAlias, extraLabels ...map[string]s
 }
 
 func (p PgBouncer) offshootLabels(selector, override map[string]string) map[string]string {
-	selector[meta_util.ComponentLabelKey] = ComponentConnectionPooler
+	selector[meta_util.ComponentLabelKey] = kubedb.ComponentConnectionPooler
 	return meta_util.FilterKeys(kubedb.GroupName, selector, meta_util.OverwriteKeys(nil, p.Labels, override))
 }
 
@@ -161,7 +163,7 @@ func (p pgbouncerStatsService) ServiceMonitorAdditionalLabels() map[string]strin
 }
 
 func (p pgbouncerStatsService) Path() string {
-	return DefaultStatsPath
+	return kubedb.DefaultStatsPath
 }
 
 func (p pgbouncerStatsService) Scheme() string {
@@ -177,7 +179,7 @@ func (p PgBouncer) StatsService() mona.StatsAccessor {
 }
 
 func (p PgBouncer) StatsServiceLabels() map[string]string {
-	return p.ServiceLabels(StatsServiceAlias, map[string]string{LabelRole: RoleStats})
+	return p.ServiceLabels(StatsServiceAlias, map[string]string{kubedb.LabelRole: kubedb.RoleStats})
 }
 
 func (p PgBouncer) ReplicasServiceName() string {
@@ -219,7 +221,7 @@ func (p *PgBouncer) SetDefaults(pgBouncerVersion *catalog.PgBouncerVersion, uses
 			p.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup = pgBouncerVersion.Spec.SecurityContext.RunAsUser
 		}
 	}
-	apis.SetDefaultResourceLimits(&p.Spec.PodTemplate.Spec.Resources, DefaultResources)
+	apis.SetDefaultResourceLimits(&p.Spec.PodTemplate.Spec.Resources, kubedb.DefaultResources)
 }
 
 func (p *PgBouncer) SetTLSDefaults(usesAcme bool) {
@@ -290,7 +292,7 @@ func (p *PgBouncer) setConnectionPoolConfigDefaults() {
 		p.Spec.ConnectionPool.Port = pointer.Int32P(5432)
 	}
 	if p.Spec.ConnectionPool.PoolMode == "" {
-		p.Spec.ConnectionPool.PoolMode = PgBouncerDefaultPoolMode
+		p.Spec.ConnectionPool.PoolMode = kubedb.PgBouncerDefaultPoolMode
 	}
 	if p.Spec.ConnectionPool.MaxClientConnections == nil {
 		p.Spec.ConnectionPool.MaxClientConnections = pointer.Int64P(100)
@@ -320,7 +322,7 @@ func (p *PgBouncer) setConnectionPoolConfigDefaults() {
 		p.Spec.ConnectionPool.AuthType = PgBouncerClientAuthModeMD5
 	}
 	if p.Spec.ConnectionPool.IgnoreStartupParameters == "" {
-		p.Spec.ConnectionPool.IgnoreStartupParameters = PgBouncerDefaultIgnoreStartupParameters
+		p.Spec.ConnectionPool.IgnoreStartupParameters = kubedb.PgBouncerDefaultIgnoreStartupParameters
 	}
 }
 

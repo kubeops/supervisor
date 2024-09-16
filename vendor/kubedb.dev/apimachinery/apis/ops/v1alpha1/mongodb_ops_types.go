@@ -37,7 +37,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=mongodbopsrequests,singular=mongodbopsrequest,shortName=mgops,categories={datastore,kubedb,appscode}
+// +kubebuilder:resource:path=mongodbopsrequests,singular=mongodbopsrequest,shortName=mgops,categories={ops,kubedb,appscode}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".spec.type"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
@@ -165,12 +165,9 @@ type MongoDBCustomConfigurationSpec struct {
 }
 
 type MongoDBCustomConfiguration struct {
-	ConfigSecret *core.LocalObjectReference `json:"configSecret,omitempty"`
-	// Deprecated
-	InlineConfig string `json:"inlineConfig,omitempty"`
-
-	ApplyConfig        map[string]string `json:"applyConfig,omitempty"`
-	RemoveCustomConfig bool              `json:"removeCustomConfig,omitempty"`
+	ConfigSecret       *core.LocalObjectReference `json:"configSecret,omitempty"`
+	ApplyConfig        map[string]string          `json:"applyConfig,omitempty"`
+	RemoveCustomConfig bool                       `json:"removeCustomConfig,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

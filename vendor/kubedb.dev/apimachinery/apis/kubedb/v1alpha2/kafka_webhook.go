@@ -21,6 +21,7 @@ import (
 	"errors"
 
 	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	"kubedb.dev/apimachinery/apis/kubedb"
 
 	errors2 "github.com/pkg/errors"
 	"gomodules.xyz/pointer"
@@ -80,7 +81,7 @@ func (k *Kafka) ValidateDelete() (admission.Warnings, error) {
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	var allErr field.ErrorList
-	if k.Spec.TerminationPolicy == TerminationPolicyDoNotTerminate {
+	if k.Spec.DeletionPolicy == TerminationPolicyDoNotTerminate {
 		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("teminationPolicy"),
 			k.Name,
 			"Can not delete as terminationPolicy is set to \"DoNotTerminate\""))
@@ -169,6 +170,12 @@ func (k *Kafka) ValidateCreateOrUpdate() error {
 		}
 	}
 
+	if k.Spec.Halted && k.Spec.DeletionPolicy == TerminationPolicyDoNotTerminate {
+		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("halted"),
+			k.Name,
+			`can't halt if deletionPolicy is set to "DoNotTerminate"`))
+	}
+
 	err := k.validateVersion(k)
 	if err != nil {
 		allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("version"),
@@ -199,6 +206,11 @@ func (k *Kafka) ValidateCreateOrUpdate() error {
 			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("storageType"),
 				k.Name,
 				"StorageType should be either durable or ephemeral"))
+		}
+		if k.Spec.StorageType == StorageTypeEphemeral && k.Spec.DeletionPolicy == TerminationPolicyHalt {
+			allErr = append(allErr, field.Invalid(field.NewPath("spec").Child("deletionPolicy"),
+				k.Name,
+				`'spec.deletionPolicy: Halt' can not be used for 'Ephemeral' storage`))
 		}
 	}
 
@@ -240,9 +252,9 @@ func (k *Kafka) validateNodeReplicas(topology *KafkaClusterTopology) error {
 }
 
 var kafkaReservedVolumes = []string{
-	KafkaVolumeData,
-	KafkaVolumeConfig,
-	KafkaVolumeTempConfig,
+	kubedb.KafkaVolumeData,
+	kubedb.KafkaVolumeConfig,
+	kubedb.KafkaVolumeTempConfig,
 }
 
 func (k *Kafka) validateVolumes(db *Kafka) error {
@@ -268,11 +280,11 @@ func (k *Kafka) validateVolumes(db *Kafka) error {
 }
 
 var kafkaReservedVolumeMountPaths = []string{
-	KafkaConfigDir,
-	KafkaTempConfigDir,
-	KafkaDataDir,
-	KafkaMetaDataDir,
-	KafkaCertDir,
+	kubedb.KafkaConfigDir,
+	kubedb.KafkaTempConfigDir,
+	kubedb.KafkaDataDir,
+	kubedb.KafkaMetaDataDir,
+	kubedb.KafkaCertDir,
 }
 
 func (k *Kafka) validateVolumesMountPaths(podTemplate *ofst.PodTemplateSpec) error {

@@ -33,7 +33,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=proxysqlversions,singular=proxysqlversion,scope=Cluster,categories={datastore,kubedb,appscode}
+// +kubebuilder:resource:path=proxysqlversions,singular=proxysqlversion,scope=Cluster,categories={catalog,kubedb,appscode}
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="ProxySQL_IMAGE",type="string",JSONPath=".spec.proxysql.image"
 // +kubebuilder:printcolumn:name="Deprecated",type="boolean",JSONPath=".spec.deprecated"
@@ -62,6 +62,8 @@ type ProxySQLVersionSpec struct {
 	// SecurityContext is for the additional config for the DB container
 	// +optional
 	SecurityContext SecurityContext `json:"securityContext"`
+	// +optional
+	UI []ChartInfo `json:"ui,omitempty"`
 }
 
 // ProxySQLVersionProxysql is the proxysql image

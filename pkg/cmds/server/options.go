@@ -27,7 +27,7 @@ import (
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
-	"kmodules.xyz/client-go/tools/clusterid"
+	clustermeta "kmodules.xyz/client-go/cluster"
 	"kmodules.xyz/webhook-runtime/builder"
 )
 
@@ -57,7 +57,7 @@ func NewExtraOptions() *ExtraOptions {
 }
 
 func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
-	clusterid.AddGoFlags(fs)
+	clustermeta.AddGoFlags(fs)
 
 	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")

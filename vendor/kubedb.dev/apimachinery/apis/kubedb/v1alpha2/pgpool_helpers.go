@@ -19,6 +19,7 @@ package v1alpha2
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"kubedb.dev/apimachinery/apis"
 	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
@@ -32,10 +33,12 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+	kmapi "kmodules.xyz/client-go/api/v1"
 	"kmodules.xyz/client-go/apiextensions"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/policy/secomp"
+	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v2"
 	pslister "kubeops.dev/petset/client/listers/apps/v1"
@@ -43,6 +46,22 @@ import (
 
 func (p *Pgpool) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralPgpool))
+}
+
+type pgpoolApp struct {
+	*Pgpool
+}
+
+func (p *pgpoolApp) Name() string {
+	return p.Pgpool.Name
+}
+
+func (p *pgpoolApp) Type() appcat.AppType {
+	return appcat.AppType(fmt.Sprintf("%s/%s", kubedb.GroupName, ResourceSingularPgpool))
+}
+
+func (p *Pgpool) AppBindingMeta() appcat.AppBindingMeta {
+	return &pgpoolApp{p}
 }
 
 func (p *Pgpool) ResourceFQN() string {
@@ -67,6 +86,10 @@ func (p *Pgpool) ResourcePlural() string {
 
 func (p *Pgpool) ConfigSecretName() string {
 	return meta_util.NameWithSuffix(p.OffshootName(), "config")
+}
+
+func (p *Pgpool) TLSSecretName() string {
+	return meta_util.NameWithSuffix(p.OffshootName(), "tls-certs")
 }
 
 func (p *Pgpool) ServiceAccountName() string {
@@ -109,7 +132,7 @@ func (p *Pgpool) OffshootLabels() map[string]string {
 }
 
 func (p *Pgpool) offshootLabels(selector, override map[string]string) map[string]string {
-	selector[meta_util.ComponentLabelKey] = ComponentConnectionPooler
+	selector[meta_util.ComponentLabelKey] = kubedb.ComponentConnectionPooler
 	return meta_util.FilterKeys(kubedb.GroupName, selector, meta_util.OverwriteKeys(nil, p.Labels, override))
 }
 
@@ -179,7 +202,7 @@ func (p PgpoolStatsService) ServiceMonitorAdditionalLabels() map[string]string {
 }
 
 func (p PgpoolStatsService) Path() string {
-	return DefaultStatsPath
+	return kubedb.DefaultStatsPath
 }
 
 func (p PgpoolStatsService) Scheme() string {
@@ -195,12 +218,72 @@ func (p Pgpool) StatsService() mona.StatsAccessor {
 }
 
 func (p Pgpool) StatsServiceLabels() map[string]string {
-	return p.ServiceLabels(StatsServiceAlias, map[string]string{LabelRole: RoleStats})
+	return p.ServiceLabels(StatsServiceAlias, map[string]string{kubedb.LabelRole: kubedb.RoleStats})
 }
 
 func (p *Pgpool) ServiceLabels(alias ServiceAlias, extraLabels ...map[string]string) map[string]string {
 	svcTemplate := GetServiceTemplate(p.Spec.ServiceTemplates, alias)
 	return p.offshootLabels(meta_util.OverwriteKeys(p.OffshootSelectors(), extraLabels...), svcTemplate.Labels)
+}
+
+func (p *Pgpool) GetSSLMODE(appBinding *appcat.AppBinding) (PgpoolSSLMode, error) {
+	if appBinding.Spec.ClientConfig.Service == nil {
+		return PgpoolSSLModeDisable, nil
+	}
+	sslmodeString := appBinding.Spec.ClientConfig.Service.Query
+	if sslmodeString == "" {
+		return PgpoolSSLModeDisable, nil
+	}
+	temps := strings.Split(sslmodeString, "=")
+	if len(temps) != 2 {
+		return "", fmt.Errorf("the sslmode is not valid. please provide the valid template. the temlpate should be like this: sslmode=<your_desire_sslmode>")
+	}
+	return PgpoolSSLMode(strings.TrimSpace(temps[1])), nil
+}
+
+func (p *Pgpool) IsBackendTLSEnabled() (bool, error) {
+	apb := appcat.AppBinding{}
+	err := DefaultClient.Get(context.TODO(), types.NamespacedName{
+		Name:      p.Spec.PostgresRef.Name,
+		Namespace: p.Spec.PostgresRef.Namespace,
+	}, &apb)
+	if err != nil {
+		return false, err
+	}
+	sslMode, err := p.GetSSLMODE(&apb)
+	if err != nil {
+		return false, err
+	}
+	if apb.Spec.TLSSecret != nil || len(apb.Spec.ClientConfig.CABundle) > 0 || sslMode != PgpoolSSLModeDisable {
+		return true, nil
+	}
+	return false, nil
+}
+
+// CertificateName returns the default certificate name and/or certificate secret name for a certificate alias
+func (p *Pgpool) CertificateName(alias PgpoolCertificateAlias) string {
+	return meta_util.NameWithSuffix(p.Name, fmt.Sprintf("%s-cert", string(alias)))
+}
+
+// GetCertSecretName returns the secret name for a certificate alias if any provide,
+// otherwise returns default certificate secret name for the given alias.
+func (p *Pgpool) GetCertSecretName(alias PgpoolCertificateAlias) string {
+	if p.Spec.TLS != nil {
+		name, ok := kmapi.GetCertificateSecretName(p.Spec.TLS.Certificates, string(alias))
+		if ok {
+			return name
+		}
+	}
+	return p.CertificateName(alias)
+}
+
+func (p *Pgpool) SetTLSDefaults() {
+	if p.Spec.TLS == nil || p.Spec.TLS.IssuerRef == nil {
+		return
+	}
+	p.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(p.Spec.TLS.Certificates, string(PgpoolServerCert), p.CertificateName(PgpoolServerCert))
+	p.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(p.Spec.TLS.Certificates, string(PgpoolClientCert), p.CertificateName(PgpoolClientCert))
+	p.Spec.TLS.Certificates = kmapi.SetMissingSecretNameForCertificate(p.Spec.TLS.Certificates, string(PgpoolMetricsExporterCert), p.CertificateName(PgpoolMetricsExporterCert))
 }
 
 func (p *Pgpool) SetSecurityContext(ppVersion *catalog.PgpoolVersion, podTemplate *ofst.PodTemplateSpec) {
@@ -214,10 +297,10 @@ func (p *Pgpool) SetSecurityContext(ppVersion *catalog.PgpoolVersion, podTemplat
 		podTemplate.Spec.SecurityContext.FSGroup = ppVersion.Spec.SecurityContext.RunAsUser
 	}
 
-	container := core_util.GetContainerByName(podTemplate.Spec.Containers, PgpoolContainerName)
+	container := core_util.GetContainerByName(podTemplate.Spec.Containers, kubedb.PgpoolContainerName)
 	if container == nil {
 		container = &core.Container{
-			Name: PgpoolContainerName,
+			Name: kubedb.PgpoolContainerName,
 		}
 	}
 	if container.SecurityContext == nil {
@@ -251,9 +334,9 @@ func (p *Pgpool) assignContainerSecurityContext(ppVersion *catalog.PgpoolVersion
 }
 
 func (p *Pgpool) setContainerResourceLimits(podTemplate *ofst.PodTemplateSpec) {
-	ppContainer := core_util.GetContainerByName(podTemplate.Spec.Containers, PgpoolContainerName)
+	ppContainer := core_util.GetContainerByName(podTemplate.Spec.Containers, kubedb.PgpoolContainerName)
 	if ppContainer != nil && (ppContainer.Resources.Requests == nil && ppContainer.Resources.Limits == nil) {
-		apis.SetDefaultResourceLimits(&ppContainer.Resources, DefaultResources)
+		apis.SetDefaultResourceLimits(&ppContainer.Resources, kubedb.DefaultResources)
 	}
 }
 
@@ -264,12 +347,22 @@ func (p *Pgpool) SetDefaults() {
 	if p.Spec.Replicas == nil {
 		p.Spec.Replicas = pointer.Int32P(1)
 	}
-	if p.Spec.TerminationPolicy == "" {
-		p.Spec.TerminationPolicy = TerminationPolicyDelete
+	if p.Spec.DeletionPolicy == "" {
+		p.Spec.DeletionPolicy = TerminationPolicyDelete
 	}
 	if p.Spec.PodTemplate == nil {
 		p.Spec.PodTemplate = &ofst.PodTemplateSpec{}
 		p.Spec.PodTemplate.Spec.Containers = []core.Container{}
+	}
+
+	if p.Spec.TLS != nil {
+		if p.Spec.SSLMode == "" {
+			p.Spec.SSLMode = PgpoolSSLModeVerifyFull
+		}
+	} else {
+		if p.Spec.SSLMode == "" {
+			p.Spec.SSLMode = PgpoolSSLModeDisable
+		}
 	}
 
 	ppVersion := catalog.PgpoolVersion{}
@@ -286,7 +379,7 @@ func (p *Pgpool) SetDefaults() {
 			p.Spec.Monitor.Prometheus = &mona.PrometheusSpec{}
 		}
 		if p.Spec.Monitor.Prometheus.Exporter.Port == 0 {
-			p.Spec.Monitor.Prometheus.Exporter.Port = PgpoolMonitoringDefaultServicePort
+			p.Spec.Monitor.Prometheus.Exporter.Port = kubedb.PgpoolMonitoringDefaultServicePort
 		}
 		p.Spec.Monitor.SetDefaults()
 		if p.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsUser == nil {
@@ -297,6 +390,7 @@ func (p *Pgpool) SetDefaults() {
 		}
 	}
 
+	p.SetTLSDefaults()
 	p.SetHealthCheckerDefaults()
 	p.SetSecurityContext(&ppVersion, p.Spec.PodTemplate)
 	p.setContainerResourceLimits(p.Spec.PodTemplate)

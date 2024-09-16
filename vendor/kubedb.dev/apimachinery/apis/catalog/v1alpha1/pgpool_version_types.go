@@ -20,9 +20,6 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 const (
 	ResourceCodePgpoolVersion     = "ppversion"
 	ResourceKindPgpoolVersion     = "PgpoolVersion"
@@ -37,7 +34,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=pgpoolversions,singular=pgpoolversion,scope=Cluster,shortName=ppversion,categories={datastore,kubedb,appscode}
+// +kubebuilder:resource:path=pgpoolversions,singular=pgpoolversion,scope=Cluster,shortName=ppversion,categories={catalog,kubedb,appscode}
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="PGPOOL_IMAGE",type="string",JSONPath=".spec.pgpool.image"
 // +kubebuilder:printcolumn:name="Deprecated",type="boolean",JSONPath=".spec.deprecated"
@@ -65,6 +62,9 @@ type PgpoolVersionSpec struct {
 	// SecurityContext is for the additional config for pgpool DB container
 	// +optional
 	SecurityContext PgpoolSecurityContext `json:"securityContext"`
+
+	// +optional
+	UI []ChartInfo `json:"ui,omitempty"`
 }
 
 // PgpoolVersionPodSecurityPolicy is the Pgpool pod security policies

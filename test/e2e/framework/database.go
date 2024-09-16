@@ -28,22 +28,23 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	kubedbapi "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+	kubedbv1 "kubedb.dev/apimachinery/apis/kubedb/v1"
+	"kubedb.dev/apimachinery/apis/kubedb"
 )
 
 func (f *Framework) getDatabaseNamespace() string {
 	return f.namespace
 }
 
-func (f *Framework) newMongoDBStandaloneDatabase() *kubedbapi.MongoDB {
-	return &kubedbapi.MongoDB{
+func (f *Framework) newMongoDBStandaloneDatabase() *kubedbv1.MongoDB {
+	return &kubedbv1.MongoDB{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("supervisor"),
 			Namespace: f.getDatabaseNamespace(),
 		},
-		Spec: kubedbapi.MongoDBSpec{
+		Spec: kubedbv1.MongoDBSpec{
 			Version:     "4.2.3",
-			StorageType: kubedbapi.StorageTypeDurable,
+			StorageType: kubedbv1.StorageTypeDurable,
 			Storage: &core.PersistentVolumeClaimSpec{
 				AccessModes: []core.PersistentVolumeAccessMode{core.ReadWriteOnce},
 				Resources: core.VolumeResourceRequirements{
@@ -53,21 +54,21 @@ func (f *Framework) newMongoDBStandaloneDatabase() *kubedbapi.MongoDB {
 				},
 				StorageClassName: pointer.StringP("standard"),
 			},
-			TerminationPolicy: "WipeOut",
+			DeletionPolicy: "WipeOut",
 		},
 	}
 }
 
-func (f *Framework) newPostgresStandaloneDatabase(customAuthName string) *kubedbapi.Postgres {
-	return &kubedbapi.Postgres{
+func (f *Framework) newPostgresStandaloneDatabase(customAuthName string) *kubedbv1.Postgres {
+	return &kubedbv1.Postgres{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("supervisor"),
 			Namespace: f.getDatabaseNamespace(),
 		},
-		Spec: kubedbapi.PostgresSpec{
+		Spec: kubedbv1.PostgresSpec{
 			Version:     "13.2",
-			StorageType: kubedbapi.StorageTypeDurable,
-			AuthSecret: &kubedbapi.SecretReference{
+			StorageType: kubedbv1.StorageTypeDurable,
+			AuthSecret: &kubedbv1.SecretReference{
 				LocalObjectReference: core.LocalObjectReference{
 					Name: customAuthName,
 				},
@@ -81,25 +82,25 @@ func (f *Framework) newPostgresStandaloneDatabase(customAuthName string) *kubedb
 				},
 				StorageClassName: pointer.StringP("standard"),
 			},
-			TerminationPolicy: "WipeOut",
+			DeletionPolicy: "WipeOut",
 		},
 	}
 }
 
-func (f *Framework) CreateNewStandaloneMongoDB() (*kubedbapi.MongoDB, error) {
+func (f *Framework) CreateNewStandaloneMongoDB() (*kubedbv1.MongoDB, error) {
 	mongoDB := f.newMongoDBStandaloneDatabase()
 	if err := f.kc.Create(f.ctx, mongoDB); err != nil {
 		return nil, err
 	}
 
 	err := wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute*10, true, func(ctx context.Context) (bool, error) {
-		mg := &kubedbapi.MongoDB{}
+		mg := &kubedbv1.MongoDB{}
 		key := client.ObjectKey{Namespace: mongoDB.Namespace, Name: mongoDB.Name}
 		if err := f.kc.Get(f.ctx, key, mg); err != nil {
 			return false, client.IgnoreNotFound(err)
 		}
 
-		if mg.Status.Phase == kubedbapi.DatabaseReady {
+		if mg.Status.Phase == kubedb.DatabaseReady {
 			return true, nil
 		}
 		return false, nil
@@ -110,7 +111,7 @@ func (f *Framework) CreateNewStandaloneMongoDB() (*kubedbapi.MongoDB, error) {
 	return mongoDB, nil
 }
 
-func (f *Framework) CreateNewStandalonePostgres() (*kubedbapi.Postgres, error) {
+func (f *Framework) CreateNewStandalonePostgres() (*kubedbv1.Postgres, error) {
 	pgAuth, err := f.createPostgresCustomAuthSecret()
 	if err != nil {
 		return nil, err
@@ -121,13 +122,13 @@ func (f *Framework) CreateNewStandalonePostgres() (*kubedbapi.Postgres, error) {
 	}
 
 	err = wait.PollUntilContextTimeout(context.Background(), time.Second, time.Minute*10, true, func(ctx context.Context) (bool, error) {
-		mg := &kubedbapi.Postgres{}
+		mg := &kubedbv1.Postgres{}
 		key := client.ObjectKey{Namespace: pg.Namespace, Name: pg.Name}
 		if err := f.kc.Get(f.ctx, key, mg); err != nil {
 			return false, client.IgnoreNotFound(err)
 		}
 
-		if mg.Status.Phase == kubedbapi.DatabaseReady {
+		if mg.Status.Phase == kubedb.DatabaseReady {
 			return true, nil
 		}
 		return false, nil
@@ -139,7 +140,7 @@ func (f *Framework) CreateNewStandalonePostgres() (*kubedbapi.Postgres, error) {
 }
 
 func (f *Framework) DeleteMongoDB(key client.ObjectKey) error {
-	mg := &kubedbapi.MongoDB{
+	mg := &kubedbv1.MongoDB{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key.Name,
 			Namespace: key.Namespace,
@@ -150,7 +151,7 @@ func (f *Framework) DeleteMongoDB(key client.ObjectKey) error {
 }
 
 func (f *Framework) DeletePostgres(key client.ObjectKey) error {
-	mg := &kubedbapi.Postgres{
+	mg := &kubedbv1.Postgres{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key.Name,
 			Namespace: key.Namespace,

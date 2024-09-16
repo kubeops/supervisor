@@ -39,7 +39,7 @@ const (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=rm,scope=Namespaced
+// +kubebuilder:resource:path=rabbitmqs,singular=rabbitmq,shortName=rm,categories={datastore,kubedb,appscode,all}
 // +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".apiVersion"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
@@ -52,14 +52,8 @@ type RabbitMQ struct {
 	Status RabbitMQStatus `json:"status,omitempty"`
 }
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // RabbitMQSpec defines the desired state of RabbitMQ
 type RabbitMQSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// Version of RabbitMQ to be deployed.
 	Version string `json:"version"`
 
@@ -106,29 +100,26 @@ type RabbitMQSpec struct {
 	// +optional
 	Halted bool `json:"halted,omitempty"`
 
+	// Indicates that the RabbitMQ Protocols that are required to be disabled on bootstrap.
+	// +optional
+	DisabledProtocols []RabbitMQProtocol `json:"disabledProtocols,omitempty"`
+
 	// Monitor is used monitor database instance
 	// +optional
 	Monitor *mona.AgentSpec `json:"monitor,omitempty"`
 
-	// TerminationPolicy controls the delete operation for database
+	// DeletionPolicy controls the delete operation for database
 	// +optional
-	TerminationPolicy TerminationPolicy `json:"terminationPolicy,omitempty"`
+	DeletionPolicy TerminationPolicy `json:"deletionPolicy,omitempty"`
 
 	// HealthChecker defines attributes of the health checker
 	// +optional
-	// +kubebuilder:default={periodSeconds: 20, timeoutSeconds: 10, failureThreshold: 3}
+	// +kubebuilder:default={periodSeconds: 10, timeoutSeconds: 10, failureThreshold: 3}
 	HealthChecker kmapi.HealthCheckSpec `json:"healthChecker"`
-
-	// PodPlacementPolicy is the reference of the podPlacementPolicy
-	// +kubebuilder:default={name: "default"}
-	// +optional
-	PodPlacementPolicy *core.LocalObjectReference `json:"podPlacementPolicy,omitempty"`
 }
 
 // RabbitMQStatus defines the observed state of RabbitMQ
 type RabbitMQStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 	// Specifies the current phase of the database
 	// +optional
 	Phase RabbitMQPhase `json:"phase,omitempty"`
@@ -139,8 +130,6 @@ type RabbitMQStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
-	// +optional
-	Gateway *Gateway `json:"gateway,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Provisioning;Ready;NotReady;Critical
@@ -160,6 +149,18 @@ const (
 	RabbitmqCACert     RabbitMQCertificateAlias = "ca"
 	RabbitmqClientCert RabbitMQCertificateAlias = "client"
 	RabbitmqServerCert RabbitMQCertificateAlias = "server"
+)
+
+// +kubebuilder:validation:Enum=http;amqp;mqtt;stomp;web_mqtt;web_stomp
+type RabbitMQProtocol string
+
+const (
+	RabbitmqProtocolHTTP     RabbitMQProtocol = "http"
+	RabbitmqProtocolAMQP     RabbitMQProtocol = "amqp"
+	RabbitmqProtocolMQTT     RabbitMQProtocol = "mqtt"
+	RabbitmqProtocolSTOMP    RabbitMQProtocol = "stomp"
+	RabbitmqProtocolWEBMQTT  RabbitMQProtocol = "web_mqtt"
+	RabbitmqProtocolWEBSTOMP RabbitMQProtocol = "web_stomp"
 )
 
 // RabbitMQList contains a list of RabbitMQ

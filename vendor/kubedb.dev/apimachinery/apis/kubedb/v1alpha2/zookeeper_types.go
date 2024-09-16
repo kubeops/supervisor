@@ -39,7 +39,7 @@ const (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=zk,scope=Namespaced
+// +kubebuilder:resource:path=zookeepers,singular=zookeeper,shortName=zk,categories={datastore,kubedb,appscode,all}
 // +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".apiVersion"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
@@ -61,6 +61,7 @@ type ZooKeeperSpec struct {
 	// +optional
 	Replicas *int32 `json:"replicas"`
 
+	// +optional
 	// +kubebuilder:default=8080
 	AdminServerPort int32 `json:"adminServerPort"`
 
@@ -88,9 +89,9 @@ type ZooKeeperSpec struct {
 	// +optional
 	ServiceTemplates []NamedServiceTemplateSpec `json:"serviceTemplates,omitempty"`
 
-	// TerminationPolicy controls the delete operation for database
+	// DeletionPolicy controls the delete operation for database
 	// +optional
-	TerminationPolicy TerminationPolicy `json:"terminationPolicy,omitempty"`
+	DeletionPolicy TerminationPolicy `json:"deletionPolicy,omitempty"`
 
 	// Indicates that the database is halted and all offshoot Kubernetes resources except PVCs are deleted.
 	// +optional
@@ -104,11 +105,6 @@ type ZooKeeperSpec struct {
 	// Monitor is used monitor database instance
 	// +optional
 	Monitor *mona.AgentSpec `json:"monitor,omitempty"`
-
-	// PodPlacementPolicy is the reference of the podPlacementPolicy
-	// +kubebuilder:default={name: "default"}
-	// +optional
-	PodPlacementPolicy *core.LocalObjectReference `json:"podPlacementPolicy,omitempty"`
 }
 
 // ZooKeeperStatus defines the observed state of ZooKeeper
@@ -123,8 +119,6 @@ type ZooKeeperStatus struct {
 	// Conditions applied to the database, such as approval or denial.
 	// +optional
 	Conditions []kmapi.Condition `json:"conditions,omitempty"`
-	// +optional
-	Gateway *Gateway `json:"gateway,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
