@@ -20,10 +20,9 @@ import (
 	"context"
 	"os"
 
-	"github.com/jonboulle/clockwork"
-
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
+	"github.com/jonboulle/clockwork"
 	"gomodules.xyz/x/crypto/rand"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"

@@ -20,11 +20,12 @@ import (
 	"context"
 	"time"
 
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+
 	"gomodules.xyz/x/crypto/rand"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kmapi "kmodules.xyz/client-go/api/v1"
-	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

@@ -20,11 +20,12 @@ import (
 	"context"
 	"time"
 
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+
 	"gomodules.xyz/x/crypto/rand"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kmapi "kmodules.xyz/client-go/api/v1"
-	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -38,8 +39,8 @@ func (f *Framework) CreateDefaultMaintenanceWindow() error {
 			IsDefault: true,
 			Dates: []api.DateWindow{
 				{
-					Start: metav1.Time{Time: time.Date(2022, 01, 01, 0, 0, 0, 0, time.UTC)},
-					End:   metav1.Time{Time: time.Date(2023, 01, 01, 0, 0, 0, 0, time.UTC)},
+					Start: metav1.Time{Time: time.Date(2022, 0o1, 0o1, 0, 0, 0, 0, time.UTC)},
+					End:   metav1.Time{Time: time.Date(2023, 0o1, 0o1, 0, 0, 0, 0, time.UTC)},
 				},
 			},
 		},

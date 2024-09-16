@@ -20,23 +20,21 @@ import (
 	"errors"
 	"time"
 
-	"gomodules.xyz/pointer"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	"kubeops.dev/supervisor/test/e2e/framework"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/pointer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	kubedbv1 "kubedb.dev/apimachinery/apis/kubedb/v1"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
-	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
-	"kubeops.dev/supervisor/test/e2e/framework"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Supervisor E2E Testing", func() {
-	var (
-		f *framework.Invocation
-	)
+	var f *framework.Invocation
 
 	var (
 		createNewStandaloneMongoDB = func() *kubedbv1.MongoDB {

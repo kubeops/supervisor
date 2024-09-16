@@ -22,7 +22,7 @@ import (
 	"errors"
 	"time"
 
-	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	"gomodules.xyz/pointer"
 	"gomodules.xyz/x/crypto/rand"
@@ -33,7 +33,7 @@ import (
 	kmapi "kmodules.xyz/client-go/api/v1"
 	kmc "kmodules.xyz/client-go/client"
 	kubedbv1 "kubedb.dev/apimachinery/apis/kubedb/v1"
-	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -156,7 +156,6 @@ func (f *Framework) createRecommendation(rcmd *api.Recommendation) (*api.Recomme
 		}
 		return true, nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

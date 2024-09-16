@@ -22,6 +22,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+	"kubeops.dev/supervisor/test/e2e/framework"
+
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
@@ -32,13 +35,10 @@ import (
 	"k8s.io/client-go/util/homedir"
 	kubedbv1 "kubedb.dev/apimachinery/apis/kubedb/v1"
 	opsapi "kubedb.dev/apimachinery/apis/ops/v1alpha1"
-	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
-	"kubeops.dev/supervisor/test/e2e/framework"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	//+kubebuilder:scaffold:imports
 )
 
 var (
@@ -103,7 +103,6 @@ var _ = BeforeSuite(func() {
 
 	By("Ensuring CRDs")
 	root.EnsureCRD().Should(Succeed())
-
 }, 60)
 
 var _ = AfterSuite(func() {

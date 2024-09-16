@@ -20,8 +20,9 @@ import (
 	"fmt"
 	"time"
 
-	. "github.com/onsi/gomega"
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+
+	. "github.com/onsi/gomega"
 )
 
 func (f *Framework) EnsureCRD() GomegaAsyncAssertion {

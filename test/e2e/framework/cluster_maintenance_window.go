@@ -20,9 +20,10 @@ import (
 	"context"
 	"time"
 
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
