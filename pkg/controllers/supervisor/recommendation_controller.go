@@ -19,6 +19,7 @@ package supervisor
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -32,7 +33,6 @@ import (
 
 	"github.com/jonboulle/clockwork"
 	"gomodules.xyz/pointer"
-	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -263,11 +263,14 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 		return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 	}
 
-	// Creating OpsRequest from given raw object
-	opsReqName := rand.WithUniqSuffix("supervisor")
 	unObj, err := shared.GetUnstructuredObj(rcmd.Spec.Operation)
 	if err != nil {
 		return r.handleErr(ctx, rcmd, err, api.Failed)
+	}
+
+	opsReqName, err := generateOpsRequestName(unObj)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 	unObj.SetName(opsReqName)
 
@@ -291,6 +294,19 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 		return in
 	})
 	return ctrl.Result{}, err
+}
+
+func generateOpsRequestName(unObj *unstructured.Unstructured) (string, error) {
+	dbName, found, err := unstructured.NestedString(unObj.Object, "spec", "databaseRef", "name")
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", fmt.Errorf("invalid recommendation %s; missing `spec.databaseRef.name` in spec.opration", unObj.GetName())
+	}
+	unixTime := time.Now().Unix()
+	operationType := unObj.GetName()
+	return meta_util.ValidNameWithPrefix(dbName, fmt.Sprintf("%v-%s-auto", unixTime, operationType)), nil
 }
 
 func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *api.Recommendation, err error, phase api.RecommendationPhase) (ctrl.Result, error) {
