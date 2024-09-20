@@ -306,7 +306,7 @@ func generateOpsRequestName(unObj *unstructured.Unstructured) (string, error) {
 	}
 	unixTime := time.Now().Unix()
 	operationType := unObj.GetName()
-	return fmt.Sprintf("%s-%v-%s-supervisor", dbName, unixTime, operationType), nil
+	return meta_util.ValidNameWithPrefix(dbName, fmt.Sprintf("%v-%s-auto", unixTime, operationType)), nil
 }
 
 func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *api.Recommendation, err error, phase api.RecommendationPhase) (ctrl.Result, error) {
