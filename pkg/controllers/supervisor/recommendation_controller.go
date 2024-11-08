@@ -140,19 +140,26 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return r.handleErr(ctx, obj, err, api.Pending)
 		}
 
-		if !isMaintenanceTime {
-			if obj.Status.Phase == api.Pending {
-				_, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
-					in := obj.(*api.Recommendation)
-					in.Status.Phase = api.Waiting
-					in.Status.Reason = api.WaitingForMaintenanceWindow
-					return in
-				})
-				if err != nil {
-					return ctrl.Result{}, err
-				}
+		if !isMaintenanceTime && obj.Status.Phase == api.Pending {
+			_, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
+				in := obj.(*api.Recommendation)
+				in.Status.Phase = api.Waiting
+				in.Status.Reason = api.WaitingForMaintenanceWindow
+				return in
+			})
+			if err != nil {
+				return ctrl.Result{}, err
 			}
+
 			return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
+		}
+
+		// If WaitingForMaintenanceWindow, but certificate deadline is reached,
+		// trigger maintenanceWork anyway, requeue otherwise
+		if obj.Status.Phase == api.Waiting && obj.Status.Reason == api.WaitingForMaintenanceWindow {
+			if obj.Spec.Deadline != nil && obj.Spec.Deadline.UTC().After(r.Clock.Now()) {
+				return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
+			}
 		}
 
 		return r.runMaintenanceWork(ctx, obj)
