@@ -16,6 +16,8 @@ limitations under the License.
 
 package v1alpha1
 
+import meta_util "kmodules.xyz/client-go/meta"
+
 func (r *Recommendation) IsAwaitingOrProgressingRecommendation() bool {
 	return r.IsAwaitingRecommendation() || r.IsProgressingRecommendation()
 }
@@ -35,4 +37,8 @@ func (r *Recommendation) IsAwaitingRecommendation() bool {
 
 func (r *Recommendation) IsProgressingRecommendation() bool {
 	return r.Status.Phase == InProgress
+}
+
+func (r *Recommendation) MergeWithOffshootLabels(extraLabels ...map[string]string) map[string]string {
+	return meta_util.OverwriteKeys(r.GetLabels(), extraLabels...)
 }
