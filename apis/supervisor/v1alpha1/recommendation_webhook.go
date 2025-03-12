@@ -17,67 +17,107 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"reflect"
 
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
+
+// SetupRecommendationWebhookWithManager registers the webhook for Recommendation in the manager.
+func SetupRecommendationWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&Recommendation{}).
+		WithValidator(&RecommendationCustomWebhook{mgr.GetClient()}).
+		WithDefaulter(&RecommendationCustomWebhook{mgr.GetClient()}).
+		Complete()
+}
+
+//+kubebuilder:webhook:path=/mutate-supervisor-appscode-com-v1alpha1-recommendation,mutating=true,failurePolicy=fail,sideEffects=None,groups=supervisor.appscode.com,resources=recommendations,verbs=create;update,versions=v1alpha1,name=mrecommendation.kb.io,admissionReviewVersions={v1,v1beta1}
+
+// +kubebuilder:object:generate=false
+type RecommendationCustomWebhook struct {
+	DefaultClient client.Client
+}
 
 // log is for logging in this package.
 var (
 	recommendationlog = logf.Log.WithName("recommendation-resource")
 )
 
-var _ webhook.Defaulter = &Recommendation{}
+var _ webhook.CustomDefaulter = &RecommendationCustomWebhook{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Recommendation) Default() {
-	recommendationlog.Info("default", "name", r.Name)
-
-	if r.Spec.BackoffLimit == nil {
-		r.Spec.BackoffLimit = pointer.Int32P(DefaultBackoffLimit)
+func (r *RecommendationCustomWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	rec, ok := obj.(*Recommendation)
+	if !ok {
+		return fmt.Errorf("expected an Recommendation object but got %T", obj)
 	}
+
+	recommendationlog.Info("default", "name", rec.Name)
+
+	if rec.Spec.BackoffLimit == nil {
+		rec.Spec.BackoffLimit = pointer.Int32P(DefaultBackoffLimit)
+	}
+	return nil
 }
 
-var _ webhook.Validator = &Recommendation{}
+var _ webhook.CustomValidator = &RecommendationCustomWebhook{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Recommendation) ValidateCreate() (admission.Warnings, error) {
-	recommendationlog.Info("validate create", "name", r.Name)
+func (r *RecommendationCustomWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	rec, ok := obj.(*Recommendation)
+	if !ok {
+		return nil, fmt.Errorf("expected an Recommendation object but got %T", obj)
+	}
 
-	return nil, r.validateRecommendation()
+	recommendationlog.Info("validate create", "name", rec.Name)
+
+	return nil, r.validateRecommendation(rec)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Recommendation) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	recommendationlog.Info("validate update", "name", r.Name)
+func (r *RecommendationCustomWebhook) ValidateUpdate(ctx context.Context, old, newObj runtime.Object) (admission.Warnings, error) {
+	rec, ok := newObj.(*Recommendation)
+	if !ok {
+		return nil, fmt.Errorf("expected an Recommendation object but got %T", newObj)
+	}
+
+	recommendationlog.Info("validate update", "name", rec.Name)
 
 	obj := old.(*Recommendation)
 
-	if !reflect.DeepEqual(obj.Spec.Operation, r.Spec.Operation) || !reflect.DeepEqual(obj.Spec.Target, r.Spec.Target) {
+	if !reflect.DeepEqual(obj.Spec.Operation, rec.Spec.Operation) || !reflect.DeepEqual(obj.Spec.Target, rec.Spec.Target) {
 		return nil, errors.New("can't update operation or target field. fields are immutable")
 	}
-	return nil, r.validateRecommendation()
+	return nil, r.validateRecommendation(rec)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Recommendation) ValidateDelete() (admission.Warnings, error) {
-	recommendationlog.Info("validate delete", "name", r.Name)
+func (r *RecommendationCustomWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	rec, ok := obj.(*Recommendation)
+	if !ok {
+		return nil, fmt.Errorf("expected an Recommendation object but got %T", obj)
+	}
+
+	recommendationlog.Info("validate delete", "name", rec.Name)
 
 	return nil, nil
 }
 
-func (r *Recommendation) validateRecommendation() error {
+func (r *RecommendationCustomWebhook) validateRecommendation(rec *Recommendation) error {
 	klog.Info("Validating Recommendation webhook")
-	if r.Spec.BackoffLimit == nil {
+	if rec.Spec.BackoffLimit == nil {
 		return errors.New("backoffLimit field .spec.backoffLimit must not be nil")
 	}
-	if len(r.Spec.Rules.Success) == 0 || len(r.Spec.Rules.InProgress) == 0 || len(r.Spec.Rules.Failed) == 0 {
+	if len(rec.Spec.Rules.Success) == 0 || len(rec.Spec.Rules.InProgress) == 0 || len(rec.Spec.Rules.Failed) == 0 {
 		return errors.New("success/inProgress/failed rules can't be empty")
 	}
 

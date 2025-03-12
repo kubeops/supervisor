@@ -43,6 +43,7 @@ import (
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v2"
 	pslister "kubeops.dev/petset/client/listers/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (f *FerretDB) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
@@ -117,7 +118,7 @@ func (f *FerretDB) GetAuthSecretName() string {
 func (f *FerretDB) GetPersistentSecrets() []string {
 	var secrets []string
 	if f.Spec.AuthSecret != nil {
-		secrets = append(secrets, f.Spec.AuthSecret.Name)
+		secrets = append(secrets, f.GetAuthSecretName())
 	}
 	return secrets
 }
@@ -172,7 +173,7 @@ func (f *FerretDB) SetHealthCheckerDefaults() {
 	}
 }
 
-func (f *FerretDB) SetDefaults() {
+func (f *FerretDB) SetDefaults(kc client.Client) {
 	if f == nil {
 		return
 	}
@@ -181,7 +182,7 @@ func (f *FerretDB) SetDefaults() {
 	}
 
 	if f.Spec.DeletionPolicy == "" {
-		f.Spec.DeletionPolicy = TerminationPolicyWipeOut
+		f.Spec.DeletionPolicy = DeletionPolicyWipeOut
 	}
 
 	if f.Spec.SSLMode == "" {
@@ -197,7 +198,7 @@ func (f *FerretDB) SetDefaults() {
 	}
 
 	var frVersion catalog.FerretDBVersion
-	err := DefaultClient.Get(context.TODO(), types.NamespacedName{
+	err := kc.Get(context.TODO(), types.NamespacedName{
 		Name: f.Spec.Version,
 	}, &frVersion)
 	if err != nil {
@@ -244,7 +245,7 @@ func (f *FerretDB) SetDefaults() {
 		}
 	}
 
-	defaultVersion := "13.13"
+	defaultVersion := "16.4-bookworm"
 	if !f.Spec.Backend.ExternallyManaged {
 		if f.Spec.Backend.Version == nil {
 			f.Spec.Backend.Version = &defaultVersion

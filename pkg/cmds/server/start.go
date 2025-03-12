@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
+	"path/filepath"
 
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/pkg/controllers"
@@ -33,12 +35,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apiserver/pkg/endpoints/openapi"
-	"k8s.io/apiserver/pkg/features"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
-	"k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	utilversion "k8s.io/component-base/version"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	"kmodules.xyz/webhook-runtime/builder"
@@ -60,7 +61,6 @@ type SupervisorOperatorOptions struct {
 }
 
 func NewSupervisorOperatorOptions(out, errOut io.Writer) *SupervisorOperatorOptions {
-	_ = feature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%s=false", features.APIPriorityAndFairness))
 	o := &SupervisorOperatorOptions{
 		// TODO we will nil out the etcd storage options.  This requires a later level of k8s.io/apiserver
 		RecommendedOptions: genericoptions.NewRecommendedOptions(
@@ -100,6 +100,7 @@ func (o SupervisorOperatorOptions) Config() (*server.SupervisorOperatorConfig, e
 	}
 
 	serverConfig := genericapiserver.NewRecommendedConfig(server.Codecs)
+	serverConfig.EffectiveVersion = utilversion.NewEffectiveVersion("v1.0.0")
 	if err := o.RecommendedOptions.ApplyTo(serverConfig); err != nil {
 		return nil, err
 	}
@@ -165,6 +166,10 @@ func (o SupervisorOperatorOptions) Run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		caBundle, err := os.ReadFile(filepath.Join("/var/serving-cert", "ca.crt"))
+		if err != nil {
+			return err
+		}
 
 		apiGroups := []string{
 			api.GroupVersion.Group,
@@ -182,7 +187,7 @@ func (o SupervisorOperatorOptions) Run(ctx context.Context) error {
 					wc,
 					func(in *reg.MutatingWebhookConfiguration) *reg.MutatingWebhookConfiguration {
 						for i := range in.Webhooks {
-							in.Webhooks[i].ClientConfig.CABundle = cfg.ExtraConfig.ClientConfig.CAData
+							in.Webhooks[i].ClientConfig.CABundle = caBundle
 						}
 						return in
 					}, metav1.PatchOptions{})
@@ -202,7 +207,7 @@ func (o SupervisorOperatorOptions) Run(ctx context.Context) error {
 					wc,
 					func(in *reg.ValidatingWebhookConfiguration) *reg.ValidatingWebhookConfiguration {
 						for i := range in.Webhooks {
-							in.Webhooks[i].ClientConfig.CABundle = cfg.ExtraConfig.ClientConfig.CAData
+							in.Webhooks[i].ClientConfig.CABundle = caBundle
 						}
 						return in
 					}, metav1.PatchOptions{})
@@ -215,12 +220,12 @@ func (o SupervisorOperatorOptions) Run(ctx context.Context) error {
 	}
 
 	s.GenericAPIServer.AddPostStartHookOrDie("start-supervisor-informers", func(context genericapiserver.PostStartHookContext) error {
-		cfg.GenericConfig.SharedInformerFactory.Start(context.StopCh)
+		cfg.GenericConfig.SharedInformerFactory.Start(context.Context.Done())
 		return nil
 	})
 
 	err = s.Manager.Add(manager.RunnableFunc(func(ctx context.Context) error {
-		return s.GenericAPIServer.PrepareRun().Run(ctx.Done())
+		return s.GenericAPIServer.PrepareRun().RunWithContext(ctx)
 	}))
 	if err != nil {
 		return err

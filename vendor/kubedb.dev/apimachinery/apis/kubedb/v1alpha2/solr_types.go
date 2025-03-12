@@ -72,7 +72,7 @@ type SolrSpec struct {
 	Storage *core.PersistentVolumeClaimSpec `json:"storage,omitempty"`
 
 	// 	// ZooKeeper contains information for Solr to store configurations for collections
-	ZookeeperRef *kmapi.ObjectReference `json:"zookeeperRef,omitempty"`
+	ZookeeperRef *ZookeeperRef `json:"zookeeperRef,omitempty"`
 
 	// +optional
 	SolrModules []string `json:"solrModules,omitempty"`
@@ -82,6 +82,9 @@ type SolrSpec struct {
 
 	// To enable ssl for http layer
 	EnableSSL bool `json:"enableSSL,omitempty"`
+
+	// Client auth need or want
+	ClientAuthSSL string `json:"clientAuthSSL,omitempty"`
 
 	// TLS contains tls configurations for client and server.
 	// +optional
@@ -96,7 +99,10 @@ type SolrSpec struct {
 	ConfigSecret *core.LocalObjectReference `json:"configSecret,omitempty"`
 
 	// +optional
-	AuthSecret *core.LocalObjectReference `json:"authSecret,omitempty"`
+	KeystoreSecret *core.LocalObjectReference `json:"keystoreSecret,omitempty"`
+
+	// +optional
+	AuthSecret *SecretReference `json:"authSecret,omitempty"`
 
 	// +optional
 	ZookeeperDigestSecret *core.LocalObjectReference `json:"zookeeperDigestSecret,omitempty"`
@@ -117,7 +123,7 @@ type SolrSpec struct {
 
 	// DeletionPolicy controls the delete operation for database
 	// +optional
-	DeletionPolicy TerminationPolicy `json:"deletionPolicy,omitempty"`
+	DeletionPolicy DeletionPolicy `json:"deletionPolicy,omitempty"`
 
 	// HealthChecker defines attributes of the health checker
 	// +optional
@@ -174,7 +180,19 @@ const (
 	SolrNodeRoleOverseer    SolrNodeRoleType = "overseer"
 	SolrNodeRoleData        SolrNodeRoleType = "data"
 	SolrNodeRoleCoordinator SolrNodeRoleType = "coordinator"
+	SolrNodeRoleCombined    SolrNodeRoleType = "combined"
 	SolrNodeRoleSet                          = "set"
+)
+
+// +kubebuilder:validation:Enum=ca;transport;http;client;server
+type SolrCertificateAlias string
+
+const (
+	SolrCACert        SolrCertificateAlias = "ca"
+	SolrTransportCert SolrCertificateAlias = "transport"
+	SolrHTTPCert      SolrCertificateAlias = "http"
+	SolrClientCert    SolrCertificateAlias = "client"
+	SolrServerCert    SolrCertificateAlias = "server"
 )
 
 //+kubebuilder:object:root=true

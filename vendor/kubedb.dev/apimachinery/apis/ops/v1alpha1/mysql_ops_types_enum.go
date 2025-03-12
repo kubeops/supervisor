@@ -26,6 +26,10 @@ const (
 	MySQLOpsRequestTypeReconfigure MySQLOpsRequestType = "Reconfigure"
 	// MySQLOpsRequestTypeReconfigureTLS is a MySQLOpsRequestType of type ReconfigureTLS.
 	MySQLOpsRequestTypeReconfigureTLS MySQLOpsRequestType = "ReconfigureTLS"
+	// MySQLOpsRequestTypeRotateAuth is a MySQLOpsRequestType of type RotateAuth.
+	MySQLOpsRequestTypeRotateAuth MySQLOpsRequestType = "RotateAuth"
+	// MySQLOpsRequestTypeReplicationModeTransformation is a MySQLOpsRequestType of type ReplicationModeTransformation.
+	MySQLOpsRequestTypeReplicationModeTransformation MySQLOpsRequestType = "ReplicationModeTransformation"
 )
 
 var ErrInvalidMySQLOpsRequestType = fmt.Errorf("not a valid MySQLOpsRequestType, try [%s]", strings.Join(_MySQLOpsRequestTypeNames, ", "))
@@ -38,6 +42,8 @@ var _MySQLOpsRequestTypeNames = []string{
 	string(MySQLOpsRequestTypeRestart),
 	string(MySQLOpsRequestTypeReconfigure),
 	string(MySQLOpsRequestTypeReconfigureTLS),
+	string(MySQLOpsRequestTypeRotateAuth),
+	string(MySQLOpsRequestTypeReplicationModeTransformation),
 }
 
 // MySQLOpsRequestTypeNames returns a list of possible string values of MySQLOpsRequestType.
@@ -57,6 +63,8 @@ func MySQLOpsRequestTypeValues() []MySQLOpsRequestType {
 		MySQLOpsRequestTypeRestart,
 		MySQLOpsRequestTypeReconfigure,
 		MySQLOpsRequestTypeReconfigureTLS,
+		MySQLOpsRequestTypeRotateAuth,
+		MySQLOpsRequestTypeReplicationModeTransformation,
 	}
 }
 
@@ -73,13 +81,15 @@ func (x MySQLOpsRequestType) IsValid() bool {
 }
 
 var _MySQLOpsRequestTypeValue = map[string]MySQLOpsRequestType{
-	"UpdateVersion":     MySQLOpsRequestTypeUpdateVersion,
-	"HorizontalScaling": MySQLOpsRequestTypeHorizontalScaling,
-	"VerticalScaling":   MySQLOpsRequestTypeVerticalScaling,
-	"VolumeExpansion":   MySQLOpsRequestTypeVolumeExpansion,
-	"Restart":           MySQLOpsRequestTypeRestart,
-	"Reconfigure":       MySQLOpsRequestTypeReconfigure,
-	"ReconfigureTLS":    MySQLOpsRequestTypeReconfigureTLS,
+	"UpdateVersion":                 MySQLOpsRequestTypeUpdateVersion,
+	"HorizontalScaling":             MySQLOpsRequestTypeHorizontalScaling,
+	"VerticalScaling":               MySQLOpsRequestTypeVerticalScaling,
+	"VolumeExpansion":               MySQLOpsRequestTypeVolumeExpansion,
+	"Restart":                       MySQLOpsRequestTypeRestart,
+	"Reconfigure":                   MySQLOpsRequestTypeReconfigure,
+	"ReconfigureTLS":                MySQLOpsRequestTypeReconfigureTLS,
+	"RotateAuth":                    MySQLOpsRequestTypeRotateAuth,
+	"ReplicationModeTransformation": MySQLOpsRequestTypeReplicationModeTransformation,
 }
 
 // ParseMySQLOpsRequestType attempts to convert a string to a MySQLOpsRequestType.

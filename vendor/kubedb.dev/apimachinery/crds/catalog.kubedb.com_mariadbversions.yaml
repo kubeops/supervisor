@@ -16,7 +16,7 @@ spec:
     listKind: MariaDBVersionList
     plural: mariadbversions
     shortNames:
-    - mariaversion
+    - mdversion
     singular: mariadbversion
   scope: Cluster
   versions:
@@ -138,6 +138,19 @@ spec:
                 properties:
                   image:
                     type: string
+                required:
+                - image
+                type: object
+              maxscale:
+                properties:
+                  image:
+                    type: string
+                  securityContext:
+                    properties:
+                      runAsUser:
+                        format: int64
+                        type: integer
+                    type: object
                 required:
                 - image
                 type: object

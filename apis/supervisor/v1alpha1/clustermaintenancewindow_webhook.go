@@ -23,61 +23,93 @@ import (
 
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+// SetupClusterMaintenanceWindowWebhookWithManager registers the webhook for ClusterMaintenanceWindow in the manager.
+func SetupClusterMaintenanceWindowWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&ClusterMaintenanceWindow{}).
+		WithValidator(&ClusterMaintenanceWindowCustomWebhook{mgr.GetClient()}).
+		WithDefaulter(&ClusterMaintenanceWindowCustomWebhook{mgr.GetClient()}).
+		Complete()
+}
+
+//+kubebuilder:webhook:path=/mutate-supervisor-appscode-com-v1alpha1-clustermaintenancewindow,mutating=true,failurePolicy=fail,sideEffects=None,groups=supervisor.appscode.com,resources=clustermaintenancewindows,verbs=create;update,versions=v1alpha1,name=mclustermaintenancewindow.kb.io,admissionReviewVersions={v1,v1beta1}
+
+// +kubebuilder:object:generate=false
+type ClusterMaintenanceWindowCustomWebhook struct {
+	DefaultClient client.Client
+}
+
+var _ webhook.CustomDefaulter = &ClusterMaintenanceWindowCustomWebhook{}
+
 // log is for logging in this package.
 var (
 	clustermaintenancewindowlog = logf.Log.WithName("clustermaintenancewindow-resource")
 )
 
-//+kubebuilder:webhook:path=/mutate-supervisor-appscode-com-v1alpha1-clustermaintenancewindow,mutating=true,failurePolicy=fail,sideEffects=None,groups=supervisor.appscode.com,resources=clustermaintenancewindows,verbs=create;update,versions=v1alpha1,name=mclustermaintenancewindow.kb.io,admissionReviewVersions={v1,v1beta1}
-
-var _ webhook.Defaulter = &ClusterMaintenanceWindow{}
+var _ webhook.CustomDefaulter = &ClusterMaintenanceWindowCustomWebhook{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *ClusterMaintenanceWindow) Default() {
-	clustermaintenancewindowlog.Info("default", "name", r.Name)
+func (r *ClusterMaintenanceWindowCustomWebhook) Default(ctx context.Context, obj runtime.Object) error {
+	window, ok := obj.(*ClusterMaintenanceWindow)
+	if !ok {
+		return fmt.Errorf("expected an ClusterMaintenanceWindow object but got %T", obj)
+	}
+	clustermaintenancewindowlog.Info("default", "name", window.Name)
 
-	// TODO(user): fill in your defaulting logic.
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-supervisor-appscode-com-v1alpha1-clustermaintenancewindow,mutating=false,failurePolicy=fail,sideEffects=None,groups=supervisor.appscode.com,resources=clustermaintenancewindows,verbs=create;update,versions=v1alpha1,name=vclustermaintenancewindow.kb.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.Validator = &ClusterMaintenanceWindow{}
+var _ webhook.CustomValidator = &ClusterMaintenanceWindowCustomWebhook{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *ClusterMaintenanceWindow) ValidateCreate() (admission.Warnings, error) {
-	clustermaintenancewindowlog.Info("validate create", "name", r.Name)
+func (r *ClusterMaintenanceWindowCustomWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	window, ok := obj.(*ClusterMaintenanceWindow)
+	if !ok {
+		return nil, fmt.Errorf("expected an ClusterMaintenanceWindow object but got %T", obj)
+	}
+	clustermaintenancewindowlog.Info("validate create", "name", window.Name)
 
-	return nil, r.validateClusterMaintenanceWindow(context.TODO())
+	return nil, r.validateClusterMaintenanceWindow(context.TODO(), window)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *ClusterMaintenanceWindow) ValidateUpdate(_ runtime.Object) (admission.Warnings, error) {
-	clustermaintenancewindowlog.Info("validate update", "name", r.Name)
+func (r *ClusterMaintenanceWindowCustomWebhook) ValidateUpdate(ctx context.Context, old, newObj runtime.Object) (admission.Warnings, error) {
+	window, ok := newObj.(*ClusterMaintenanceWindow)
+	if !ok {
+		return nil, fmt.Errorf("expected an ClusterMaintenanceWindow object but got %T", newObj)
+	}
+	clustermaintenancewindowlog.Info("validate update", "name", window.Name)
 
-	return nil, r.validateClusterMaintenanceWindow(context.TODO())
+	return nil, r.validateClusterMaintenanceWindow(context.TODO(), window)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *ClusterMaintenanceWindow) ValidateDelete() (admission.Warnings, error) {
-	clustermaintenancewindowlog.Info("validate delete", "name", r.Name)
+func (r *ClusterMaintenanceWindowCustomWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	window, ok := obj.(*ClusterMaintenanceWindow)
+	if !ok {
+		return nil, fmt.Errorf("expected an ClusterMaintenanceWindow object but got %T", obj)
+	}
+	clustermaintenancewindowlog.Info("validate delete", "name", window.Name)
 
 	return nil, nil
 }
 
-func (r *ClusterMaintenanceWindow) validateClusterMaintenanceWindow(ctx context.Context) error {
-	if r.Spec.Timezone != nil {
-		if err := validateTimeZone(pointer.String(r.Spec.Timezone)); err != nil {
+func (r *ClusterMaintenanceWindowCustomWebhook) validateClusterMaintenanceWindow(ctx context.Context, window *ClusterMaintenanceWindow) error {
+	if window.Spec.Timezone != nil {
+		if err := validateTimeZone(pointer.String(window.Spec.Timezone)); err != nil {
 			return err
 		}
 	}
-	if !r.Spec.IsDefault {
+	if !window.Spec.IsDefault {
 		return nil
 	}
 
@@ -93,7 +125,7 @@ func (r *ClusterMaintenanceWindow) validateClusterMaintenanceWindow(ctx context.
 
 	if len(cmwList.Items) == 0 {
 		return nil
-	} else if len(cmwList.Items) == 1 && cmwList.Items[0].Name == r.Name { // to handle update operation of the Default ClusterMaintenanceWindow
+	} else if len(cmwList.Items) == 1 && cmwList.Items[0].Name == window.Name { // to handle update operation of the Default ClusterMaintenanceWindow
 		return nil
 	} else {
 		return fmt.Errorf("%q is already present as default ClusterMaintenanceWindow", cmwList.Items[0].Name)
