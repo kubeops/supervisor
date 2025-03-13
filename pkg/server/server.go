@@ -18,9 +18,8 @@ package server
 
 import (
 	"context"
-	"fmt"
+	"crypto/tls"
 	"os"
-	"strings"
 	"sync"
 
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
@@ -35,20 +34,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/version"
-	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
 	cu "kmodules.xyz/client-go/client"
-	hooks "kmodules.xyz/webhook-runtime/admission/v1"
-	admissionreview "kmodules.xyz/webhook-runtime/registry/admissionreview/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 var (
@@ -57,6 +53,10 @@ var (
 	// Codecs provides methods for retrieving codecs and serializers for specific
 	// versions and content types.
 	Codecs = serializer.NewCodecFactory(Scheme)
+)
+
+const (
+	defaultCertDir = "/var/serving-cert"
 )
 
 func init() {
@@ -109,11 +109,6 @@ func (cfg *SupervisorOperatorConfig) Complete() CompletedConfig {
 		cfg.ExtraConfig,
 	}
 
-	c.GenericConfig.Version = &version.Info{
-		Major: "1",
-		Minor: "0",
-	}
-
 	return CompletedConfig{&c}
 }
 
@@ -140,9 +135,16 @@ func (c completedConfig) New() (*SupervisorOperator, error) {
 		os.Exit(1)
 	}
 
+	tlsOpts := []func(*tls.Config){}
+	webhookServer := webhook.NewServer(webhook.Options{
+		TLSOpts: tlsOpts,
+		CertDir: defaultCertDir,
+	})
+
 	mgr, err := manager.New(cfg, manager.Options{
 		Scheme:                 Scheme,
 		Metrics:                metricsserver.Options{BindAddress: ""},
+		WebhookServer:          webhookServer,
 		HealthProbeBindAddress: "0",
 		LeaderElection:         false,
 		LeaderElectionID:       "3a57c480.supervisor.appscode.com",
@@ -222,95 +224,18 @@ func (c completedConfig) New() (*SupervisorOperator, error) {
 		GenericAPIServer: genericServer,
 		Manager:          mgr,
 	}
-
-	for _, versionMap := range admissionHooksByGroupThenVersion(c.ExtraConfig.AdmissionHooks...) {
-		// TODO we're going to need a later k8s.io/apiserver so that we can get discovery to list a different group version for
-		// our endpoint which we'll use to back some custom storage which will consume the AdmissionReview type and give back the correct response
-		apiGroupInfo := genericapiserver.APIGroupInfo{
-			VersionedResourcesStorageMap: map[string]map[string]rest.Storage{},
-			// TODO unhardcode this.  It was hardcoded before, but we need to re-evaluate
-			OptionsExternalVersion: &schema.GroupVersion{Version: "v1"},
-			Scheme:                 Scheme,
-			ParameterCodec:         metav1.ParameterCodec,
-			NegotiatedSerializer:   Codecs,
-		}
-
-		for _, admissionHooks := range versionMap {
-			for i := range admissionHooks {
-				admissionHook := admissionHooks[i]
-				admissionResource, _ := admissionHook.Resource()
-				admissionVersion := admissionResource.GroupVersion()
-
-				// just overwrite the groupversion with a random one.  We don't really care or know.
-				apiGroupInfo.PrioritizedVersions = appendUniqueGroupVersion(apiGroupInfo.PrioritizedVersions, admissionVersion)
-
-				admissionReview := admissionreview.NewREST(admissionHook.Admit)
-				v1alpha1storage, ok := apiGroupInfo.VersionedResourcesStorageMap[admissionVersion.Version]
-				if !ok {
-					v1alpha1storage = map[string]rest.Storage{}
-				}
-				v1alpha1storage[admissionResource.Resource] = admissionReview
-				apiGroupInfo.VersionedResourcesStorageMap[admissionVersion.Version] = v1alpha1storage
-			}
-		}
-
-		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
-			return nil, err
-		}
+	if err = api.SetupRecommendationWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to setup Recommendation webhook")
+		return s, err
 	}
-
-	for i := range c.ExtraConfig.AdmissionHooks {
-		admissionHook := c.ExtraConfig.AdmissionHooks[i]
-		postStartName := postStartHookName(admissionHook)
-		if len(postStartName) == 0 {
-			continue
-		}
-		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
-			func(context genericapiserver.PostStartHookContext) error {
-				return admissionHook.Initialize(c.ExtraConfig.ClientConfig, context.StopCh)
-			},
-		)
+	if err = api.SetupMaintenanceWindowWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to setup MaintenanceWindow webhook")
+		return s, err
+	}
+	if err = api.SetupClusterMaintenanceWindowWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to setup ClusterMaintenanceWindow webhook")
+		return s, err
 	}
 
 	return s, nil
-}
-
-func appendUniqueGroupVersion(slice []schema.GroupVersion, elems ...schema.GroupVersion) []schema.GroupVersion {
-	m := map[schema.GroupVersion]bool{}
-	for _, gv := range slice {
-		m[gv] = true
-	}
-	for _, e := range elems {
-		m[e] = true
-	}
-	out := make([]schema.GroupVersion, 0, len(m))
-	for gv := range m {
-		out = append(out, gv)
-	}
-	return out
-}
-
-func postStartHookName(hook hooks.AdmissionHook) string {
-	var ns []string
-	gvr, _ := hook.Resource()
-	ns = append(ns, fmt.Sprintf("admit-%s.%s.%s", gvr.Resource, gvr.Version, gvr.Group))
-	if len(ns) == 0 {
-		return ""
-	}
-	return strings.Join(append(ns, "init"), "-")
-}
-
-func admissionHooksByGroupThenVersion(admissionHooks ...hooks.AdmissionHook) map[string]map[string][]hooks.AdmissionHook {
-	ret := map[string]map[string][]hooks.AdmissionHook{}
-	for i := range admissionHooks {
-		hook := admissionHooks[i]
-		gvr, _ := hook.Resource()
-		group, ok := ret[gvr.Group]
-		if !ok {
-			group = map[string][]hooks.AdmissionHook{}
-			ret[gvr.Group] = group
-		}
-		group[gvr.Version] = append(group[gvr.Version], hook)
-	}
-	return ret
 }

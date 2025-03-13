@@ -42,21 +42,50 @@ spec:
             type: object
           spec:
             properties:
-              UpdateVersion:
-                properties:
-                  readinessCriteria:
-                    type: object
-                  targetVersion:
-                    type: string
-                type: object
               apply:
                 default: IfReady
                 enum:
                 - IfReady
                 - Always
                 type: string
-              configuration:
+              authentication:
+                properties:
+                  secretRef:
+                    properties:
+                      name:
+                        default: ""
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
                 type: object
+              configuration:
+                properties:
+                  pgbouncer:
+                    properties:
+                      applyConfig:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      configSecret:
+                        properties:
+                          name:
+                            default: ""
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      removeCustomConfig:
+                        type: boolean
+                    type: object
+                required:
+                - pgbouncer
+                type: object
+              databaseRef:
+                properties:
+                  name:
+                    default: ""
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               horizontalScaling:
                 properties:
                   replicas:
@@ -65,13 +94,6 @@ spec:
                 type: object
               restart:
                 type: object
-              serverRef:
-                properties:
-                  name:
-                    default: ""
-                    type: string
-                type: object
-                x-kubernetes-map-type: atomic
               timeout:
                 type: string
               tls:
@@ -161,6 +183,11 @@ spec:
                       - alias
                       type: object
                     type: array
+                  clientAuthMode:
+                    enum:
+                    - md5
+                    - scram-sha-256
+                    type: string
                   issuerRef:
                     properties:
                       apiGroup:
@@ -178,12 +205,31 @@ spec:
                     type: boolean
                   rotateCertificates:
                     type: boolean
+                  sslMode:
+                    enum:
+                    - disable
+                    - allow
+                    - prefer
+                    - require
+                    - verify-ca
+                    - verify-full
+                    type: string
                 type: object
               type:
                 enum:
                 - HorizontalScaling
                 - VerticalScaling
+                - UpdateVersion
+                - Reconfigure
+                - RotateAuth
+                - Restart
+                - ReconfigureTLS
                 type: string
+              updateVersion:
+                properties:
+                  targetVersion:
+                    type: string
+                type: object
               verticalScaling:
                 properties:
                   exporter:
@@ -194,6 +240,8 @@ spec:
                             items:
                               properties:
                                 name:
+                                  type: string
+                                request:
                                   type: string
                               required:
                               - name
@@ -230,6 +278,8 @@ spec:
                             items:
                               properties:
                                 name:
+                                  type: string
+                                request:
                                   type: string
                               required:
                               - name
@@ -268,7 +318,7 @@ spec:
                     type: object
                 type: object
             required:
-            - serverRef
+            - databaseRef
             - type
             type: object
           status:

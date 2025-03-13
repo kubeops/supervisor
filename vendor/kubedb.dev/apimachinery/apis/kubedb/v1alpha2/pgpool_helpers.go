@@ -42,6 +42,7 @@ import (
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v2"
 	pslister "kubeops.dev/petset/client/listers/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (p *Pgpool) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
@@ -160,6 +161,10 @@ func (p *Pgpool) GetAuthSecretName() string {
 	return meta_util.NameWithSuffix(p.OffshootName(), "auth")
 }
 
+func (p *Pgpool) GetPcpConfigSecretName() string {
+	return meta_util.NameWithSuffix(p.OffshootName(), "pcp-config")
+}
+
 func (p *Pgpool) SetHealthCheckerDefaults() {
 	if p.Spec.HealthChecker.PeriodSeconds == nil {
 		p.Spec.HealthChecker.PeriodSeconds = pointer.Int32P(10)
@@ -241,9 +246,9 @@ func (p *Pgpool) GetSSLMODE(appBinding *appcat.AppBinding) (PgpoolSSLMode, error
 	return PgpoolSSLMode(strings.TrimSpace(temps[1])), nil
 }
 
-func (p *Pgpool) IsBackendTLSEnabled() (bool, error) {
+func (p *Pgpool) IsBackendTLSEnabled(client client.Client) (bool, error) {
 	apb := appcat.AppBinding{}
-	err := DefaultClient.Get(context.TODO(), types.NamespacedName{
+	err := client.Get(context.TODO(), types.NamespacedName{
 		Name:      p.Spec.PostgresRef.Name,
 		Namespace: p.Spec.PostgresRef.Namespace,
 	}, &apb)
@@ -340,7 +345,7 @@ func (p *Pgpool) setContainerResourceLimits(podTemplate *ofst.PodTemplateSpec) {
 	}
 }
 
-func (p *Pgpool) SetDefaults() {
+func (p *Pgpool) SetDefaults(client client.Client) {
 	if p == nil {
 		return
 	}
@@ -348,7 +353,7 @@ func (p *Pgpool) SetDefaults() {
 		p.Spec.Replicas = pointer.Int32P(1)
 	}
 	if p.Spec.DeletionPolicy == "" {
-		p.Spec.DeletionPolicy = TerminationPolicyDelete
+		p.Spec.DeletionPolicy = DeletionPolicyDelete
 	}
 	if p.Spec.PodTemplate == nil {
 		p.Spec.PodTemplate = &ofst.PodTemplateSpec{}
@@ -366,7 +371,7 @@ func (p *Pgpool) SetDefaults() {
 	}
 
 	ppVersion := catalog.PgpoolVersion{}
-	err := DefaultClient.Get(context.TODO(), types.NamespacedName{
+	err := client.Get(context.TODO(), types.NamespacedName{
 		Name: p.Spec.Version,
 	}, &ppVersion)
 	if err != nil {

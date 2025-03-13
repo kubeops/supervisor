@@ -21,14 +21,10 @@ import (
 	"flag"
 	"time"
 
-	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/pkg/controllers"
-	"kubeops.dev/supervisor/pkg/server"
 
 	"github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/runtime"
 	clustermeta "kmodules.xyz/client-go/cluster"
-	"kmodules.xyz/webhook-runtime/builder"
 )
 
 type ExtraOptions struct {
@@ -110,26 +106,5 @@ func (s *ExtraOptions) ApplyTo(cfg *controllers.Config) error {
 
 	cfg.EnableMutatingWebhook = s.EnableMutatingWebhook
 	cfg.EnableValidatingWebhook = s.EnableValidatingWebhook
-
-	apiTypes := []runtime.Object{
-		&api.ApprovalPolicy{},
-		&api.ClusterMaintenanceWindow{},
-		&api.MaintenanceWindow{},
-		&api.Recommendation{},
-	}
-	for _, apiType := range apiTypes {
-		mutator, validator, err := builder.WebhookManagedBy(server.Scheme).
-			For(apiType).
-			Complete()
-		if err != nil {
-			return err
-		}
-		if s.EnableMutatingWebhook && mutator != nil {
-			cfg.AdmissionHooks = append(cfg.AdmissionHooks, mutator)
-		}
-		if s.EnableValidatingWebhook && validator != nil {
-			cfg.AdmissionHooks = append(cfg.AdmissionHooks, validator)
-		}
-	}
 	return nil
 }

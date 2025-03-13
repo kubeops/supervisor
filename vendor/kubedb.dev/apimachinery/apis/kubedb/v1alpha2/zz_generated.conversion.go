@@ -1100,6 +1100,7 @@ func autoConvert_v1alpha2_ArchiverRecovery_To_v1_ArchiverRecovery(in *ArchiverRe
 	out.EncryptionSecret = (*clientgoapiv1.ObjectReference)(unsafe.Pointer(in.EncryptionSecret))
 	out.ManifestRepository = (*clientgoapiv1.ObjectReference)(unsafe.Pointer(in.ManifestRepository))
 	out.FullDBRepository = (*clientgoapiv1.ObjectReference)(unsafe.Pointer(in.FullDBRepository))
+	out.ReplicationStrategy = (*v1.PITRReplicationStrategy)(unsafe.Pointer(in.ReplicationStrategy))
 	return nil
 }
 
@@ -1113,6 +1114,7 @@ func autoConvert_v1_ArchiverRecovery_To_v1alpha2_ArchiverRecovery(in *v1.Archive
 	out.EncryptionSecret = (*clientgoapiv1.ObjectReference)(unsafe.Pointer(in.EncryptionSecret))
 	out.ManifestRepository = (*clientgoapiv1.ObjectReference)(unsafe.Pointer(in.ManifestRepository))
 	out.FullDBRepository = (*clientgoapiv1.ObjectReference)(unsafe.Pointer(in.FullDBRepository))
+	out.ReplicationStrategy = (*PITRReplicationStrategy)(unsafe.Pointer(in.ReplicationStrategy))
 	return nil
 }
 
@@ -2043,7 +2045,7 @@ func autoConvert_v1_KafkaSpec_To_v1alpha2_KafkaSpec(in *v1.KafkaSpec, out *Kafka
 	out.TLS = (*clientgoapiv1.TLSConfig)(unsafe.Pointer(in.TLS))
 	out.PodTemplate = in.PodTemplate
 	out.ServiceTemplates = *(*[]NamedServiceTemplateSpec)(unsafe.Pointer(&in.ServiceTemplates))
-	out.DeletionPolicy = TerminationPolicy(in.DeletionPolicy)
+	out.DeletionPolicy = DeletionPolicy(in.DeletionPolicy)
 	out.HealthChecker = in.HealthChecker
 	out.CruiseControl = (*KafkaCruiseControl)(unsafe.Pointer(in.CruiseControl))
 	out.Monitor = (*monitoringagentapiapiv1.AgentSpec)(unsafe.Pointer(in.Monitor))
@@ -2354,6 +2356,8 @@ func autoConvert_v1_MemcachedSpec_To_v1alpha2_MemcachedSpec(in *v1.MemcachedSpec
 	out.Replicas = (*int32)(unsafe.Pointer(in.Replicas))
 	out.Monitor = (*monitoringagentapiapiv1.AgentSpec)(unsafe.Pointer(in.Monitor))
 	out.ConfigSecret = (*corev1.LocalObjectReference)(unsafe.Pointer(in.ConfigSecret))
+	// WARNING: in.AuthSecret requires manual conversion: does not exist in peer-type
+	// WARNING: in.DisableAuth requires manual conversion: does not exist in peer-type
 	out.DataVolume = (*corev1.VolumeSource)(unsafe.Pointer(in.DataVolume))
 	if err := Convert_v2_PodTemplateSpec_To_v1_PodTemplateSpec(&in.PodTemplate, &out.PodTemplate, s); err != nil {
 		return err
@@ -3415,6 +3419,7 @@ func autoConvert_v1alpha2_PgBouncerSpec_To_v1_PgBouncerSpec(in *PgBouncerSpec, o
 	out.TLS = (*clientgoapiv1.TLSConfig)(unsafe.Pointer(in.TLS))
 	// WARNING: in.TerminationPolicy requires manual conversion: does not exist in peer-type
 	out.HealthChecker = in.HealthChecker
+	out.Halted = in.Halted
 	return nil
 }
 
@@ -3439,6 +3444,7 @@ func autoConvert_v1_PgBouncerSpec_To_v1alpha2_PgBouncerSpec(in *v1.PgBouncerSpec
 	out.TLS = (*clientgoapiv1.TLSConfig)(unsafe.Pointer(in.TLS))
 	// WARNING: in.DeletionPolicy requires manual conversion: does not exist in peer-type
 	out.HealthChecker = in.HealthChecker
+	out.Halted = in.Halted
 	return nil
 }
 
@@ -3818,6 +3824,7 @@ func autoConvert_v1alpha2_ProxySQLSpec_To_v1_ProxySQLSpec(in *ProxySQLSpec, out 
 	out.TLS = (*clientgoapiv1.TLSConfig)(unsafe.Pointer(in.TLS))
 	// WARNING: in.TerminationPolicy requires manual conversion: does not exist in peer-type
 	out.HealthChecker = in.HealthChecker
+	out.Halted = in.Halted
 	return nil
 }
 
@@ -3840,6 +3847,7 @@ func autoConvert_v1_ProxySQLSpec_To_v1alpha2_ProxySQLSpec(in *v1.ProxySQLSpec, o
 	out.TLS = (*clientgoapiv1.TLSConfig)(unsafe.Pointer(in.TLS))
 	// WARNING: in.DeletionPolicy requires manual conversion: does not exist in peer-type
 	out.HealthChecker = in.HealthChecker
+	out.Halted = in.Halted
 	return nil
 }
 
@@ -4292,6 +4300,8 @@ func Convert_v1_ScriptSourceSpec_To_v1alpha2_ScriptSourceSpec(in *v1.ScriptSourc
 
 func autoConvert_v1alpha2_SecretReference_To_v1_SecretReference(in *SecretReference, out *v1.SecretReference, s conversion.Scope) error {
 	out.LocalObjectReference = in.LocalObjectReference
+	out.RotateAfter = (*metav1.Duration)(unsafe.Pointer(in.RotateAfter))
+	out.ActiveFrom = (*metav1.Time)(unsafe.Pointer(in.ActiveFrom))
 	out.ExternallyManaged = in.ExternallyManaged
 	return nil
 }
@@ -4303,6 +4313,8 @@ func Convert_v1alpha2_SecretReference_To_v1_SecretReference(in *SecretReference,
 
 func autoConvert_v1_SecretReference_To_v1alpha2_SecretReference(in *v1.SecretReference, out *SecretReference, s conversion.Scope) error {
 	out.LocalObjectReference = in.LocalObjectReference
+	out.RotateAfter = (*metav1.Duration)(unsafe.Pointer(in.RotateAfter))
+	out.ActiveFrom = (*metav1.Time)(unsafe.Pointer(in.ActiveFrom))
 	out.ExternallyManaged = in.ExternallyManaged
 	return nil
 }
