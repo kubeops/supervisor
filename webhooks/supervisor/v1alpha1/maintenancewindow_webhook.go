@@ -18,13 +18,13 @@ package v1alpha1
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -34,7 +34,8 @@ import (
 
 // SetupMaintenanceWindowWebhookWithManager registers the webhook for MaintenanceWindow in the manager.
 func SetupMaintenanceWindowWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&MaintenanceWindow{}).
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(&api.MaintenanceWindow{}).
 		WithValidator(&MaintenanceWindowCustomWebhook{mgr.GetClient()}).
 		WithDefaulter(&MaintenanceWindowCustomWebhook{mgr.GetClient()}).
 		Complete()
@@ -56,7 +57,7 @@ var (
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *MaintenanceWindowCustomWebhook) Default(ctx context.Context, obj runtime.Object) error {
-	window, ok := obj.(*MaintenanceWindow)
+	window, ok := obj.(*api.MaintenanceWindow)
 	if !ok {
 		return fmt.Errorf("expected an MaintenanceWindow object but got %T", obj)
 	}
@@ -71,7 +72,7 @@ var _ webhook.CustomValidator = &MaintenanceWindowCustomWebhook{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *MaintenanceWindowCustomWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	window, ok := obj.(*MaintenanceWindow)
+	window, ok := obj.(*api.MaintenanceWindow)
 	if !ok {
 		return nil, fmt.Errorf("expected an MaintenanceWindow object but got %T", obj)
 	}
@@ -83,7 +84,7 @@ func (r *MaintenanceWindowCustomWebhook) ValidateCreate(ctx context.Context, obj
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MaintenanceWindowCustomWebhook) ValidateUpdate(ctx context.Context, old, newObj runtime.Object) (admission.Warnings, error) {
-	window, ok := newObj.(*MaintenanceWindow)
+	window, ok := newObj.(*api.MaintenanceWindow)
 	if !ok {
 		return nil, fmt.Errorf("expected an MaintenanceWindow object but got %T", newObj)
 	}
@@ -95,7 +96,7 @@ func (r *MaintenanceWindowCustomWebhook) ValidateUpdate(ctx context.Context, old
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MaintenanceWindowCustomWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	window, ok := obj.(*MaintenanceWindow)
+	window, ok := obj.(*api.MaintenanceWindow)
 	if !ok {
 		return nil, fmt.Errorf("expected an MaintenanceWindow object but got %T", obj)
 	}
@@ -105,7 +106,7 @@ func (r *MaintenanceWindowCustomWebhook) ValidateDelete(ctx context.Context, obj
 	return nil, nil
 }
 
-func (r *MaintenanceWindowCustomWebhook) validateMaintenanceWindow(ctx context.Context, window *MaintenanceWindow) error {
+func (r *MaintenanceWindowCustomWebhook) validateMaintenanceWindow(ctx context.Context, window *api.MaintenanceWindow) error {
 	klog.Info("Validating MaintenanceWindow webhook")
 	if window.Spec.Timezone != nil {
 		if err := validateTimeZone(pointer.String(window.Spec.Timezone)); err != nil {
@@ -115,22 +116,19 @@ func (r *MaintenanceWindowCustomWebhook) validateMaintenanceWindow(ctx context.C
 	if !window.Spec.IsDefault {
 		return nil
 	}
-	if webhookClient == nil {
-		return errors.New("webhook client is not set")
-	}
-	mwList := &MaintenanceWindowList{}
-	if err := webhookClient.List(ctx, mwList, client.InNamespace(window.Namespace), client.MatchingFields{
-		DefaultMaintenanceWindowKey: "true",
+	var list api.MaintenanceWindowList
+	if err := r.DefaultClient.List(ctx, &list, client.InNamespace(window.Namespace), client.MatchingFields{
+		api.DefaultMaintenanceWindowKey: "true",
 	}); err != nil {
 		return err
 	}
 
-	if len(mwList.Items) == 0 {
+	if len(list.Items) == 0 {
 		return nil
-	} else if len(mwList.Items) == 1 && mwList.Items[0].Name == window.Name { // to handle update operation of the Default MaintenanceWindow
+	} else if len(list.Items) == 1 && list.Items[0].Name == window.Name { // to handle update operation of the Default MaintenanceWindow
 		return nil
 	} else {
-		return fmt.Errorf("%q is already present as default MaintenanceWindow in namespace %q", mwList.Items[0].Name, mwList.Items[0].Namespace)
+		return fmt.Errorf("%q is already present as default MaintenanceWindow in namespace %q", list.Items[0].Name, list.Items[0].Namespace)
 	}
 }
 
