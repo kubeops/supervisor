@@ -25,6 +25,7 @@ import (
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/pkg/controllers"
 	supervisorcontrollers "kubeops.dev/supervisor/pkg/controllers/supervisor"
+	webhooks "kubeops.dev/supervisor/webhooks/supervisor/v1alpha1"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -158,8 +159,6 @@ func (c completedConfig) New() (*SupervisorOperator, error) {
 		os.Exit(1)
 	}
 
-	api.SetupWebhookClient(mgr.GetClient())
-
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &api.MaintenanceWindow{}, api.DefaultMaintenanceWindowKey, func(rawObj client.Object) []string {
 		app := rawObj.(*api.MaintenanceWindow)
 		if v, ok := app.Annotations[api.DefaultMaintenanceWindowKey]; ok && v == "true" {
@@ -224,15 +223,15 @@ func (c completedConfig) New() (*SupervisorOperator, error) {
 		GenericAPIServer: genericServer,
 		Manager:          mgr,
 	}
-	if err = api.SetupRecommendationWebhookWithManager(mgr); err != nil {
+	if err = webhooks.SetupRecommendationWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to setup Recommendation webhook")
 		return s, err
 	}
-	if err = api.SetupMaintenanceWindowWebhookWithManager(mgr); err != nil {
+	if err = webhooks.SetupMaintenanceWindowWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to setup MaintenanceWindow webhook")
 		return s, err
 	}
-	if err = api.SetupClusterMaintenanceWindowWebhookWithManager(mgr); err != nil {
+	if err = webhooks.SetupClusterMaintenanceWindowWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to setup ClusterMaintenanceWindow webhook")
 		return s, err
 	}
