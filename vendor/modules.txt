@@ -151,8 +151,8 @@ github.com/google/gnostic-models/extensions
 github.com/google/gnostic-models/jsonschema
 github.com/google/gnostic-models/openapiv2
 github.com/google/gnostic-models/openapiv3
-# github.com/google/go-cmp v0.6.0
-## explicit; go 1.13
+# github.com/google/go-cmp v0.7.0
+## explicit; go 1.21
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
@@ -194,8 +194,8 @@ github.com/imdario/mergo
 # github.com/inconshreveable/mousetrap v1.1.0
 ## explicit; go 1.18
 github.com/inconshreveable/mousetrap
-# github.com/jonboulle/clockwork v0.4.0
-## explicit; go 1.15
+# github.com/jonboulle/clockwork v0.5.0
+## explicit; go 1.21
 github.com/jonboulle/clockwork
 # github.com/josharian/intern v1.0.0
 ## explicit; go 1.5
@@ -274,8 +274,8 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
-# github.com/onsi/ginkgo/v2 v2.22.1
-## explicit; go 1.22.0
+# github.com/onsi/ginkgo/v2 v2.23.0
+## explicit; go 1.23.0
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
 github.com/onsi/ginkgo/v2/formatter
@@ -360,13 +360,13 @@ github.com/rancher/rancher/pkg/client/generated/management/v3
 # github.com/rancher/wrangler/v3 v3.2.0-rc.3
 ## explicit; go 1.23.0
 github.com/rancher/wrangler/v3/pkg/name
-# github.com/sergi/go-diff v1.2.0
+# github.com/sergi/go-diff v1.3.1
 ## explicit; go 1.12
 github.com/sergi/go-diff/diffmatchpatch
 # github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
-# github.com/spf13/cobra v1.8.1
+# github.com/spf13/cobra v1.9.1
 ## explicit; go 1.15
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.6
@@ -494,6 +494,10 @@ go.uber.org/zap/internal/pool
 go.uber.org/zap/internal/stacktrace
 go.uber.org/zap/zapcore
 go.uber.org/zap/zapgrpc
+# go.virtual-secrets.dev/apimachinery v0.0.0-20250313131002-5cd148a87220
+## explicit; go 1.23.0
+go.virtual-secrets.dev/apimachinery/apis/virtual/v1alpha1
+go.virtual-secrets.dev/apimachinery/crds
 # golang.org/x/crypto v0.35.0
 ## explicit; go 1.23.0
 golang.org/x/crypto/cryptobyte
@@ -506,8 +510,8 @@ golang.org/x/crypto/salsa20/salsa
 # golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 ## explicit; go 1.22.0
 golang.org/x/exp/slices
-# golang.org/x/net v0.35.0
-## explicit; go 1.18
+# golang.org/x/net v0.36.0
+## explicit; go 1.23.0
 golang.org/x/net/context
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -583,7 +587,7 @@ gomodules.xyz/clock
 # gomodules.xyz/flags v0.1.3
 ## explicit; go 1.16
 gomodules.xyz/flags
-# gomodules.xyz/jsonpatch/v2 v2.4.0
+# gomodules.xyz/jsonpatch/v2 v2.5.0
 ## explicit; go 1.20
 gomodules.xyz/jsonpatch/v2
 # gomodules.xyz/logs v0.0.7
@@ -743,7 +747,7 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# k8s.io/api v0.32.2
+# k8s.io/api v0.32.3
 ## explicit; go 1.23.0
 k8s.io/api/admission/v1
 k8s.io/api/admission/v1beta1
@@ -804,7 +808,7 @@ k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
 k8s.io/api/storagemigration/v1alpha1
-# k8s.io/apiextensions-apiserver v0.32.2
+# k8s.io/apiextensions-apiserver v0.32.3
 ## explicit; go 1.23.0
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/install
@@ -818,7 +822,7 @@ k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1
-# k8s.io/apimachinery v0.32.2
+# k8s.io/apimachinery v0.32.3
 ## explicit; go 1.23.0
 k8s.io/apimachinery/pkg/api/apitesting
 k8s.io/apimachinery/pkg/api/apitesting/fuzzer
@@ -890,7 +894,7 @@ k8s.io/apimachinery/pkg/version
 k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/json
 k8s.io/apimachinery/third_party/forked/golang/reflect
-# k8s.io/apiserver v0.32.2 => github.com/kmodules/apiserver v0.32.3-0.20250221062720-35dc674c7dd6
+# k8s.io/apiserver v0.32.3 => github.com/kmodules/apiserver v0.32.3-0.20250221062720-35dc674c7dd6
 ## explicit; go 1.23.0
 k8s.io/apiserver/pkg/admission
 k8s.io/apiserver/pkg/admission/configuration
@@ -1051,7 +1055,7 @@ k8s.io/cli-runtime/pkg/genericclioptions
 k8s.io/cli-runtime/pkg/genericiooptions
 k8s.io/cli-runtime/pkg/printers
 k8s.io/cli-runtime/pkg/resource
-# k8s.io/client-go v0.32.2
+# k8s.io/client-go v0.32.3
 ## explicit; go 1.23.0
 k8s.io/client-go/applyconfigurations
 k8s.io/client-go/applyconfigurations/admissionregistration/v1
@@ -1396,7 +1400,7 @@ k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/watchlist
 k8s.io/client-go/util/workqueue
-# k8s.io/component-base v0.32.2
+# k8s.io/component-base v0.32.3
 ## explicit; go 1.23.0
 k8s.io/component-base/cli/flag
 k8s.io/component-base/featuregate
@@ -1421,7 +1425,7 @@ k8s.io/klog/v2/internal/dbg
 k8s.io/klog/v2/internal/serialize
 k8s.io/klog/v2/internal/severity
 k8s.io/klog/v2/internal/sloghandler
-# k8s.io/kms v0.32.2
+# k8s.io/kms v0.32.3
 ## explicit; go 1.23.0
 k8s.io/kms/apis/v1beta1
 k8s.io/kms/apis/v2
@@ -1436,7 +1440,7 @@ k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/scheme
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1
 k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
-# k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7
+# k8s.io/kube-openapi v0.0.0-20250304201544-e5f78fe3ede9
 ## explicit; go 1.21
 k8s.io/kube-openapi/pkg/builder
 k8s.io/kube-openapi/pkg/builder3
@@ -1474,7 +1478,7 @@ k8s.io/utils/trace
 # kmodules.xyz/apiversion v0.2.0
 ## explicit; go 1.14
 kmodules.xyz/apiversion
-# kmodules.xyz/client-go v0.30.47-0.20250303073751-80d02d19452f
+# kmodules.xyz/client-go v0.32.0
 ## explicit; go 1.23.0
 kmodules.xyz/client-go
 kmodules.xyz/client-go/admissionregistration
@@ -1494,7 +1498,7 @@ kmodules.xyz/client-go/dynamic
 kmodules.xyz/client-go/meta
 kmodules.xyz/client-go/policy/secomp
 kmodules.xyz/client-go/tools/clientcmd
-# kmodules.xyz/crd-schema-fuzz v0.29.2-0.20250302110413-c5b140ca984a
+# kmodules.xyz/crd-schema-fuzz v0.32.0
 ## explicit; go 1.23.0
 kmodules.xyz/crd-schema-fuzz
 # kmodules.xyz/custom-resources v0.30.2-0.20250303080226-05eb1392c05f
@@ -1516,12 +1520,11 @@ kmodules.xyz/offshoot-api/util
 kmodules.xyz/resource-metadata/apis/node
 kmodules.xyz/resource-metadata/apis/node/v1alpha1
 kmodules.xyz/resource-metadata/crds
-# kmodules.xyz/webhook-runtime v0.29.2-0.20250302105300-336a0cc60d78
+# kmodules.xyz/webhook-runtime v0.32.0
 ## explicit; go 1.23.0
 kmodules.xyz/webhook-runtime/admission/v1
 kmodules.xyz/webhook-runtime/builder
-kmodules.xyz/webhook-runtime/registry/admissionreview/v1
-# kubedb.dev/apimachinery v0.52.1-0.20250312053939-134fde9e3a0c
+# kubedb.dev/apimachinery v0.52.1-0.20250318023929-051711da2e5d
 ## explicit; go 1.23.0
 kubedb.dev/apimachinery/apis
 kubedb.dev/apimachinery/apis/catalog
@@ -1532,14 +1535,13 @@ kubedb.dev/apimachinery/apis/kubedb/v1alpha2
 kubedb.dev/apimachinery/apis/ops
 kubedb.dev/apimachinery/apis/ops/v1alpha1
 kubedb.dev/apimachinery/crds
-# kubeops.dev/petset v0.0.8-0.20250221072845-c4b7c4af4678
+# kubeops.dev/petset v0.0.9
 ## explicit; go 1.23.0
 kubeops.dev/petset/apis/apps/v1
 kubeops.dev/petset/client/clientset/versioned/scheme
 kubeops.dev/petset/client/clientset/versioned/typed/apps/v1
 kubeops.dev/petset/client/listers/apps/v1
 kubeops.dev/petset/crds
-kubeops.dev/petset/pkg/features
 # kubeops.dev/sidekick v0.0.10
 ## explicit; go 1.22.1
 kubeops.dev/sidekick/apis/apps
@@ -1682,7 +1684,11 @@ sigs.k8s.io/kustomize/kyaml/yaml/internal/k8sgen/pkg/util/validation/field
 sigs.k8s.io/kustomize/kyaml/yaml/merge2
 sigs.k8s.io/kustomize/kyaml/yaml/schema
 sigs.k8s.io/kustomize/kyaml/yaml/walk
-# sigs.k8s.io/structured-merge-diff/v4 v4.5.0
+# sigs.k8s.io/randfill v1.0.0
+## explicit; go 1.18
+sigs.k8s.io/randfill
+sigs.k8s.io/randfill/bytesource
+# sigs.k8s.io/structured-merge-diff/v4 v4.6.0
 ## explicit; go 1.13
 sigs.k8s.io/structured-merge-diff/v4/fieldpath
 sigs.k8s.io/structured-merge-diff/v4/merge
