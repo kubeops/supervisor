@@ -25,7 +25,7 @@ import (
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	"kubeops.dev/supervisor/pkg/controllers"
 	supervisorcontrollers "kubeops.dev/supervisor/pkg/controllers/supervisor"
-	webhooks "kubeops.dev/supervisor/webhooks/supervisor/v1alpha1"
+	webhooks "kubeops.dev/supervisor/pkg/webhooks/supervisor/v1alpha1"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"

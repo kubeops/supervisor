@@ -22,10 +22,11 @@ import (
 	"fmt"
 	"reflect"
 
+	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
+
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
-	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
