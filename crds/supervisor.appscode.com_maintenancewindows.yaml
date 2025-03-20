@@ -27,14 +27,19 @@ spec:
         description: MaintenanceWindow is the Schema for the maintenancewindows API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -42,10 +47,14 @@ spec:
             description: MaintenanceWindowSpec defines the desired state of MaintenanceWindow
             properties:
               dates:
-                description: 'Dates consists of a list of Dates as Maintenance time.
-                  Dates are always needed to be given in UTC format. Format: yyyy-mm-ddThh.mm.ssZ
-                  [Here Z stands for Zero time zone / UTC time zone / GMT (+0000)]
-                  Example: dates: - start: 2022-01-24T00:00:18Z end: 2022-01-24T23:41:18Z'
+                description: |-
+                  Dates consists of a list of Dates as Maintenance time.
+                  Dates are always needed to be given in UTC format.
+                  Format: yyyy-mm-ddThh.mm.ssZ [Here Z stands for Zero time zone / UTC time zone / GMT (+0000)]
+                  Example:
+                   dates:
+                    - start: 2022-01-24T00:00:18Z
+                      end: 2022-01-24T23:41:18Z
                 items:
                   properties:
                     end:
@@ -74,19 +83,26 @@ spec:
                     - start
                     type: object
                   type: array
-                description: 'Days consists of a map of DayOfWeek and corresponding
-                  list of TimeWindow. There is `Logical OR` relationship between Days
-                  and Dates. Example: days: Monday: - start: 10:40AM end: 7:00PM'
+                description: |-
+                  Days consists of a map of DayOfWeek and corresponding list of TimeWindow.
+                  There is `Logical OR` relationship between Days and Dates.
+                  Example:
+                   days:
+                     Monday:
+                      - start: 10:40AM
+                        end: 7:00PM
                 type: object
               isDefault:
                 type: boolean
               timezone:
-                description: "If the Timezone is not set or \"\" or \"UTC\", the given
-                  times and dates are considered as UTC. If the name is \"Local\",
-                  the given times and dates are considered as server local timezone.
-                  \n Otherwise, the Timezone should specify a location name corresponding
-                  to a file in the IANA Time Zone database, such as \"Asia/Dhaka\",
-                  \"America/New_York\", . Ref: https://www.iana.org/time-zones https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
+                description: |-
+                  If the Timezone is not set or "" or "UTC", the given times and dates are considered as UTC.
+                  If the name is "Local", the given times and dates are considered as server local timezone.
+
+                  Otherwise, the Timezone should specify a location name corresponding to a file
+                  in the IANA Time Zone database, such as "Asia/Dhaka", "America/New_York", .
+                  Ref: https://www.iana.org/time-zones
+                       https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
                 type: string
             type: object
           status:
@@ -100,43 +116,44 @@ spec:
                     state.
                   properties:
                     lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another. This should be when the underlying condition changed.
-                        If that is not known, then using the time when the API field
-                        changed is acceptable.
+                      description: |-
+                        Last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed. If that is not known, then using the time when
+                        the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
-                      description: A human-readable message indicating details about
-                        the transition. This field may be empty.
+                      description: |-
+                        A human-readable message indicating details about the transition.
+                        This field may be empty.
                       type: string
                     observedGeneration:
-                      description: If set, this represents the .metadata.generation
-                        that the condition was set based upon. For instance, if .metadata.generation
-                        is currently 12, but the .status.condition[x].observedGeneration
-                        is 9, the condition is out of date with respect to the current
-                        state of the instance.
+                      description: |-
+                        If set, this represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.condition[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
                       format: int64
                       type: integer
                     reason:
-                      description: The reason for the condition's last transition
-                        in CamelCase. The specific API may choose whether this field
-                        is considered a guaranteed API. This field may not be empty.
+                      description: |-
+                        The reason for the condition's last transition in CamelCase.
+                        The specific API may choose whether this field is considered a guaranteed API.
+                        This field may not be empty.
                       type: string
                     severity:
-                      description: Severity provides an explicit classification of
-                        Reason code, so the users or machines can immediately understand
-                        the current situation and act accordingly. The Severity field
-                        MUST be set only when Status=False.
+                      description: |-
+                        Severity provides an explicit classification of Reason code, so the users or machines can immediately
+                        understand the current situation and act accordingly.
+                        The Severity field MUST be set only when Status=False.
                       type: string
                     status:
                       description: Status of the condition, one of True, False, Unknown.
                       type: string
                     type:
-                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                        Many .condition.type values are consistent across resources
-                        like Available, but because arbitrary util can be useful (see
-                        .node.status.util), the ability to deconflict is important.
+                      description: |-
+                        Type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary util
+                        can be useful (see .node.status.util), the ability to deconflict is important.
                       type: string
                   required:
                   - lastTransitionTime
@@ -145,9 +162,9 @@ spec:
                   type: object
                 type: array
               observedGeneration:
-                description: observedGeneration is the most recent generation observed
-                  for this resource. It corresponds to the resource's generation,
-                  which is updated on mutation by the API Server.
+                description: |-
+                  observedGeneration is the most recent generation observed for this resource. It corresponds to the
+                  resource's generation, which is updated on mutation by the API Server.
                 format: int64
                 type: integer
               status:

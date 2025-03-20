@@ -25,7 +25,7 @@ COMPRESS ?= no
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS          ?= "crd:crdVersions={v1},allowDangerousTypes=true"
-CODE_GENERATOR_IMAGE ?= ghcr.io/appscode/gengo:release-1.29
+CODE_GENERATOR_IMAGE ?= ghcr.io/appscode/gengo:release-1.32
 API_GROUPS           ?= supervisor:v1alpha1
 
 # Where to push the docker image.
@@ -200,12 +200,12 @@ gen-crds:
 		-v /tmp:/.cache                     \
 		-v $$(pwd):$(DOCKER_REPO_ROOT)      \
 		-w $(DOCKER_REPO_ROOT)              \
-	    --env HTTP_PROXY=$(HTTP_PROXY)      \
-	    --env HTTPS_PROXY=$(HTTPS_PROXY)    \
+		--env HTTP_PROXY=$(HTTP_PROXY)      \
+		--env HTTPS_PROXY=$(HTTPS_PROXY)    \
 		$(CODE_GENERATOR_IMAGE)             \
 		controller-gen                      \
-			$(CRD_OPTIONS)                  \
-			paths="./apis/..."              \
+			$(CRD_OPTIONS)                    \
+			paths="./apis/..."                \
 			output:crd:artifacts:config=crds
 
 .PHONY: manifests
