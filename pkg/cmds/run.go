@@ -74,12 +74,12 @@ func NewCmdRun() *cobra.Command {
 		secureMetrics        bool   = true
 		enableHTTP2          bool   = false
 
-		ResyncPeriod           time.Duration = 10 * time.Minute
-		MaxConcurrentReconcile int           // NumThreads = 2
-		RequeueAfterDuration   time.Duration
-		MaxRetryOnFailure      int // MaxNumRequeues = 5
-		RetryAfterDuration     time.Duration
-		BeforeDeadlineDuration time.Duration
+		resyncPeriod               = 10 * time.Minute
+		maxConcurrentReconcile int // NumThreads = 2
+		requeueAfterDuration   time.Duration
+		maxRetryOnFailure      int // MaxNumRequeues = 5
+		retryAfterDuration     time.Duration
+		beforeDeadlineDuration time.Duration
 	)
 	cmd := &cobra.Command{
 		Use:               "run",
@@ -181,7 +181,7 @@ func NewCmdRun() *cobra.Command {
 				// after the manager stops then its usage might be unsafe.
 				// LeaderElectionReleaseOnCancel: true,
 				Cache: cache.Options{
-					SyncPeriod: &ResyncPeriod,
+					SyncPeriod: &resyncPeriod,
 				},
 				NewClient: cu.NewClient,
 			})
@@ -213,15 +213,15 @@ func NewCmdRun() *cobra.Command {
 			}
 
 			recommendationControllerOpts := controller.Options{
-				MaxConcurrentReconciles: MaxConcurrentReconcile,
+				MaxConcurrentReconciles: maxConcurrentReconcile,
 			}
 			if err = (&supervisorcontrollers.RecommendationReconciler{
 				Client:                 mgr.GetClient(),
 				Scheme:                 mgr.GetScheme(),
 				Mutex:                  &sync.Mutex{},
-				RequeueAfterDuration:   RequeueAfterDuration,
-				RetryAfterDuration:     RetryAfterDuration,
-				BeforeDeadlineDuration: BeforeDeadlineDuration,
+				RequeueAfterDuration:   requeueAfterDuration,
+				RetryAfterDuration:     retryAfterDuration,
+				BeforeDeadlineDuration: beforeDeadlineDuration,
 				Clock:                  api.GetClock(),
 			}).SetupWithManager(mgr, recommendationControllerOpts); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Recommendation")
@@ -304,12 +304,12 @@ func NewCmdRun() *cobra.Command {
 	cmd.Flags().BoolVar(&enableHTTP2, "enable-http2", enableHTTP2,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 
-	cmd.Flags().DurationVar(&ResyncPeriod, "resync-period", ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
-	cmd.Flags().IntVar(&MaxConcurrentReconcile, "max-concurrent-reconcile", MaxConcurrentReconcile, "Maximum number of Recommendation object that will be reconciled concurrently")
-	cmd.Flags().DurationVar(&RequeueAfterDuration, "requeue-after-duration", RequeueAfterDuration, "Duration after the Recommendation object will be requeue when it is waiting for MaintenanceWindow. The flag accepts a value acceptable to time.ParseDuration. Ref: https://pkg.go.dev/time#ParseDuration")
-	cmd.Flags().IntVar(&MaxRetryOnFailure, "max-retry-on-failure", MaxRetryOnFailure, "Maximum number of retry on any kind of failure in Recommendation execution")
-	cmd.Flags().DurationVar(&RetryAfterDuration, "retry-after-duration", RetryAfterDuration, "Duration after the failure events will be requeue again. The flag accepts a value acceptable to time.ParseDuration. Ref: https://pkg.go.dev/time#ParseDuration")
-	cmd.Flags().DurationVar(&BeforeDeadlineDuration, "before-deadline-duration", BeforeDeadlineDuration, "When there is less time than `BeforeDeadlineDuration` before deadline, Recommendations are free to execute regardless of Parallelism")
+	cmd.Flags().DurationVar(&resyncPeriod, "resync-period", resyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
+	cmd.Flags().IntVar(&maxConcurrentReconcile, "max-concurrent-reconcile", maxConcurrentReconcile, "Maximum number of Recommendation object that will be reconciled concurrently")
+	cmd.Flags().DurationVar(&requeueAfterDuration, "requeue-after-duration", requeueAfterDuration, "Duration after the Recommendation object will be requeue when it is waiting for MaintenanceWindow. The flag accepts a value acceptable to time.ParseDuration. Ref: https://pkg.go.dev/time#ParseDuration")
+	cmd.Flags().IntVar(&maxRetryOnFailure, "max-retry-on-failure", maxRetryOnFailure, "Maximum number of retry on any kind of failure in Recommendation execution")
+	cmd.Flags().DurationVar(&retryAfterDuration, "retry-after-duration", retryAfterDuration, "Duration after the failure events will be requeue again. The flag accepts a value acceptable to time.ParseDuration. Ref: https://pkg.go.dev/time#ParseDuration")
+	cmd.Flags().DurationVar(&beforeDeadlineDuration, "before-deadline-duration", beforeDeadlineDuration, "When there is less time than `BeforeDeadlineDuration` before deadline, Recommendations are free to execute regardless of Parallelism")
 
 	return cmd
 }
