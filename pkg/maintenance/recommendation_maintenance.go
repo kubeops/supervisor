@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"k8s.io/klog/v2"
 	"time"
 
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
@@ -70,7 +71,7 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 	if len(mwList.Items) == 0 {
 		return false, errors.New("no available MaintenanceWindow is found")
 	}
-
+	klog.Infof("Found available maintenance windows..........: %s", mwList.Items[0].Name)
 	mwPassedFlag := true
 
 	for _, mw := range mwList.Items {
@@ -84,6 +85,8 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 		day := getCurrentDay(r.clock, loc)
 
 		mTimes, found := mw.Spec.Days[api.DayOfWeek(day)]
+		klog.Infof("check loc, day, times.....")
+		fmt.Println(loc, day, mTimes)
 		if found {
 			if r.isMaintenanceTimeWindow(mTimes, loc) {
 				return true, nil
