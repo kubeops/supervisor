@@ -131,7 +131,6 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	if obj.Status.Phase == api.Pending && obj.Status.ApprovalStatus == api.ApprovalPending {
 		if obj.Spec.Deadline != nil && obj.Spec.Deadline.UTC().Before(r.Clock.Now()) {
-			klog.Info("deadline is expire....................")
 			_, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 				in := obj.(*api.Recommendation)
 				in.Status.ApprovalStatus = api.ApprovalApproved
@@ -147,12 +146,14 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if obj.Status.ApprovalStatus == api.ApprovalApproved {
+		klog.Infof("Recommendation %q approved", key.String())
 		if obj.Status.Phase == api.InProgress && obj.Status.CreatedOperationRef != nil {
 			return r.checkOpsRequestStatus(ctx, obj)
 		}
 
 		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, obj, r.Clock)
 		isMaintenanceTime, err := rcmdMaintenance.IsMaintenanceTime()
+		klog.Infof("Recommendation %q maintenance time %v", key.String(), isMaintenanceTime)
 		if err != nil {
 			return r.handleErr(ctx, obj, err, api.Pending)
 		}
@@ -175,7 +176,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// trigger maintenanceWork anyway, requeue otherwise
 		if obj.Status.Phase == api.Waiting && obj.Status.Reason == api.WaitingForMaintenanceWindow {
 			if obj.Spec.Deadline != nil {
-				if obj.Spec.Deadline.UTC().After(r.Clock.Now()) {
+				if obj.Spec.Deadline.UTC().After(r.Clock.Now()) && !isMaintenanceTime {
 					return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 				}
 			} else {
@@ -303,11 +304,12 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 		return ctrl.Result{}, err
 	}
 	unObj.SetName(opsReqName)
-
 	err = r.Client.Create(ctx, unObj)
 	if err != nil {
 		return r.handleErr(ctx, rcmd, err, api.Failed)
 	}
+
+	klog.Info("Generated Opsrequest name is", opsReqName)
 
 	_, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 		in := obj.(*api.Recommendation)
