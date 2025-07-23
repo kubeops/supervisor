@@ -19,7 +19,7 @@ package v1alpha1
 const (
 	DefaultMaintenanceWindowKey        = "supervisor.appscode.com/is-default-maintenance-window"
 	DefaultClusterMaintenanceWindowKey = "supervisor.appscode.com/is-default-cluster-maintenance-window"
-	DefaultBackoffLimit                = 5
+	DefaultBackoffLimit                = 10
 )
 
 // List of Condition and Phase reasons

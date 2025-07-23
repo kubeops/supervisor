@@ -85,6 +85,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// Skipped outdated Recommendation
 	if obj.Status.Outdated {
+		klog.Infof("skipped outdated recommendation: %s", obj.Name)
 		_, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
@@ -107,6 +108,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if obj.Status.FailedAttempt > pointer.Int32(obj.Spec.BackoffLimit) {
+		klog.Infof("backoff limit exceeded for recommendation: %s", key.String())
 		_, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
@@ -142,12 +144,17 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			if err != nil {
 				return ctrl.Result{}, err
 			}
+			klog.Infof("recommendation %q approved", key.String())
 		}
 	}
 
+	klog.Infof("object status %v, %v, %v", obj.Status.Phase, obj.Status.ApprovalStatus, obj.Status.ApprovedWindow)
+
 	if obj.Status.ApprovalStatus == api.ApprovalApproved {
 		klog.Infof("Recommendation %q approved", key.String())
+		klog.Infof("recommendation phase: %s", obj.Status.Phase)
 		if obj.Status.Phase == api.InProgress && obj.Status.CreatedOperationRef != nil {
+			klog.Infof("Recommendation %q is in progress", key.String())
 			return r.checkOpsRequestStatus(ctx, obj)
 		}
 
@@ -244,10 +251,13 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 	}
 
 	if success == nil {
+		klog.Infof("not successful operation retry again %q", key.String())
+		klog.Infof("recommendation phase: %s", rcmd.Status.Phase)
 		return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 	}
 
 	if pointer.Bool(success) {
+		klog.Infof("successful operation %q", key.String())
 		_, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.Phase = api.Succeeded
@@ -264,6 +274,7 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 		})
 		return ctrl.Result{}, err
 	} else {
+		klog.Infof("record failed operation %q", key.String())
 		return r.recordFailedAttempt(ctx, rcmd, errors.New("operation has been failed"))
 	}
 }
@@ -280,7 +291,7 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 
 	deadlineMgr := deadline_manager.NewManager(rcmd, r.Clock)
 	deadlineKnocking := deadlineMgr.IsDeadlineLessThan(r.BeforeDeadlineDuration)
-
+	klog.Infof("deadlinekoncking, maintainParallelism: %v, %v", deadlineKnocking, maintainParallelism)
 	if !(maintainParallelism || deadlineKnocking) {
 		_, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
@@ -296,22 +307,25 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 
 	unObj, err := shared.GetUnstructuredObj(rcmd.Spec.Operation)
 	if err != nil {
+		klog.Infof("error getting unstructured object: %v", err)
 		return r.handleErr(ctx, rcmd, err, api.Failed)
 	}
 
 	opsReqName, err := generateOpsRequestName(unObj)
 	if err != nil {
+		klog.Errorf("error generating ops request name: %v", err)
 		return ctrl.Result{}, err
 	}
 	unObj.SetName(opsReqName)
 	err = r.Client.Create(ctx, unObj)
 	if err != nil {
+		klog.Infof("error creating unstructured object: %v", err)
+		klog.Infof("recommendation status now.........", rcmd.Status.Phase)
 		return r.handleErr(ctx, rcmd, err, api.Failed)
 	}
 
-	klog.Info("Generated Opsrequest name is", opsReqName)
-
 	_, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
+		klog.Info("Created Opsrequest name is", opsReqName)
 		in := obj.(*api.Recommendation)
 		in.Status.Phase = api.InProgress
 		in.Status.Reason = api.StartedExecutingOperation
@@ -323,6 +337,8 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 			Message:            "OpsRequest is successfully created",
 		})
 		in.Status.CreatedOperationRef = &core.LocalObjectReference{Name: opsReqName}
+		klog.Infof("recommendation description....................", rcmd.Spec.Description)
+		klog.Info("recommendation status phase is .......................................", in.Status.Phase)
 		return in
 	})
 	return ctrl.Result{}, err
