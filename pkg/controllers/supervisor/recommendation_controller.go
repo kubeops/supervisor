@@ -74,11 +74,9 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	_ = log.FromContext(ctx)
 
 	key := req.NamespacedName
-	klog.Info("got event for Recommendation: ", key.String())
 
 	obj := &api.Recommendation{}
 	if err := r.Client.Get(ctx, key, obj); err != nil {
-		klog.Infof("Recommendation %q doesn't exist anymore", key.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	obj = obj.DeepCopy()
@@ -144,23 +142,17 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-			klog.Infof("recommendation %q approved", key.String())
 		}
 	}
 
-	klog.Infof("object status %v, %v, %v", obj.Status.Phase, obj.Status.ApprovalStatus, obj.Status.ApprovedWindow)
-
 	if obj.Status.ApprovalStatus == api.ApprovalApproved {
 		klog.Infof("Recommendation %q approved", key.String())
-		klog.Infof("recommendation phase: %s", obj.Status.Phase)
 		if obj.Status.Phase == api.InProgress && obj.Status.CreatedOperationRef != nil {
-			klog.Infof("Recommendation %q is in progress", key.String())
 			return r.checkOpsRequestStatus(ctx, obj)
 		}
 
 		rcmdMaintenance := maintenance.NewRecommendationMaintenance(ctx, r.Client, obj, r.Clock)
 		isMaintenanceTime, err := rcmdMaintenance.IsMaintenanceTime()
-		klog.Infof("Recommendation %q maintenance time %v", key.String(), isMaintenanceTime)
 		if err != nil {
 			return r.handleErr(ctx, obj, err, api.Pending)
 		}
@@ -252,7 +244,6 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 
 	if success == nil {
 		klog.Infof("not successful operation retry again %q", key.String())
-		klog.Infof("recommendation phase: %s", rcmd.Status.Phase)
 		return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 	}
 
@@ -291,7 +282,6 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 
 	deadlineMgr := deadline_manager.NewManager(rcmd, r.Clock)
 	deadlineKnocking := deadlineMgr.IsDeadlineLessThan(r.BeforeDeadlineDuration)
-	klog.Infof("deadlinekoncking, maintainParallelism: %v, %v", deadlineKnocking, maintainParallelism)
 	if !(maintainParallelism || deadlineKnocking) {
 		_, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
@@ -320,7 +310,6 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 	err = r.Client.Create(ctx, unObj)
 	if err != nil {
 		klog.Infof("error creating unstructured object: %v", err)
-		klog.Infof("recommendation status now.........", rcmd.Status.Phase)
 		return r.handleErr(ctx, rcmd, err, api.Failed)
 	}
 
@@ -337,8 +326,6 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 			Message:            "OpsRequest is successfully created",
 		})
 		in.Status.CreatedOperationRef = &core.LocalObjectReference{Name: opsReqName}
-		klog.Infof("recommendation description....................", rcmd.Spec.Description)
-		klog.Info("recommendation status phase is .......................................", in.Status.Phase)
 		return in
 	})
 	return ctrl.Result{}, err
