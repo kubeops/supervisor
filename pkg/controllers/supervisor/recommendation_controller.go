@@ -142,11 +142,11 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			if err != nil {
 				return ctrl.Result{}, err
 			}
+			return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 		}
 	}
 
 	if obj.Status.ApprovalStatus == api.ApprovalApproved {
-		klog.Infof("Recommendation %q approved", key.String())
 		if obj.Status.Phase == api.InProgress && obj.Status.CreatedOperationRef != nil {
 			return r.checkOpsRequestStatus(ctx, obj)
 		}
