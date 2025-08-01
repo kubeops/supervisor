@@ -74,17 +74,16 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	_ = log.FromContext(ctx)
 
 	key := req.NamespacedName
-	klog.Info("got event for Recommendation: ", key.String())
 
 	obj := &api.Recommendation{}
 	if err := r.Client.Get(ctx, key, obj); err != nil {
-		klog.Infof("Recommendation %q doesn't exist anymore", key.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	obj = obj.DeepCopy()
 
 	// Skipped outdated Recommendation
 	if obj.Status.Outdated {
+		klog.Infof("skipped outdated recommendation: %s", obj.Name)
 		_, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
@@ -107,6 +106,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if obj.Status.FailedAttempt > pointer.Int32(obj.Spec.BackoffLimit) {
+		klog.Infof("backoff limit exceeded for recommendation: %s", key.String())
 		_, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.ObservedGeneration = in.Generation
@@ -126,6 +126,23 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		})
 		if err != nil {
 			return ctrl.Result{}, err
+		}
+	}
+
+	if obj.Status.Phase == api.Pending && obj.Status.ApprovalStatus == api.ApprovalPending {
+		if obj.Spec.Deadline != nil && obj.Spec.Deadline.UTC().Before(r.Clock.Now()) {
+			_, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
+				in := obj.(*api.Recommendation)
+				in.Status.ApprovalStatus = api.ApprovalApproved
+				in.Status.ApprovedWindow = &api.ApprovedWindow{
+					Window: api.Immediate,
+				}
+				return in
+			})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 		}
 	}
 
@@ -157,8 +174,14 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// If WaitingForMaintenanceWindow, but certificate deadline is reached,
 		// trigger maintenanceWork anyway, requeue otherwise
 		if obj.Status.Phase == api.Waiting && obj.Status.Reason == api.WaitingForMaintenanceWindow {
-			if obj.Spec.Deadline != nil && obj.Spec.Deadline.UTC().After(r.Clock.Now()) {
-				return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
+			if obj.Spec.Deadline != nil {
+				if obj.Spec.Deadline.UTC().After(r.Clock.Now()) && !isMaintenanceTime {
+					return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
+				}
+			} else {
+				if !isMaintenanceTime {
+					return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
+				}
 			}
 		}
 
@@ -220,10 +243,12 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 	}
 
 	if success == nil {
+		klog.Infof("not successful operation retry again %q", key.String())
 		return ctrl.Result{RequeueAfter: r.RequeueAfterDuration}, nil
 	}
 
 	if pointer.Bool(success) {
+		klog.Infof("successful operation %q", key.String())
 		_, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.Phase = api.Succeeded
@@ -240,6 +265,7 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 		})
 		return ctrl.Result{}, err
 	} else {
+		klog.Infof("record failed operation %q", key.String())
 		return r.recordFailedAttempt(ctx, rcmd, errors.New("operation has been failed"))
 	}
 }
@@ -256,7 +282,6 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 
 	deadlineMgr := deadline_manager.NewManager(rcmd, r.Clock)
 	deadlineKnocking := deadlineMgr.IsDeadlineLessThan(r.BeforeDeadlineDuration)
-
 	if !(maintainParallelism || deadlineKnocking) {
 		_, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
@@ -272,21 +297,24 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 
 	unObj, err := shared.GetUnstructuredObj(rcmd.Spec.Operation)
 	if err != nil {
+		klog.Infof("error getting unstructured object: %v", err)
 		return r.handleErr(ctx, rcmd, err, api.Failed)
 	}
 
 	opsReqName, err := generateOpsRequestName(unObj)
 	if err != nil {
+		klog.Errorf("error generating ops request name: %v", err)
 		return ctrl.Result{}, err
 	}
 	unObj.SetName(opsReqName)
-
 	err = r.Client.Create(ctx, unObj)
 	if err != nil {
+		klog.Infof("error creating unstructured object: %v", err)
 		return r.handleErr(ctx, rcmd, err, api.Failed)
 	}
 
 	_, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
+		klog.Info("Created Opsrequest name is", opsReqName)
 		in := obj.(*api.Recommendation)
 		in.Status.Phase = api.InProgress
 		in.Status.Reason = api.StartedExecutingOperation

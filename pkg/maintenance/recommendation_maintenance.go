@@ -26,6 +26,7 @@ import (
 
 	"github.com/jonboulle/clockwork"
 	"gomodules.xyz/pointer"
+	"k8s.io/klog/v2"
 	kmapi "kmodules.xyz/client-go/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -70,7 +71,6 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 	if len(mwList.Items) == 0 {
 		return false, errors.New("no available MaintenanceWindow is found")
 	}
-
 	mwPassedFlag := true
 
 	for _, mw := range mwList.Items {
@@ -84,6 +84,7 @@ func (r *RecommendationMaintenance) IsMaintenanceTime() (bool, error) {
 		day := getCurrentDay(r.clock, loc)
 
 		mTimes, found := mw.Spec.Days[api.DayOfWeek(day)]
+		klog.Info("DayOfWeek:", day, ":", mTimes)
 		if found {
 			if r.isMaintenanceTimeWindow(mTimes, loc) {
 				return true, nil
@@ -236,11 +237,25 @@ func (r *RecommendationMaintenance) getAvailableMaintenanceWindowList() (*api.Ma
 			}
 		}
 	} else if aw.MaintenanceWindow != nil {
-		mw, err := r.getMaintenanceWindow(client.ObjectKey{Namespace: aw.MaintenanceWindow.Namespace, Name: aw.MaintenanceWindow.Name})
-		if err != nil {
-			return nil, err
+		klog.Info("Found existing maintenance window")
+		if aw.MaintenanceWindow.Kind == api.ResourceKindClusterMaintenanceWindow {
+			clusterMWList, err := r.getMWListFromClusterMWList()
+			if err != nil {
+				klog.Error(err)
+				return nil, err
+			}
+			mw := &api.MaintenanceWindow{
+				Spec:   clusterMWList.Items[0].Spec,
+				Status: clusterMWList.Items[0].Status,
+			}
+			mwList.Items = append(mwList.Items, *mw)
+		} else {
+			mw, err := r.getMaintenanceWindow(client.ObjectKey{Namespace: aw.MaintenanceWindow.Namespace, Name: aw.MaintenanceWindow.Name})
+			if err != nil {
+				return nil, err
+			}
+			mwList.Items = append(mwList.Items, *mw)
 		}
-		mwList.Items = append(mwList.Items, *mw)
 	} else if aw.Window == api.NextAvailable {
 		var err error
 		mwList, err = r.getMaintenanceWindows()
