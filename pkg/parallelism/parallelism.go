@@ -40,11 +40,12 @@ func NewParallelRunner(ctx context.Context, kc client.Client, rcmd *api.Recommen
 }
 
 func (r *ParallelRunner) MaintainParallelism() (bool, error) {
-	if r.rcmd.Status.Parallelism == api.QueuePerTarget {
+	switch r.rcmd.Status.Parallelism {
+	case api.QueuePerTarget:
 		return r.isMaintainingQueuePerTarget()
-	} else if r.rcmd.Status.Parallelism == api.QueuePerTargetAndNamespace {
+	case api.QueuePerTargetAndNamespace:
 		return r.isMaintainingQueuePerTargetAndNamespace()
-	} else {
+	default:
 		return r.isMaintainingQueuePerNamespace()
 	}
 }

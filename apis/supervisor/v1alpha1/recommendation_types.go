@@ -350,6 +350,6 @@ func init() {
 	SchemeBuilder.Register(&Recommendation{}, &RecommendationList{})
 }
 
-func (_ Recommendation) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (Recommendation) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(GroupVersion.WithResource(ResourceRecommendations))
 }

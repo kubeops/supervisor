@@ -130,6 +130,6 @@ func init() {
 	SchemeBuilder.Register(&MaintenanceWindow{}, &MaintenanceWindowList{})
 }
 
-func (_ MaintenanceWindow) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (MaintenanceWindow) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(GroupVersion.WithResource(ResourceMaintenanceWindows))
 }

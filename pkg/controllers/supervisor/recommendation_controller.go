@@ -76,7 +76,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	key := req.NamespacedName
 
 	obj := &api.Recommendation{}
-	if err := r.Client.Get(ctx, key, obj); err != nil {
+	if err := r.Get(ctx, key, obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	obj = obj.DeepCopy()
@@ -146,7 +146,8 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	if obj.Status.ApprovalStatus == api.ApprovalApproved {
+	switch obj.Status.ApprovalStatus {
+	case api.ApprovalApproved:
 		if obj.Status.Phase == api.InProgress && obj.Status.CreatedOperationRef != nil {
 			return r.checkOpsRequestStatus(ctx, obj)
 		}
@@ -186,7 +187,7 @@ func (r *RecommendationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 
 		return r.runMaintenanceWork(ctx, obj)
-	} else if obj.Status.ApprovalStatus == api.ApprovalRejected {
+	case api.ApprovalRejected:
 		_, err := kmc.PatchStatus(ctx, r.Client, obj, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.Phase = api.Skipped
@@ -231,7 +232,7 @@ func (r *RecommendationReconciler) checkOpsRequestStatus(ctx context.Context, rc
 	obj.SetGroupVersionKind(gvk)
 
 	key := client.ObjectKey{Name: rcmd.Status.CreatedOperationRef.Name, Namespace: rcmd.Namespace}
-	err = r.Client.Get(ctx, key, obj)
+	err = r.Get(ctx, key, obj)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: r.RetryAfterDuration}, err
 	}
@@ -282,7 +283,7 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 
 	deadlineMgr := deadline_manager.NewManager(rcmd, r.Clock)
 	deadlineKnocking := deadlineMgr.IsDeadlineLessThan(r.BeforeDeadlineDuration)
-	if !(maintainParallelism || deadlineKnocking) {
+	if !maintainParallelism && !deadlineKnocking {
 		_, err = kmc.PatchStatus(ctx, r.Client, rcmd, func(obj client.Object) client.Object {
 			in := obj.(*api.Recommendation)
 			in.Status.Phase = api.Waiting
@@ -307,7 +308,7 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 		return ctrl.Result{}, err
 	}
 	unObj.SetName(opsReqName)
-	err = r.Client.Create(ctx, unObj)
+	err = r.Create(ctx, unObj)
 	if err != nil {
 		klog.Infof("error creating unstructured object: %v", err)
 		return r.handleErr(ctx, rcmd, err, api.Failed)

@@ -51,7 +51,7 @@ func (r *MaintenanceWindowReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	klog.Info("got event for MaintenanceWindow: ", key.String())
 
 	mw := &api.MaintenanceWindow{}
-	if err := r.Client.Get(ctx, key, mw); err != nil {
+	if err := r.Get(ctx, key, mw); err != nil {
 		klog.Infof("MaintenanceWindow %q doesn't exist anymore", key.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}

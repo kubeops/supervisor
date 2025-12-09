@@ -59,6 +59,6 @@ func init() {
 	SchemeBuilder.Register(&ClusterMaintenanceWindow{}, &ClusterMaintenanceWindowList{})
 }
 
-func (_ ClusterMaintenanceWindow) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (ClusterMaintenanceWindow) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(GroupVersion.WithResource(ResourceClusterMaintenanceWindows))
 }

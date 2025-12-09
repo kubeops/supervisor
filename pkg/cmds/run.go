@@ -40,7 +40,6 @@ import (
 	cu "kmodules.xyz/client-go/client"
 	clustermeta "kmodules.xyz/client-go/cluster"
 	"kmodules.xyz/client-go/meta"
-	_ "kmodules.xyz/client-go/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
@@ -67,14 +66,14 @@ func NewCmdRun() *cobra.Command {
 		QPS   float32 = 1e6
 		Burst int     = 1e6
 
-		metricsAddr          string = "0"
+		metricsAddr          = "0"
 		certDir              string
-		enableLeaderElection bool   = false
-		probeAddr            string = ":8081"
-		secureMetrics        bool   = true
-		enableHTTP2          bool   = false
+		enableLeaderElection = false
+		probeAddr            = ":8081"
+		secureMetrics        = true
+		enableHTTP2          = false
 
-		resyncPeriod               = 10 * time.Minute
+		resyncPeriod           = 10 * time.Minute
 		maxConcurrentReconcile int // NumThreads = 2
 		requeueAfterDuration   time.Duration
 		maxRetryOnFailure      int // MaxNumRequeues = 5
