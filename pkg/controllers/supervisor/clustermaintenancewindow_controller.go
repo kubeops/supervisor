@@ -51,7 +51,7 @@ func (r *ClusterMaintenanceWindowReconciler) Reconcile(ctx context.Context, req 
 	klog.Info("got event for ClusterMaintenanceWindow: ", key.String())
 
 	clusterMW := &api.ClusterMaintenanceWindow{}
-	if err := r.Client.Get(ctx, key, clusterMW); err != nil {
+	if err := r.Get(ctx, key, clusterMW); err != nil {
 		klog.Infof("ClusterMaintenanceWindow %q doesn't exist anymore", key.String())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}

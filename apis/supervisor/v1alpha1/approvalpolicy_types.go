@@ -72,6 +72,6 @@ func init() {
 	SchemeBuilder.Register(&ApprovalPolicy{}, &ApprovalPolicyList{})
 }
 
-func (_ ApprovalPolicy) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (ApprovalPolicy) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(GroupVersion.WithResource(ResourceApprovalPolicies))
 }

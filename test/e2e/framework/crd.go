@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"time"
 
+	// nolint:staticcheck
+
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	. "github.com/onsi/gomega"

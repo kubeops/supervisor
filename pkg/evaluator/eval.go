@@ -109,7 +109,7 @@ func (e *Evaluator) evalProgram(program cel.Program) (success bool, err error) {
 		}
 	}()
 
-	res := make(map[string]interface{})
+	res := make(map[string]any)
 	res[defaultCELVar] = e.obj.UnstructuredContent()
 
 	val, _, err := program.Eval(res)

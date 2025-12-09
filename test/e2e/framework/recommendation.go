@@ -203,11 +203,12 @@ func (f *Framework) WaitForRecommendationToBeSucceeded(key client.ObjectKey) err
 			return false, err
 		}
 
-		if rcmd.Status.Phase == api.Succeeded {
+		switch rcmd.Status.Phase {
+		case api.Succeeded:
 			return true, nil
-		} else if rcmd.Status.Phase == api.Failed {
+		case api.Failed:
 			return false, errors.New("operation failed")
-		} else {
+		default:
 			return false, nil
 		}
 	})
