@@ -18,7 +18,7 @@ require (
 	k8s.io/client-go v0.32.3
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-openapi v0.0.0-20250304201544-e5f78fe3ede9
-	kmodules.xyz/client-go v0.32.10
+	kmodules.xyz/client-go v0.34.2
 	kmodules.xyz/crd-schema-fuzz v0.32.0
 	kubedb.dev/apimachinery v0.52.1-0.20250318023929-051711da2e5d
 	sigs.k8s.io/controller-runtime v0.20.4
@@ -135,10 +135,11 @@ require (
 	k8s.io/component-base v0.32.3 // indirect
 	k8s.io/utils v0.0.0-20241210054802-24370beab758 // indirect
 	kmodules.xyz/apiversion v0.2.0 // indirect
-	kmodules.xyz/custom-resources v0.30.2-0.20250303080226-05eb1392c05f // indirect
+	kmodules.xyz/custom-resources v0.34.0 // indirect
 	kmodules.xyz/monitoring-agent-api v0.30.4 // indirect
 	kmodules.xyz/offshoot-api v0.30.1 // indirect
-	kmodules.xyz/resource-metadata v0.25.2 // indirect
+	kmodules.xyz/resource-metadata v0.40.2 // indirect
+	kmodules.xyz/webhook-runtime v0.34.0
 	kubeops.dev/petset v0.0.9 // indirect
 	kubeops.dev/sidekick v0.0.10 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.1 // indirect
@@ -154,4 +155,8 @@ replace sigs.k8s.io/controller-runtime => github.com/kmodules/controller-runtime
 
 replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.6
 
-replace k8s.io/apiserver => github.com/kmodules/apiserver v0.32.3-0.20250221062720-35dc674c7dd6
+replace k8s.io/apiserver => github.com/kmodules/apiserver v0.21.2-0.20210716212718-83e5493ac170
+
+replace github.com/satori/go.uuid => github.com/gofrs/uuid v4.0.0+incompatible
+
+replace helm.sh/helm/v3 => github.com/kubepack/helm/v3 v3.6.1-0.20210518225915-c3e0ce48dd1b
