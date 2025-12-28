@@ -23,7 +23,8 @@ import (
 	api "kubeops.dev/supervisor/apis/supervisor/v1alpha1"
 
 	"github.com/google/cel-go/cel"
-	"github.com/google/cel-go/checker/decls"
+	"github.com/google/cel-go/common/decls"
+	"github.com/google/cel-go/common/types"
 	"gomodules.xyz/pointer"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/klog/v2"
@@ -130,8 +131,8 @@ func getProgramForRule(rule string) (cel.Program, error) {
 		return program, nil
 	}
 	env, err := cel.NewEnv(
-		cel.Declarations(
-			decls.NewVar(defaultCELVar, decls.Dyn)))
+		cel.VariableDecls(
+			decls.NewVariable(defaultCELVar, types.DynType)))
 	if err != nil {
 		return nil, err
 	}
