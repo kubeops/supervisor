@@ -40,7 +40,6 @@ import (
 	"kmodules.xyz/client-go/apiextensions"
 	coreutil "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
-	metautil "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/policy/secomp"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
@@ -91,25 +90,25 @@ func (m *MSSQLServer) ServiceName() string {
 }
 
 func (m *MSSQLServer) SecondaryServiceName() string {
-	return metautil.NameWithPrefix(m.ServiceName(), string(SecondaryServiceAlias))
+	return meta_util.NameWithPrefix(m.ServiceName(), string(SecondaryServiceAlias))
 }
 
 func (m *MSSQLServer) GoverningServiceName() string {
-	return metautil.NameWithSuffix(m.ServiceName(), "pods")
+	return meta_util.NameWithSuffix(m.ServiceName(), "pods")
 }
 
 func (m *MSSQLServer) DefaultUserCredSecretName(username string) string {
-	return metautil.NameWithSuffix(m.Name, strings.ReplaceAll(fmt.Sprintf("%s-cred", username), "_", "-"))
+	return meta_util.NameWithSuffix(m.Name, strings.ReplaceAll(fmt.Sprintf("%s-cred", username), "_", "-"))
 }
 
 func (m *MSSQLServer) offshootLabels(selector, override map[string]string) map[string]string {
-	selector[metautil.ComponentLabelKey] = kubedb.ComponentDatabase
-	return metautil.FilterKeys(kubedb.GroupName, selector, metautil.OverwriteKeys(nil, m.Labels, override))
+	selector[meta_util.ComponentLabelKey] = kubedb.ComponentDatabase
+	return meta_util.FilterKeys(kubedb.GroupName, selector, meta_util.OverwriteKeys(nil, m.Labels, override))
 }
 
 func (m *MSSQLServer) ServiceLabels(alias ServiceAlias, extraLabels ...map[string]string) map[string]string {
 	svcTemplate := GetServiceTemplate(m.Spec.ServiceTemplates, alias)
-	return m.offshootLabels(metautil.OverwriteKeys(m.OffshootSelectors(), extraLabels...), svcTemplate.Labels)
+	return m.offshootLabels(meta_util.OverwriteKeys(m.OffshootSelectors(), extraLabels...), svcTemplate.Labels)
 }
 
 func (m *MSSQLServer) OffshootLabels() map[string]string {
@@ -118,11 +117,11 @@ func (m *MSSQLServer) OffshootLabels() map[string]string {
 
 func (m *MSSQLServer) OffshootSelectors(extraSelectors ...map[string]string) map[string]string {
 	selector := map[string]string{
-		metautil.NameLabelKey:      m.ResourceFQN(),
-		metautil.InstanceLabelKey:  m.Name,
-		metautil.ManagedByLabelKey: kubedb.GroupName,
+		meta_util.NameLabelKey:      m.ResourceFQN(),
+		meta_util.InstanceLabelKey:  m.Name,
+		meta_util.ManagedByLabelKey: kubedb.GroupName,
 	}
-	return metautil.OverwriteKeys(selector, extraSelectors...)
+	return meta_util.OverwriteKeys(selector, extraSelectors...)
 }
 
 type mssqlserverStatsService struct {
@@ -171,16 +170,31 @@ func (m *MSSQLServer) IsAvailabilityGroup() bool {
 		*m.Spec.Topology.Mode == MSSQLServerModeAvailabilityGroup
 }
 
+func (m *MSSQLServer) IsDistributedAG() bool {
+	return m.Spec.Topology != nil &&
+		m.Spec.Topology.Mode != nil &&
+		*m.Spec.Topology.Mode == MSSQLServerModeDistributedAG &&
+		m.Spec.Topology.DistributedAG != nil
+}
+
+func (m *MSSQLServer) IsCluster() bool {
+	return m.IsAvailabilityGroup() || m.IsDistributedAG()
+}
+
+func (m *MSSQLServer) DistributedAGName() string {
+	return "dag"
+}
+
 func (m *MSSQLServer) IsStandalone() bool {
 	return m.Spec.Topology == nil
 }
 
 func (m *MSSQLServer) PVCName(alias string) string {
-	return metautil.NameWithSuffix(m.Name, alias)
+	return meta_util.NameWithSuffix(m.Name, alias)
 }
 
 func (m *MSSQLServer) PodLabels(extraLabels ...map[string]string) map[string]string {
-	return m.offshootLabels(metautil.OverwriteKeys(m.OffshootSelectors(), extraLabels...), m.Spec.PodTemplate.Labels)
+	return m.offshootLabels(meta_util.OverwriteKeys(m.OffshootSelectors(), extraLabels...), m.Spec.PodTemplate.Labels)
 }
 
 func (m *MSSQLServer) PodLabel(podTemplate *ofst.PodTemplateSpec) map[string]string {
@@ -191,7 +205,7 @@ func (m *MSSQLServer) PodLabel(podTemplate *ofst.PodTemplateSpec) map[string]str
 }
 
 func (m *MSSQLServer) ConfigSecretName() string {
-	return metautil.NameWithSuffix(m.OffshootName(), "config")
+	return meta_util.NameWithSuffix(m.OffshootName(), "config")
 }
 
 func (m *MSSQLServer) PetSetName() string {
@@ -237,7 +251,7 @@ func (m MSSQLServer) SidekickLabels(skName string) map[string]string {
 }
 
 func (m *MSSQLServer) PodControllerLabels(extraLabels ...map[string]string) map[string]string {
-	return m.offshootLabels(metautil.OverwriteKeys(m.OffshootSelectors(), extraLabels...), m.Spec.PodTemplate.Controller.Labels)
+	return m.offshootLabels(meta_util.OverwriteKeys(m.OffshootSelectors(), extraLabels...), m.Spec.PodTemplate.Controller.Labels)
 }
 
 func (m *MSSQLServer) PodControllerLabel(podTemplate *ofst.PodTemplateSpec) map[string]string {
@@ -281,32 +295,41 @@ func (m MSSQLServer) GetAuthSecretName() string {
 	if m.Spec.AuthSecret != nil && m.Spec.AuthSecret.Name != "" {
 		return m.Spec.AuthSecret.Name
 	}
-	return metautil.NameWithSuffix(m.OffshootName(), "auth")
+	return meta_util.NameWithSuffix(m.OffshootName(), "auth")
 }
 
 func (m *MSSQLServer) CAProviderClassName() string {
-	return metautil.NameWithSuffix(m.OffshootName(), "ca-provider")
+	return meta_util.NameWithSuffix(m.OffshootName(), "ca-provider")
 }
 
 func (m *MSSQLServer) DbmLoginSecretName() string {
-	return metautil.NameWithSuffix(m.OffshootName(), "dbm-login")
+	if m.Spec.Topology != nil && m.Spec.Topology.AvailabilityGroup != nil && m.Spec.Topology.AvailabilityGroup.LoginSecretName != "" {
+		return m.Spec.Topology.AvailabilityGroup.LoginSecretName
+	}
+	return meta_util.NameWithSuffix(m.OffshootName(), "dbm-login")
 }
 
 func (m *MSSQLServer) MasterKeySecretName() string {
-	return metautil.NameWithSuffix(m.OffshootName(), "master-key")
+	if m.Spec.Topology != nil && m.Spec.Topology.AvailabilityGroup != nil && m.Spec.Topology.AvailabilityGroup.MasterKeySecretName != "" {
+		return m.Spec.Topology.AvailabilityGroup.MasterKeySecretName
+	}
+	return meta_util.NameWithSuffix(m.OffshootName(), "master-key")
 }
 
 func (m *MSSQLServer) EndpointCertSecretName() string {
-	return metautil.NameWithSuffix(m.OffshootName(), "endpoint-cert")
+	if m.Spec.Topology != nil && m.Spec.Topology.AvailabilityGroup != nil && m.Spec.Topology.AvailabilityGroup.EndpointCertSecretName != "" {
+		return m.Spec.Topology.AvailabilityGroup.EndpointCertSecretName
+	}
+	return meta_util.NameWithSuffix(m.OffshootName(), "endpoint-cert")
 }
 
 // CertificateName returns the default certificate name and/or certificate secret name for a certificate alias
 func (m *MSSQLServer) CertificateName(alias MSSQLServerCertificateAlias) string {
-	return metautil.NameWithSuffix(m.Name, fmt.Sprintf("%s-cert", string(alias)))
+	return meta_util.NameWithSuffix(m.Name, fmt.Sprintf("%s-cert", string(alias)))
 }
 
 func (m *MSSQLServer) SecretName(alias MSSQLServerCertificateAlias) string {
-	return metautil.NameWithSuffix(m.Name, string(alias))
+	return meta_util.NameWithSuffix(m.Name, string(alias))
 }
 
 // GetCertSecretName returns the secret name for a certificate alias if any
@@ -340,11 +363,18 @@ func (m *MSSQLServer) SetDefaults(kc client.Client) {
 		m.Spec.DeletionPolicy = DeletionPolicyDelete
 	}
 
+	if m.Spec.AuthSecret == nil {
+		m.Spec.AuthSecret = &SecretReference{}
+	}
+	if m.Spec.AuthSecret.Kind == "" {
+		m.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
+	}
+
 	if m.IsStandalone() {
 		if m.Spec.Replicas == nil {
 			m.Spec.Replicas = pointer.Int32P(1)
 		}
-	} else if m.IsAvailabilityGroup() {
+	} else if m.IsCluster() {
 		if m.Spec.Topology.AvailabilityGroup == nil {
 			m.Spec.Topology.AvailabilityGroup = &MSSQLServerAvailabilityGroupSpec{}
 		}
@@ -461,7 +491,7 @@ func (m *MSSQLServer) setDefaultContainerSecurityContext(mssqlVersion *catalog.M
 	m.assignDefaultContainerSecurityContext(mssqlVersion, initContainer.SecurityContext, false)
 	podTemplate.Spec.InitContainers = coreutil.UpsertContainer(podTemplate.Spec.InitContainers, *initContainer)
 
-	if m.IsAvailabilityGroup() {
+	if m.IsCluster() {
 		coordinatorContainer := coreutil.GetContainerByName(podTemplate.Spec.Containers, kubedb.MSSQLCoordinatorContainerName)
 		if coordinatorContainer == nil {
 			coordinatorContainer = &core.Container{
@@ -616,4 +646,19 @@ func (m *MSSQLServer) ReplicasAreReady(lister pslister.PetSetLister) (bool, stri
 	// Desire number of petSets
 	expectedItems := 1
 	return checkReplicasOfPetSet(lister.PetSets(m.Namespace), labels.SelectorFromSet(m.OffshootLabels()), expectedItems)
+}
+
+// Map SecondaryAccessMode to SQL string values
+func SecondaryAccessSQL(mode SecondaryAccessMode) string {
+	switch mode {
+	case SecondaryAccessModePassive:
+		return "NO"
+	case SecondaryAccessModeReadOnly:
+		return "READ_ONLY"
+	case SecondaryAccessModeAll:
+		return "ALL"
+	default:
+		// Fallback to NO if unset or unknown
+		return "NO"
+	}
 }

@@ -29,6 +29,10 @@ const (
 	Failed     = "Failed"
 )
 
+const (
+	Retrying = "Retrying"
+)
+
 // Database
 const (
 	DatabaseReady           = "DatabaseReady"
@@ -119,6 +123,7 @@ const (
 	Restart              = "Restart"
 	RestartNodes         = "RestartNodes"
 	RestartPods          = "RestartPods"
+	RestartKeeperPods    = "RestartKeeperPods"
 	RestartPodsSucceeded = "RestartPodsSucceeded"
 	RestartPodsFailed    = "RestartPodsFailed"
 )
@@ -282,15 +287,20 @@ const (
 	RestartShard        = "RestartShard"
 	RestartArbiter      = "RestartArbiter"
 	RestartHidden       = "RestartHidden"
+
+	SetHorizons    = "SetHorizons"
+	RemoveHorizons = "RemoveHorizons"
 )
 
-// MySQL/MariaDB Constants
+// MySQL/MariaDB/Maxscale Constants
 const (
-	TempIniFilesPath           = "/tmp/kubedb-custom-ini-files"
-	StopRemoteReplica          = "StopRemoteReplica"
-	DBPatch                    = "DBPatch"
-	StopRemoteReplicaSucceeded = "StopRemoteReplicaSucceeded"
-	DBPatchSucceeded           = "DBPatchSucceeded"
+	TempIniFilesPath             = "/tmp/kubedb-custom-ini-files"
+	StopRemoteReplica            = "StopRemoteReplica"
+	DBPatch                      = "DBPatch"
+	StopRemoteReplicaSucceeded   = "StopRemoteReplicaSucceeded"
+	DBPatchSucceeded             = "DBPatchSucceeded"
+	RestartMaxscale              = "RestartMaxscale"
+	RestartMaxscalePodsSucceeded = "RestartMaxscalePodsSucceeded"
 )
 
 // Postgres Constants
@@ -356,10 +366,13 @@ const (
 	ScaleUpRedisReplicasInSentinelMode   = "ScaleUpRedisReplicasInSentinelMode"
 	ScaleDownRedisReplicasInSentinelMode = "ScaleDownRedisReplicasInSentinelMode"
 
+	RedisUpdateAnnounces        = "UpdateAnnounces"
 	HorizontalScaleReplicasUp   = "HorizontalScaleReplicasUp"
 	HorizontalScaleReplicasDown = "HorizontalScaleReplicasDown"
 	HorizontalScaleSentinelUp   = "HorizontalScaleSentinelUp"
 	HorizontalScaleSentinelDown = "HorizontalScaleSentinelDown"
+
+	RedisUpdateAclSecret = "UpdateAclSecret"
 )
 
 // Druid Constants

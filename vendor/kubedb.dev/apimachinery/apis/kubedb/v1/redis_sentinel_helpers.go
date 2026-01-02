@@ -192,7 +192,7 @@ func (rs *RedisSentinel) SetDefaults(rdVersion *catalog.RedisVersion) error {
 	if err != nil {
 		return fmt.Errorf("can't get the semvar version from RedisVersion spec. err: %v", err)
 	}
-	if curVersion.Major() <= 4 {
+	if rdVersion.Spec.Distribution == catalog.RedisDistroOfficial && curVersion.Major() <= 4 {
 		rs.Spec.DisableAuth = true
 	}
 	if rs.Spec.Halted {
@@ -211,6 +211,15 @@ func (rs *RedisSentinel) SetDefaults(rdVersion *catalog.RedisVersion) error {
 
 	if rs.Spec.StorageType == "" {
 		rs.Spec.StorageType = StorageTypeDurable
+	}
+
+	if !rs.Spec.DisableAuth {
+		if rs.Spec.AuthSecret == nil {
+			rs.Spec.AuthSecret = &SecretReference{}
+		}
+		if rs.Spec.AuthSecret.Kind == "" {
+			rs.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
+		}
 	}
 
 	rs.setDefaultContainerSecurityContext(rdVersion, &rs.Spec.PodTemplate)
@@ -262,7 +271,7 @@ func (rs *RedisSentinel) GetPersistentSecrets() []string {
 	}
 
 	var secrets []string
-	if rs.Spec.AuthSecret != nil {
+	if !IsVirtualAuthSecretReferred(rs.Spec.AuthSecret) && rs.Spec.AuthSecret != nil && rs.Spec.AuthSecret.Name != "" {
 		secrets = append(secrets, rs.Spec.AuthSecret.Name)
 	}
 	return secrets

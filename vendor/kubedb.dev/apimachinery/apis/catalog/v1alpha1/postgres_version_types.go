@@ -53,6 +53,11 @@ type PostgresVersion struct {
 type PostgresVersionSpec struct {
 	// Version
 	Version string `json:"version"`
+
+	// EndOfLife refers if this version reached into its end of the life or not, based on https://endoflife.date/
+	// +optional
+	EndOfLife bool `json:"endOfLife"`
+
 	// Distribution
 	Distribution PostgresDistro `json:"distribution,omitempty"`
 	// init container image
@@ -142,7 +147,7 @@ type PostgresSecurityContext struct {
 	RunAsAnyNonRoot bool `json:"runAsAnyNonRoot,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Official;TimescaleDB;PostGIS;KubeDB;PostgreSQL
+// +kubebuilder:validation:Enum=Official;TimescaleDB;PostGIS;KubeDB;DocumentDB;PostgreSQL
 type PostgresDistro string
 
 const (
@@ -150,4 +155,5 @@ const (
 	PostgresDistroTimescaleDB PostgresDistro = "TimescaleDB"
 	PostgresDistroPostGIS     PostgresDistro = "PostGIS"
 	PostgresDistroKubeDB      PostgresDistro = "KubeDB"
+	PostgresDistroDocumentDB  PostgresDistro = "DocumentDB"
 )

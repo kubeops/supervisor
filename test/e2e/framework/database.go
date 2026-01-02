@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	"kubedb.dev/apimachinery/apis/kubedb"
 	kubedbv1 "kubedb.dev/apimachinery/apis/kubedb/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -68,8 +69,10 @@ func (f *Framework) newPostgresStandaloneDatabase(customAuthName string) *kubedb
 			Version:     "13.2",
 			StorageType: kubedbv1.StorageTypeDurable,
 			AuthSecret: &kubedbv1.SecretReference{
-				LocalObjectReference: core.LocalObjectReference{
-					Name: customAuthName,
+				TypedLocalObjectReference: appcat.TypedLocalObjectReference{
+					APIGroup: "",
+					Kind:     "Secret",
+					Name:     customAuthName,
 				},
 			},
 			Storage: &core.PersistentVolumeClaimSpec{

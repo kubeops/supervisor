@@ -46,7 +46,7 @@ import (
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
-func (_ Postgres) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (Postgres) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralPostgres))
 }
 
@@ -198,6 +198,13 @@ func (p *Postgres) SetDefaults(postgresVersion *catalog.PostgresVersion, topolog
 	}
 	if p.Spec.TerminationPolicy == "" {
 		p.Spec.TerminationPolicy = DeletionPolicyDelete
+	}
+
+	if p.Spec.AuthSecret == nil {
+		p.Spec.AuthSecret = &SecretReference{}
+	}
+	if p.Spec.AuthSecret.Kind == "" {
+		p.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
 	}
 
 	if p.Spec.LeaderElection == nil {

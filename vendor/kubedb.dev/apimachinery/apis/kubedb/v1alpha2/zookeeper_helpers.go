@@ -91,7 +91,7 @@ func (z *ZooKeeper) ConfigSecretName() string {
 }
 
 func (z *ZooKeeper) PVCName(alias string) string {
-	return meta_util.NameWithSuffix(z.Name, alias)
+	return alias
 }
 
 func (z *ZooKeeper) ServiceName() string {
@@ -201,6 +201,15 @@ func (z *ZooKeeper) SetDefaults(kc client.Client) {
 			return
 		}
 		z.Spec.DeletionPolicy = DeletionPolicyHalt
+	}
+
+	if !z.Spec.DisableAuth {
+		if z.Spec.AuthSecret == nil {
+			z.Spec.AuthSecret = &SecretReference{}
+		}
+		if z.Spec.AuthSecret.Kind == "" {
+			z.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
+		}
 	}
 
 	var zkVersion catalog.ZooKeeperVersion

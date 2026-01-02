@@ -205,8 +205,21 @@ func (f *FerretDB) SetDefaults(kc client.Client) {
 	if f == nil {
 		return
 	}
-	if f.Spec.StorageType == "" {
-		f.Spec.StorageType = StorageTypeDurable
+
+	if f.Spec.Backend == nil {
+		f.Spec.Backend = &FerretDBBackendSpec{}
+	}
+
+	if f.Spec.Backend.Replicas == nil {
+		f.Spec.Backend.Replicas = pointer.Int32P(3)
+	}
+
+	if f.Spec.Backend.PodTemplate == nil {
+		f.Spec.Backend.PodTemplate = &ofst.PodTemplateSpec{}
+	}
+
+	if f.Spec.Backend.StorageType == "" {
+		f.Spec.Backend.StorageType = StorageTypeDurable
 	}
 
 	if f.Spec.DeletionPolicy == "" {
@@ -215,6 +228,13 @@ func (f *FerretDB) SetDefaults(kc client.Client) {
 
 	if f.Spec.SSLMode == "" {
 		f.Spec.SSLMode = SSLModeDisabled
+	}
+
+	if f.Spec.AuthSecret == nil {
+		f.Spec.AuthSecret = &SecretReference{}
+	}
+	if f.Spec.AuthSecret.Kind == "" {
+		f.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
 	}
 
 	var frVersion catalog.FerretDBVersion
@@ -255,14 +275,6 @@ func (f *FerretDB) SetDefaults(kc client.Client) {
 		f.setDefaultPodTemplateValues(f.Spec.Server.Secondary.PodTemplate, &frVersion)
 	}
 
-	if f.Spec.Backend.LinkedDB == "" {
-		if f.Spec.Backend.ExternallyManaged {
-			f.Spec.Backend.LinkedDB = "postgres"
-		} else {
-			f.Spec.Backend.LinkedDB = "ferretdb"
-		}
-	}
-
 	if f.Spec.AuthSecret == nil {
 		f.Spec.AuthSecret = &SecretReference{
 			ExternallyManaged: false,
@@ -277,19 +289,6 @@ func (f *FerretDB) SetDefaults(kc client.Client) {
 		if f.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup == nil {
 			f.Spec.Monitor.Prometheus.Exporter.SecurityContext.RunAsGroup = frVersion.Spec.SecurityContext.RunAsUser
 		}
-	}
-	defaultVersion := "16.4-bookworm"
-	if f.IsLaterVersion(&frVersion, 2) {
-		defaultVersion = "16.7-doc"
-	}
-	if !f.Spec.Backend.ExternallyManaged {
-		if f.Spec.Backend.Version == nil {
-			f.Spec.Backend.Version = &defaultVersion
-		}
-	}
-
-	if f.Spec.Backend.PostgresRef != nil && f.Spec.Backend.PostgresRef.Name != "" && f.Spec.Backend.PostgresRef.Namespace == "" {
-		f.Spec.Backend.PostgresRef.Namespace = f.Namespace
 	}
 
 	f.SetTLSDefaults()
@@ -314,7 +313,7 @@ func (f *FerretDB) setDefaultPodTemplateValues(podTemplate *ofst.PodTemplateSpec
 	f.setDefaultPodTemplateSecurityContext(frVersion, podTemplate)
 }
 
-func (f *FerretDB) IsLaterVersion(frVersion *catalog.FerretDBVersion, version uint64) bool {
+func (f *FerretDB) IsVersionAtLeast(frVersion *catalog.FerretDBVersion, version uint64) bool {
 	v, _ := semver.NewVersion(frVersion.Spec.Version)
 	return v.Major() >= version
 }

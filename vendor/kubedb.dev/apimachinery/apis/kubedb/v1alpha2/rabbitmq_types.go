@@ -40,7 +40,6 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=rabbitmqs,singular=rabbitmq,shortName=rm,categories={datastore,kubedb,appscode,all}
-// +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".apiVersion"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -54,6 +53,10 @@ type RabbitMQ struct {
 
 // RabbitMQSpec defines the desired state of RabbitMQ
 type RabbitMQSpec struct {
+	// AutoOps contains configuration of automatic ops-request-recommendation generation
+	// +optional
+	AutoOps AutoOpsSpec `json:"autoOps,omitempty"`
+
 	// Version of RabbitMQ to be deployed.
 	Version string `json:"version"`
 

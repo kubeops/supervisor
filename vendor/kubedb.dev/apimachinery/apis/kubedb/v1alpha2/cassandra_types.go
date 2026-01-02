@@ -38,7 +38,6 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=cassandras,singular=cassandra,shortName=cas,categories={datastore,kubedb,appscode,all}
-// +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".apiVersion"
 // +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -52,6 +51,10 @@ type Cassandra struct {
 
 // CassandraSpec defines the desired state of Cassandra
 type CassandraSpec struct {
+	// AutoOps contains configuration of automatic ops-request-recommendation generation
+	// +optional
+	AutoOps AutoOpsSpec `json:"autoOps,omitempty"`
+
 	// Version of Cassandra to be deployed.
 	Version string `json:"version"`
 
@@ -82,6 +85,17 @@ type CassandraSpec struct {
 	// If specified, this file will be used as configuration file otherwise default configuration file will be used.
 	// +optional
 	ConfigSecret *core.LocalObjectReference `json:"configSecret,omitempty"`
+
+	// Keystore encryption secret
+	// +optional
+	KeystoreCredSecret *SecretReference `json:"keystoreCredSecret,omitempty"`
+
+	// To enable ssl for http layer
+	EnableSSL bool `json:"enableSSL,omitempty"`
+
+	// TLS contains tls configurations
+	// +optional
+	TLS *kmapi.TLSConfig `json:"tls,omitempty"`
 
 	// PodTemplate is an optional configuration for pods used to expose database
 	// +optional
@@ -150,3 +164,11 @@ type CassandraList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Cassandra `json:"items"`
 }
+
+// +kubebuilder:validation:Enum=server;client
+type CassandraCertificateAlias string
+
+const (
+	CassandraServerCert CassandraCertificateAlias = "server"
+	CassandraClientCert CassandraCertificateAlias = "client"
+)
