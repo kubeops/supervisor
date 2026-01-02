@@ -90,15 +90,19 @@ type PostgresOpsRequestSpec struct {
 	ForceFailOver *PostgresForceFailOver `json:"forceFailOver,omitempty"`
 	// Set given key pairs to raft storage
 	SetRaftKeyPair *PostgresSetRaftKeyPair `json:"setRaftKeyPair,omitempty"`
+	// Specifies information necessary for migrating storageClass or data
+	Migration *PostgresMigrationSpec `json:"migration,omitempty"`
 	// Timeout for each step of the ops request in second. If a step doesn't finish within the specified timeout, the ops request will result in failure.
 	Timeout *metav1.Duration `json:"timeout,omitempty"`
 	// ApplyOption is to control the execution of OpsRequest depending on the database state.
 	// +kubebuilder:default="IfReady"
 	Apply ApplyOption `json:"apply,omitempty"`
+	// +kubebuilder:default=1
+	MaxRetries int32 `json:"maxRetries,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Upgrade;UpdateVersion;HorizontalScaling;VerticalScaling;VolumeExpansion;Restart;Reconfigure;ReconfigureTLS;RotateAuth;ReconnectStandby;ForceFailOver;SetRaftKeyPair
-// ENUM(UpdateVersion, HorizontalScaling, VerticalScaling, VolumeExpansion, Restart, Reconfigure, ReconfigureTLS, RotateAuth, ReconnectStandby, ForceFailOver, SetRaftKeyPair)
+// +kubebuilder:validation:Enum=Upgrade;UpdateVersion;HorizontalScaling;VerticalScaling;VolumeExpansion;Restart;Reconfigure;ReconfigureTLS;RotateAuth;ReconnectStandby;ForceFailOver;SetRaftKeyPair;StorageMigration
+// ENUM(UpdateVersion, HorizontalScaling, VerticalScaling, VolumeExpansion, Restart, Reconfigure, ReconfigureTLS, RotateAuth, ReconnectStandby, ForceFailOver, SetRaftKeyPair, StorageMigration)
 type PostgresOpsRequestType string
 
 type PostgresUpdateVersionSpec struct {
@@ -142,6 +146,11 @@ type PostgresVerticalScalingSpec struct {
 	Exporter    *ContainerResources `json:"exporter,omitempty"`
 	Coordinator *ContainerResources `json:"coordinator,omitempty"`
 	Arbiter     *PodResources       `json:"arbiter,omitempty"`
+}
+
+type PostgresMigrationSpec struct {
+	StorageClassName   *string                            `json:"storageClassName"`
+	OldPVReclaimPolicy core.PersistentVolumeReclaimPolicy `json:"oldPVReclaimPolicy,omitempty"`
 }
 
 // PostgresVolumeExpansionSpec is the spec for Postgres volume expansion

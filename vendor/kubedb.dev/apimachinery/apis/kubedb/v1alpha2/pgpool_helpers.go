@@ -283,6 +283,13 @@ func (p *Pgpool) GetCertSecretName(alias PgpoolCertificateAlias) string {
 }
 
 func (p *Pgpool) SetTLSDefaults() {
+	if p.Spec.AuthSecret == nil {
+		p.Spec.AuthSecret = &SecretReference{}
+	}
+	if p.Spec.AuthSecret.Kind == "" {
+		p.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
+	}
+
 	if p.Spec.TLS == nil || p.Spec.TLS.IssuerRef == nil {
 		return
 	}
@@ -403,10 +410,10 @@ func (p *Pgpool) SetDefaults(client client.Client) {
 
 func (p *Pgpool) GetPersistentSecrets() []string {
 	var secrets []string
-	if p.Spec.AuthSecret != nil {
-		secrets = append(secrets, p.Spec.AuthSecret.Name)
-		secrets = append(secrets, p.ConfigSecretName())
+	if !IsVirtualAuthSecretReferred(p.Spec.AuthSecret) && p.Spec.AuthSecret != nil && p.Spec.AuthSecret.Name != "" {
+		secrets = append(secrets, p.GetAuthSecretName())
 	}
+	secrets = append(secrets, p.ConfigSecretName())
 	return secrets
 }
 

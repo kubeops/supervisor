@@ -254,7 +254,7 @@ func (s *Solr) StatsServiceLabels() map[string]string {
 }
 
 func (s *Solr) PVCName(alias string) string {
-	return meta_util.NameWithSuffix(s.Name, alias)
+	return alias
 }
 
 func (s Solr) NodeRoleSpecificLabelKey(roleType SolrNodeRoleType) string {
@@ -312,6 +312,15 @@ func (s *Solr) SetDefaults(kc client.Client) {
 
 	if s.Spec.StorageType == "" {
 		s.Spec.StorageType = StorageTypeDurable
+	}
+
+	if !s.Spec.DisableSecurity {
+		if s.Spec.AuthSecret == nil {
+			s.Spec.AuthSecret = &SecretReference{}
+		}
+		if s.Spec.AuthSecret.Kind == "" {
+			s.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
+		}
 	}
 
 	s.SetDefaultsToZooKeeperRef()

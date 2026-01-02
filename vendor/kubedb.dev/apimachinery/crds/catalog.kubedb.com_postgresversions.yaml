@@ -131,8 +131,11 @@ spec:
                 - TimescaleDB
                 - PostGIS
                 - KubeDB
+                - DocumentDB
                 - PostgreSQL
                 type: string
+              endOfLife:
+                type: boolean
               exporter:
                 properties:
                   image:

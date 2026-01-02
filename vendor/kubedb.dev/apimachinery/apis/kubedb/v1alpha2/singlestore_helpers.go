@@ -216,8 +216,7 @@ func (s *Singlestore) IsStandalone() bool {
 }
 
 func (s *Singlestore) PVCName(alias string) string {
-	return metautil.NameWithSuffix(s.OffshootName(), alias)
-	// return s.OffshootName()
+	return alias
 }
 
 func (s *Singlestore) AggregatorPetSet() string {
@@ -329,6 +328,13 @@ func (s *Singlestore) SetDefaults(kc client.Client) {
 	}
 	if s.Spec.DeletionPolicy == "" {
 		s.Spec.DeletionPolicy = DeletionPolicyDelete
+	}
+
+	if s.Spec.AuthSecret == nil {
+		s.Spec.AuthSecret = &SecretReference{}
+	}
+	if s.Spec.AuthSecret.Kind == "" {
+		s.Spec.AuthSecret.Kind = kubedb.ResourceKindSecret
 	}
 
 	if s.Spec.Topology == nil {

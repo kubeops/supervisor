@@ -52,6 +52,11 @@ type RedisVersion struct {
 type RedisVersionSpec struct {
 	// Version
 	Version string `json:"version"`
+
+	// EndOfLife refers if this version reached into its end of the life or not, based on https://endoflife.date/
+	// +optional
+	EndOfLife bool `json:"endOfLife"`
+
 	// Distribution determines the type of the database(Valkey or Redis)
 	Distribution RedisDistro `json:"distribution,omitempty"`
 	// init container image
@@ -116,10 +121,10 @@ type RedisVersionList struct {
 	Items []RedisVersion `json:"items,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Redis;Valkey
+// +kubebuilder:validation:Enum=Official;Valkey
 type RedisDistro string
 
 const (
-	RedisDistroRedis  RedisDistro = "Redis"
-	RedisDistroValkey RedisDistro = "Valkey"
+	RedisDistroOfficial RedisDistro = "Official"
+	RedisDistroValkey   RedisDistro = "Valkey"
 )

@@ -72,9 +72,17 @@ spec:
                 properties:
                   secretRef:
                     properties:
-                      name:
+                      apiGroup:
                         default: ""
                         type: string
+                      kind:
+                        default: Secret
+                        type: string
+                      name:
+                        type: string
+                    required:
+                    - kind
+                    - name
                     type: object
                     x-kubernetes-map-type: atomic
                 type: object
@@ -200,6 +208,17 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              horizons:
+                properties:
+                  dns:
+                    type: string
+                  pods:
+                    items:
+                      type: string
+                    type: array
+                required:
+                - dns
+                type: object
               horizontalScaling:
                 properties:
                   configServer:
@@ -233,6 +252,10 @@ spec:
                         type: integer
                     type: object
                 type: object
+              maxRetries:
+                default: 1
+                format: int32
+                type: integer
               readinessCriteria:
                 properties:
                   objectsCountDiffPercentage:
@@ -368,6 +391,7 @@ spec:
                 - ReconfigureTLS
                 - Reprovision
                 - RotateAuth
+                - Horizons
                 type: string
               updateVersion:
                 properties:
