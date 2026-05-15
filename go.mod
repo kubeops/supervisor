@@ -19,6 +19,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912
 	kmodules.xyz/client-go v0.34.2
 	kmodules.xyz/crd-schema-fuzz v0.34.1
+	kmodules.xyz/custom-resources v0.34.0
 	kubedb.dev/apimachinery v0.60.0-rc.1
 	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/randfill v1.0.0
@@ -27,7 +28,7 @@ require (
 
 require (
 	cel.dev/expr v0.24.0 // indirect
-	filippo.io/edwards25519 v1.1.0 // indirect
+	filippo.io/edwards25519 v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -145,7 +146,6 @@ require (
 	k8s.io/component-base v0.34.3 // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
 	kmodules.xyz/apiversion v0.2.0 // indirect
-	kmodules.xyz/custom-resources v0.34.0 // indirect
 	kmodules.xyz/monitoring-agent-api v0.34.0 // indirect
 	kmodules.xyz/offshoot-api v0.34.0 // indirect
 	kmodules.xyz/resource-metadata v0.40.2 // indirect
