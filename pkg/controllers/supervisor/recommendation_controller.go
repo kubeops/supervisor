@@ -333,16 +333,22 @@ func (r *RecommendationReconciler) runMaintenanceWork(ctx context.Context, rcmd 
 }
 
 func generateOpsRequestName(unObj *unstructured.Unstructured) (string, error) {
-	dbName, found, err := unstructured.NestedString(unObj.Object, "spec", "databaseRef", "name")
+	refName, found, err := unstructured.NestedString(unObj.Object, "spec", "databaseRef", "name")
 	if err != nil {
 		return "", err
 	}
 	if !found {
-		return "", fmt.Errorf("invalid recommendation %s; missing `spec.databaseRef.name` in spec.opration", unObj.GetName())
+		refName, found, err = unstructured.NestedString(unObj.Object, "spec", "proxyRef", "name")
+		if err != nil {
+			return "", err
+		}
+		if !found {
+			return "", fmt.Errorf("invalid recommendation %s; missing `spec.databaseRef.name` or `spec.proxyRef.name` in spec.opration", unObj.GetName())
+		}
 	}
 	unixTime := time.Now().Unix()
 	operationType := unObj.GetName()
-	return meta_util.ValidNameWithPrefix(dbName, fmt.Sprintf("%v-%s-auto", unixTime, operationType)), nil
+	return meta_util.ValidNameWithPrefix(refName, fmt.Sprintf("%v-%s-auto", unixTime, operationType)), nil
 }
 
 func (r *RecommendationReconciler) handleErr(ctx context.Context, rcmd *api.Recommendation, err error, phase api.RecommendationPhase) (ctrl.Result, error) {
