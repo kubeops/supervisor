@@ -28,25 +28,26 @@ import (
 )
 
 func (f *Framework) EnsureCRD() GomegaAsyncAssertion {
-	return Eventually(func() error {
-		if err := f.kc.List(f.ctx, &api.RecommendationList{}); err != nil {
-			return fmt.Errorf("CRD Recommendation is not ready, Reason: %v", err)
-		}
+	return Eventually(
+		func() error {
+			if err := f.kc.List(f.ctx, &api.RecommendationList{}); err != nil {
+				return fmt.Errorf("CRD Recommendation is not ready, Reason: %v", err)
+			}
 
-		if err := f.kc.List(f.ctx, &api.MaintenanceWindowList{}); err != nil {
-			return fmt.Errorf("CRD MaintainenceWindow is not ready, Reason: %v", err)
-		}
+			if err := f.kc.List(f.ctx, &api.MaintenanceWindowList{}); err != nil {
+				return fmt.Errorf("CRD MaintainenceWindow is not ready, Reason: %v", err)
+			}
 
-		if err := f.kc.List(f.ctx, &api.ClusterMaintenanceWindowList{}); err != nil {
-			return fmt.Errorf("CRD ClusterMaintainenceWindow is not ready, Reason: %v", err)
-		}
+			if err := f.kc.List(f.ctx, &api.ClusterMaintenanceWindowList{}); err != nil {
+				return fmt.Errorf("CRD ClusterMaintainenceWindow is not ready, Reason: %v", err)
+			}
 
-		if err := f.kc.List(f.ctx, &api.ApprovalPolicyList{}); err != nil {
-			return fmt.Errorf("CRD ApprovalPolicy is not ready, Reason: %v", err)
-		}
+			if err := f.kc.List(f.ctx, &api.ApprovalPolicyList{}); err != nil {
+				return fmt.Errorf("CRD ApprovalPolicy is not ready, Reason: %v", err)
+			}
 
-		return nil
-	},
+			return nil
+		},
 		time.Minute*2,
 		time.Second*10,
 	)

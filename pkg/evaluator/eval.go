@@ -132,7 +132,9 @@ func getProgramForRule(rule string) (cel.Program, error) {
 	}
 	env, err := cel.NewEnv(
 		cel.VariableDecls(
-			decls.NewVariable(defaultCELVar, types.DynType)))
+			decls.NewVariable(defaultCELVar, types.DynType),
+		),
+	)
 	if err != nil {
 		return nil, err
 	}
