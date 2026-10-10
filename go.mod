@@ -3,7 +3,7 @@ module kubeops.dev/supervisor
 go 1.25.0
 
 require (
-	github.com/google/cel-go v0.26.0
+	github.com/google/cel-go v0.29.0
 	github.com/jonboulle/clockwork v0.5.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.23.1
@@ -19,6 +19,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912
 	kmodules.xyz/client-go v0.34.2
 	kmodules.xyz/crd-schema-fuzz v0.34.1
+	kmodules.xyz/custom-resources v0.34.0
 	kubedb.dev/apimachinery v0.60.0-rc.1
 	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/randfill v1.0.0
@@ -26,7 +27,7 @@ require (
 )
 
 require (
-	cel.dev/expr v0.24.0 // indirect
+	cel.dev/expr v0.25.1 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
@@ -96,7 +97,6 @@ require (
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
@@ -145,7 +145,6 @@ require (
 	k8s.io/component-base v0.34.3 // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
 	kmodules.xyz/apiversion v0.2.0 // indirect
-	kmodules.xyz/custom-resources v0.34.0 // indirect
 	kmodules.xyz/monitoring-agent-api v0.34.0 // indirect
 	kmodules.xyz/offshoot-api v0.34.0 // indirect
 	kmodules.xyz/resource-metadata v0.40.2 // indirect
